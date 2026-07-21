@@ -1,7 +1,11 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getMe, can } from '@/lib/session';
 import { CreateApprovalForm } from './form';
 
-export default function NewApprovalPage() {
+export default async function NewApprovalPage() {
+  const me = await getMe();
+  if (!can(me, 'cases:create')) redirect('/approvals');
   return (
     <>
       <div className="page-header">

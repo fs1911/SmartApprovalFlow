@@ -70,6 +70,9 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'identity', description: 'Current user & tenants' },
         { name: 'approval-cases', description: 'Approval workflow (the wedge)' },
         { name: 'templates', description: 'Outbound message templates' },
+        { name: 'members', description: 'Workspace members & roles (RBAC)' },
+        { name: 'workspace', description: 'Workspace settings & white-label branding' },
+        { name: 'reporting', description: 'Operational metrics' },
         { name: 'public', description: 'Loginless customer-facing endpoints' },
       ],
       components: {

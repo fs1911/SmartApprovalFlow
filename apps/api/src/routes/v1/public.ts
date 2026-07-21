@@ -44,7 +44,17 @@ async function resolveByToken(rawToken: string) {
           items: { orderBy: { sortOrder: 'asc' } },
           customer: { select: { name: true } },
           vehicle: { select: { plate: true, make: true, model: true, year: true } },
-          tenant: { select: { name: true, brandName: true, currency: true, locale: true } },
+          tenant: {
+            select: {
+              name: true,
+              brandName: true,
+              brandColor: true,
+              contactEmail: true,
+              contactPhone: true,
+              currency: true,
+              locale: true,
+            },
+          },
         },
       },
     },
@@ -94,6 +104,9 @@ function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
     workspace: {
       name: c.tenant.brandName ?? c.tenant.name,
       currency: c.tenant.currency,
+      brandColor: c.tenant.brandColor,
+      contactEmail: c.tenant.contactEmail,
+      contactPhone: c.tenant.contactPhone,
     },
     customerName: c.customer?.name ?? null,
     vehicle: c.vehicle

@@ -5,11 +5,27 @@
  * (x-saf-tenant / x-saf-role). When real auth lands (Block 5) only this file
  * changes — screens keep calling the same functions.
  */
+import { cookies } from 'next/headers';
 import type { ApiResponse, ApiSuccessResponse } from '@saf/types';
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 const DEV_TENANT = process.env.SAF_DEV_TENANT ?? 'muster-garage';
-const DEV_ROLE = process.env.SAF_DEV_ROLE ?? 'SERVICE_ADVISOR';
+const DEFAULT_ROLE = process.env.SAF_DEV_ROLE ?? 'OWNER';
+
+/** Cookie name used by the dev role switcher to impersonate a role. */
+export const ROLE_COOKIE = 'saf_role';
+
+/**
+ * Dev auth: the active role comes from a cookie the role switcher sets, so RBAC
+ * is demonstrable in the running app. Replaced by real sessions in Block 5.
+ */
+function currentRole(): string {
+  try {
+    return cookies().get(ROLE_COOKIE)?.value ?? DEFAULT_ROLE;
+  } catch {
+    return DEFAULT_ROLE;
+  }
+}
 
 export class ApiClientError extends Error {
   constructor(
@@ -36,7 +52,7 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (!opts.publicRoute) {
     headers['x-saf-tenant'] = DEV_TENANT;
-    headers['x-saf-role'] = DEV_ROLE;
+    headers['x-saf-role'] = currentRole();
   }
   if (opts.idempotencyKey) headers['idempotency-key'] = opts.idempotencyKey;
 

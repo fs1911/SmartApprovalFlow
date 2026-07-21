@@ -9,7 +9,8 @@ Login**. Alles revisionssicher protokolliert.
 > Garagensoftware.
 
 **Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow) ✅ ·
-Block 3 (Operational Hardening) ✅ — siehe [`docs/roadmap.md`](docs/roadmap.md).
+Block 3 (Operational Hardening) ✅ · Block 4 (Multi-Tenant-B2B-Reife) ✅ —
+siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
@@ -25,6 +26,13 @@ gehärtetes **Statusmodell mit Ablauf-Logik**, eine vertrauenswürdigere
 **öffentliche Kundenseite** und eine **Event-/Webhook-Grundlage** für spätere
 Integrationen. E-Mail-Versand läuft im Dev-Modus über einen **Console-Provider**
 (keine Credentials nötig — Nachrichten werden ins API-Log geschrieben).
+
+Und (Block 4): **tenant-scoped RBAC** mit fünf Rollen (Owner/Admin/Advisor/
+Technician/Viewer), gehärtete **Tenant-Isolation**, **Mitglieder-** und
+**Workspace-/Branding-Verwaltung** (White-Label-Grundlage) sowie eine
+**Auswertungs-Seite** mit operativen Kennzahlen. Rechte sind in App und API
+sichtbar wirksam; im Topbar lässt sich die **Demo-Rolle** umschalten, um RBAC
+zu erleben (bis echte Auth in Block 5 folgt).
 
 ## Repo-Struktur
 
@@ -109,11 +117,19 @@ npm run format                      # Prettier
 | Wireframes | [`docs/wireframes.md`](docs/wireframes.md) |
 | ADRs | [`docs/decisions/`](docs/decisions/) |
 | Offene Entscheidungen | [`docs/open-questions.md`](docs/open-questions.md) |
-| Block-Summaries | [`docs/block-1-summary.md`](docs/block-1-summary.md) · [`docs/block-2-summary.md`](docs/block-2-summary.md) · [`docs/block-3-summary.md`](docs/block-3-summary.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) |
+
+## Rollen ausprobieren
+
+Im laufenden Dev-Setup oben rechts die **Demo-Rolle** umschalten
+(Owner/Admin/Advisor/Technician/Viewer). Beobachten: „Neue Freigabe" und die
+Versand-Aktionen verschwinden für Viewer/Technician, „Auswertung"/„Team" nur mit
+den passenden Rechten. Die Berechtigungsmatrix steht in
+[`docs/api-design.md`](docs/api-design.md).
 
 ## Nächster Block
 
-**Block 4/5 — Delivery & Auth-Härtung:** realer E-Mail/SMS-Provider,
-automatische Reminder-Policy, echte Webhook-Zustellung (HMAC/Retry) und echte
-Authentifizierung (JWT + API-Keys). Details in
-[`docs/block-3-summary.md`](docs/block-3-summary.md).
+**Block 5 — Auth- & Integrations-Härtung:** echte Authentifizierung
+(JWT + API-Keys/Scopes), Rate-Limiting, persistente Idempotency und echte
+Webhook-Zustellung (HMAC/Retry). Details in
+[`docs/block-4-summary.md`](docs/block-4-summary.md).

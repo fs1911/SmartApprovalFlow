@@ -3,6 +3,7 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { prisma } from '@saf/db';
+import { ROLE_LABELS, ROLE_PERMISSIONS } from '@saf/types';
 import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
 
@@ -29,6 +30,8 @@ export async function identityRoutes(app: FastifyInstance) {
         user,
         tenant: { id: auth.tenantId, slug: auth.tenantSlug },
         role: auth.role,
+        roleLabel: ROLE_LABELS[auth.role],
+        permissions: ROLE_PERMISSIONS[auth.role],
         scopes: auth.scopes,
         via: auth.via,
       });
@@ -38,7 +41,7 @@ export async function identityRoutes(app: FastifyInstance) {
   app.get(
     '/tenants/:tenantId',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('workspace:read'),
       schema: {
         tags: ['identity'],
         summary: 'Fetch a tenant (must match the caller’s tenant)',

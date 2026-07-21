@@ -28,9 +28,11 @@ function SaveButton() {
 export function TemplateEditor({
   template,
   variables,
+  readOnly = false,
 }: {
   template: Template;
   variables: readonly string[];
+  readOnly?: boolean;
 }) {
   const [state, formAction] = useFormState<TemplateSaveState, FormData>(saveTemplate, {});
 
@@ -54,6 +56,7 @@ export function TemplateEditor({
               id={`subject-${template.id}`}
               name="subject"
               defaultValue={template.subject ?? ''}
+              disabled={readOnly}
             />
           </div>
           <div className="field">
@@ -62,6 +65,7 @@ export function TemplateEditor({
               id={`body-${template.id}`}
               name="body"
               defaultValue={template.body}
+              disabled={readOnly}
               style={{ minHeight: 180, fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)' }}
             />
           </div>
@@ -75,7 +79,7 @@ export function TemplateEditor({
             </span>
           </div>
 
-          <SaveButton />
+          {!readOnly && <SaveButton />}
         </form>
       </div>
     </div>

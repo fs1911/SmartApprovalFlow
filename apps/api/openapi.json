@@ -397,6 +397,104 @@
         }
       }
     },
+    "/api/v1/members": {
+      "get": {
+        "summary": "List workspace members and their roles",
+        "tags": [
+          "members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/members/{id}": {
+      "patch": {
+        "summary": "Change a member’s role",
+        "tags": [
+          "members"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/workspace": {
+      "get": {
+        "summary": "Read the current workspace settings and branding",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update workspace settings and branding",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/reporting/summary": {
+      "get": {
+        "summary": "Key operational metrics for the current workspace",
+        "tags": [
+          "reporting"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/public/approvals/{token}": {
       "get": {
         "summary": "Read an approval request via its secure token (no login)",
@@ -467,6 +565,18 @@
     {
       "name": "templates",
       "description": "Outbound message templates"
+    },
+    {
+      "name": "members",
+      "description": "Workspace members & roles (RBAC)"
+    },
+    {
+      "name": "workspace",
+      "description": "Workspace settings & white-label branding"
+    },
+    {
+      "name": "reporting",
+      "description": "Operational metrics"
     },
     {
       "name": "public",

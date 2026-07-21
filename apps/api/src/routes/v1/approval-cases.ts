@@ -43,7 +43,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.get(
     '/approval-cases',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:read'),
       schema: {
         tags: ['approval-cases'],
         summary: 'List approval cases for the current tenant',
@@ -99,7 +99,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.post(
     '/approval-cases',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:create'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Create an approval case',
@@ -218,7 +218,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.get(
     '/approval-cases/:id',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:read'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Get one approval case with items, decisions and audit trail',
@@ -257,7 +257,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.post(
     '/approval-cases/:id/generate-public-link',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:send'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Issue (or rotate) the secure loginless customer link',
@@ -320,7 +320,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.post(
     '/approval-cases/:id/send',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:send'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Send the approval request (issues link + e-mails the customer)',
@@ -392,7 +392,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.post(
     '/approval-cases/:id/remind',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:send'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Send a reminder for a pending case',
@@ -466,7 +466,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
   app.get(
     '/approval-cases/:id/timeline',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('cases:read'),
       schema: {
         tags: ['approval-cases'],
         summary: 'Merged, chronological history of a case (audit + messages)',

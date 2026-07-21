@@ -7,9 +7,9 @@ Kanonische Quelle im Code: `packages/db/prisma/schema.prisma` (Struktur) und
 
 | Entity | Beschreibung |
 | --- | --- |
-| **Tenant** | Workspace = eine Garage/Gruppe. Wurzel der Mandantentrennung. Trägt Locale/Währung/Branding (White-Label vorbereitet). |
+| **Tenant** | Workspace = eine Garage/Gruppe. Wurzel der Mandantentrennung. Trägt Locale/Währung sowie White-Label-Branding: `brandName`, `brandColor`, `contactEmail`, `contactPhone` (auf der Kundenseite genutzt). |
 | **User** | Person mit Zugang. Im MVP genau einem Tenant zugeordnet. |
-| **Membership** | Verknüpft User↔Tenant mit **Role**. Explizit modelliert, damit Multi-Workspace später bruchfrei möglich ist. |
+| **Membership** | Verknüpft User↔Tenant mit **Role** (`OWNER`, `ADMIN`, `SERVICE_ADVISOR`=Advisor, `TECHNICIAN`, `VIEWER`). Rollen sind **tenant-scoped**; die Permission-Matrix liegt in `@saf/types`. Siehe `decisions/adr-004`. |
 | **Customer** | Fahrzeughalter/Kunde der Garage. |
 | **Vehicle** | Fahrzeug, optional einem Customer zugeordnet. |
 | **ApprovalCase** | Der Freigabefall (der Wedge): Betreff, Beschreibung, Status, Dringlichkeit, Referenz. |

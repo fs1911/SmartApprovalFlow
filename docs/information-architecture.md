@@ -3,15 +3,20 @@
 ## App-Navigation (intern)
 
 ```
-Sidebar
+Sidebar (permission-gated)
 ├── Übersicht        /dashboard      Kennzahlen + neueste Fälle
 ├── Freigaben        /approvals      Liste aller Fälle
-│   ├── Neu          /approvals/new  Fall erstellen
-│   └── Detail       /approvals/:id  Fall + Audit + Kundenlink
-└── Einstellungen    /settings       Vorlagen, Team (Ausbau später)
+│   ├── Neu          /approvals/new  Fall erstellen        (cases:create)
+│   └── Detail       /approvals/:id  Fall + Audit + Versand/Kundenlink (cases:send)
+├── Auswertung       /reporting      Operative Kennzahlen  (reporting:read)
+├── Team             /members        Mitglieder + Rollen   (members:read/-:manage)
+└── Einstellungen    /settings       Branding + Vorlagen   (workspace:manage / templates:write)
 
-Topbar: Workspace-Name · Rolle · [+ Neue Freigabe]
+Topbar: Workspace-Name · Rollen-Badge · [Demo-Rollenumschalter] · [+ Neue Freigabe]
 ```
+
+Nav-Einträge und Aktionen werden serverseitig anhand der Permissions ein-/
+ausgeblendet; Direktaufrufe ohne Recht werden umgeleitet (siehe adr-004).
 
 ## Rollenbezogene Views (Zielbild)
 

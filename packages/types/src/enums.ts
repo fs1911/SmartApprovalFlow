@@ -5,9 +5,22 @@
  * database layer. Keep them in sync with packages/db/prisma/schema.prisma.
  */
 
-/** Roles a user can hold within a single workspace (tenant). */
-export const ROLES = ['OWNER', 'ADMIN', 'SERVICE_ADVISOR', 'TECHNICIAN'] as const;
+/**
+ * Roles a user can hold within a single workspace (tenant). Controlled set —
+ * no free-form custom roles. Note: `SERVICE_ADVISOR` is the product's "Advisor"
+ * (kept as the enum value for backwards compatibility with existing data).
+ */
+export const ROLES = ['OWNER', 'ADMIN', 'SERVICE_ADVISOR', 'TECHNICIAN', 'VIEWER'] as const;
 export type Role = (typeof ROLES)[number];
+
+/** Human-facing labels (German UI). */
+export const ROLE_LABELS: Record<Role, string> = {
+  OWNER: 'Inhaber:in',
+  ADMIN: 'Administrator:in',
+  SERVICE_ADVISOR: 'Serviceberater:in',
+  TECHNICIAN: 'Techniker:in',
+  VIEWER: 'Betrachter:in',
+};
 
 /**
  * Lifecycle of an ApprovalCase.

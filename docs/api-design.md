@@ -33,16 +33,35 @@ Zwei Wege, ein Kontext `{ tenantId, userId?, role, scopes }`:
 > `x-saf-role`), damit der Flow end-to-end läuft. Nur `plugins/auth-context.ts`
 > wird in Block 5 ausgetauscht; die Endpoints bleiben unverändert.
 
-## Rollen / Scopes
+## Rollen & Berechtigungen (tenant-scoped RBAC, Block 4)
 
-| Rolle | Kurz |
-| --- | --- |
-| `OWNER` | Alles inkl. Workspace/Team/API-Keys |
-| `ADMIN` | Wie Owner ohne Abrechnung |
-| `SERVICE_ADVISOR` | Fälle erstellen/senden/ansehen |
-| `TECHNICIAN` | Eingeschränkt (Zuarbeit; Voice später) |
+Kontrolliertes Rollenset (keine Custom Roles), **tenant-spezifisch** über
+`Membership`. Die Permission-Matrix lebt in `@saf/types` (`ROLE_PERMISSIONS`) und
+wird von API (Durchsetzung via `requirePermission`) und Web (Gating) geteilt.
+Hinweis: `SERVICE_ADVISOR` ist der Produktbegriff „Advisor" (Enum-Wert aus
+Kompatibilitätsgründen beibehalten). Details: `decisions/adr-004-...`.
 
-Scopes für API-Keys (Beispiele): `approval-cases:read`, `approval-cases:write`.
+| Permission | OWNER | ADMIN | ADVISOR | TECHNICIAN | VIEWER |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| `cases:read` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `cases:create` | ✓ | ✓ | ✓ | | |
+| `cases:send` | ✓ | ✓ | ✓ | | |
+| `cases:annotate` | ✓ | ✓ | ✓ | ✓ | |
+| `templates:read` | ✓ | ✓ | ✓ | | ✓ |
+| `templates:write` | ✓ | ✓ | | | |
+| `members:read` | ✓ | ✓ | ✓ | | ✓ |
+| `members:manage` | ✓ | ✓ | | | |
+| `workspace:read` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `workspace:manage` | ✓ | ✓ | | | |
+| `reporting:read` | ✓ | ✓ | ✓ | | ✓ |
+
+Owner-Guardrails (Business-Regeln, nicht als Permission): nur `OWNER` darf die
+Rolle `OWNER` vergeben; der letzte Owner kann nicht herabgestuft werden.
+
+**Membership-aware:** Der Auth-Kontext leitet die Rolle aus der Mitgliedschaft im
+aktuellen Tenant ab; ohne Mitgliedschaft → `403`. Alle Ressourcen-Lookups sind
+`{ id, tenantId }` → Cross-Tenant-Zugriff ergibt `404`. Scopes für API-Keys
+(Block 5) spiegeln dieselben Permissions.
 
 ## Fehlerformat
 
@@ -103,6 +122,11 @@ ist `null` am Ende.
 | `GET` | `/api/v1/templates` | ja | Nachrichtenvorlagen listen | 3 |
 | `GET` | `/api/v1/templates/:id` | ja | Vorlage lesen | 3 |
 | `PATCH` | `/api/v1/templates/:id` | ja | Vorlage bearbeiten (subject/body) | 3 |
+| `GET` | `/api/v1/members` | `members:read` | Mitglieder + Rollen listen | 4 |
+| `PATCH` | `/api/v1/members/:id` | `members:manage` | Rolle zuweisen (Guardrails) | 4 |
+| `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
+| `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
+| `GET` | `/api/v1/reporting/summary` | `reporting:read` | Operative Kennzahlen | 4 |
 | `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid (idempotent) | 2 |
 

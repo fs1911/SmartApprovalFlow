@@ -11,11 +11,19 @@ const prisma = new PrismaClient();
 async function main() {
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'muster-garage' },
-    update: {},
+    // Keep branding/contact in sync on re-seed so new fields backfill.
+    update: {
+      brandColor: '#1f5fa8',
+      contactEmail: 'service@muster-garage.ch',
+      contactPhone: '+41 44 000 00 00',
+    },
     create: {
       slug: 'muster-garage',
       name: 'Muster Garage AG',
       brandName: 'Muster Garage',
+      brandColor: '#1f5fa8',
+      contactEmail: 'service@muster-garage.ch',
+      contactPhone: '+41 44 000 00 00',
       locale: 'de-CH',
       timezone: 'Europe/Zurich',
       currency: 'CHF',
@@ -53,6 +61,23 @@ async function main() {
     update: { role: 'SERVICE_ADVISOR' },
     create: { tenantId: tenant.id, userId: advisor.id, role: 'SERVICE_ADVISOR' },
   });
+
+  // A technician and a viewer so the members admin has realistic content.
+  for (const [email, name, role] of [
+    ['technik@muster-garage.ch', 'Luka Weber', 'TECHNICIAN'],
+    ['einblick@muster-garage.ch', 'Nina Betrachter', 'VIEWER'],
+  ] as const) {
+    const u = await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email } },
+      update: {},
+      create: { tenantId: tenant.id, email, name },
+    });
+    await prisma.membership.upsert({
+      where: { tenantId_userId: { tenantId: tenant.id, userId: u.id } },
+      update: { role },
+      create: { tenantId: tenant.id, userId: u.id, role },
+    });
+  }
 
   // Sample case is created only once (idempotent re-seed): keyed on its
   // per-tenant reference. Re-running the seed then only refreshes templates etc.

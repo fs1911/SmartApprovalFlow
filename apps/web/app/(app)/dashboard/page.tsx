@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { api, ApiClientError } from '@/lib/api';
+import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 
 interface CaseRow {
@@ -17,6 +18,8 @@ interface CaseRow {
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
+  const me = await getMe();
+  const canCreate = can(me, 'cases:create');
   let cases: CaseRow[] = [];
   let error: string | null = null;
   try {
@@ -45,9 +48,11 @@ export default async function DashboardPage() {
           <h1>Übersicht</h1>
           <p className="subtle">Ihre digitalen Freigaben auf einen Blick.</p>
         </div>
-        <Link href="/approvals/new" className="btn btn--primary">
-          + Neue Freigabe
-        </Link>
+        {canCreate && (
+          <Link href="/approvals/new" className="btn btn--primary">
+            + Neue Freigabe
+          </Link>
+        )}
       </div>
 
       {error && (

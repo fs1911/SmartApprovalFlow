@@ -8,6 +8,31 @@ export interface TemplateSaveState {
   error?: string;
 }
 
+export interface WorkspaceSaveState {
+  ok?: boolean;
+  error?: string;
+}
+
+export async function saveWorkspace(
+  _prev: WorkspaceSaveState,
+  formData: FormData,
+): Promise<WorkspaceSaveState> {
+  const body = {
+    name: String(formData.get('name') ?? '').trim() || undefined,
+    brandName: String(formData.get('brandName') ?? '').trim() || null,
+    brandColor: String(formData.get('brandColor') ?? '').trim() || null,
+    contactEmail: String(formData.get('contactEmail') ?? '').trim() || null,
+    contactPhone: String(formData.get('contactPhone') ?? '').trim() || null,
+  };
+  try {
+    await api.request('/api/v1/workspace', { method: 'PATCH', body });
+    revalidatePath('/settings');
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiClientError ? e.message : 'Speichern fehlgeschlagen.' };
+  }
+}
+
 export async function saveTemplate(
   _prev: TemplateSaveState,
   formData: FormData,

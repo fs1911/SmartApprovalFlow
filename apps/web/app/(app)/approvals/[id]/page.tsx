@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatPriceBand, AUDIT_LABELS } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
+import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
@@ -62,6 +63,8 @@ export default async function ApprovalDetailPage({
   params: { id: string };
   searchParams: { created?: string };
 }) {
+  const me = await getMe();
+  const canSend = can(me, 'cases:send');
   let c: CaseDetail;
   try {
     c = await api.request<CaseDetail>(`/api/v1/approval-cases/${params.id}`);
@@ -162,7 +165,7 @@ export default async function ApprovalDetailPage({
 
         {/* Right column */}
         <div className="stack" style={{ flex: '1 1 300px' }}>
-          {!['APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'].includes(c.status) && (
+          {canSend && !['APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'].includes(c.status) && (
             <div className="card">
               <div className="card__body">
                 <h2>Versand</h2>
@@ -171,12 +174,14 @@ export default async function ApprovalDetailPage({
             </div>
           )}
 
-          <div className="card">
-            <div className="card__body">
-              <h2>Kundenlink</h2>
-              <LinkPanel caseId={c.id} hasLink={Boolean(c.accessLink)} />
+          {canSend && (
+            <div className="card">
+              <div className="card__body">
+                <h2>Kundenlink</h2>
+                <LinkPanel caseId={c.id} hasLink={Boolean(c.accessLink)} />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="card">
             <div className="card__body">

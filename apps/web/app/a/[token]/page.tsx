@@ -8,7 +8,13 @@ interface PublicView {
   description?: string | null;
   urgency: string;
   status: string;
-  workspace: { name: string; currency: string };
+  workspace: {
+    name: string;
+    currency: string;
+    brandColor?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
+  };
   customerName?: string | null;
   vehicle?: string | null;
   vehiclePlate?: string | null;
@@ -74,9 +80,13 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
   }
 
   const urgent = view.urgency === 'HIGH';
+  // White-label accent: override the brand token with the workspace's colour.
+  const brandStyle = view.workspace.brandColor
+    ? ({ ['--color-brand-500']: view.workspace.brandColor } as React.CSSProperties)
+    : undefined;
 
   return (
-    <div className="public-page">
+    <div className="public-page" style={brandStyle}>
       <div className="public-card">
         {/* Branded header — builds trust */}
         <div className="public-header">
@@ -178,6 +188,13 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
           <span>✓ Kein Login nötig</span>
           <span>📄 Dokumentiert</span>
         </div>
+        {(view.workspace.contactEmail || view.workspace.contactPhone) && (
+          <div style={{ textAlign: 'center', fontSize: 'var(--text-sm)' }}>
+            Fragen? Kontaktieren Sie {view.workspace.name}
+            {view.workspace.contactPhone ? ` · ${view.workspace.contactPhone}` : ''}
+            {view.workspace.contactEmail ? ` · ${view.workspace.contactEmail}` : ''}
+          </div>
+        )}
         <div className="public-foot">
           Bereitgestellt über Smart Approval Flow für {view.workspace.name}
           {view.expiresAt && (

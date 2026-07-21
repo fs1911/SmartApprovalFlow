@@ -1,5 +1,7 @@
 import { api, ApiClientError } from '@/lib/api';
+import { getMe, can } from '@/lib/session';
 import { TemplateEditor } from './_template-editor';
+import { BrandingForm } from './_branding-form';
 
 interface Template {
   id: string;
@@ -9,19 +11,34 @@ interface Template {
   body: string;
 }
 
+interface Workspace {
+  name: string;
+  brandName: string | null;
+  brandColor: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+}
+
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
+  const me = await getMe();
+  const canBrand = can(me, 'workspace:manage');
+  const canEditTemplates = can(me, 'templates:write');
+
   let templates: Template[] = [];
   let variables: string[] = [];
+  let workspace: Workspace | null = null;
   let error: string | null = null;
 
   try {
-    const res = await api.request<{ templates: Template[]; variables: string[] }>(
-      '/api/v1/templates',
-    );
-    templates = res.templates;
-    variables = res.variables;
+    const [tpl, ws] = await Promise.all([
+      api.request<{ templates: Template[]; variables: string[] }>('/api/v1/templates'),
+      canBrand ? api.request<Workspace>('/api/v1/workspace') : Promise.resolve(null),
+    ]);
+    templates = tpl.templates;
+    variables = tpl.variables;
+    workspace = ws;
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -31,7 +48,7 @@ export default async function SettingsPage() {
       <div className="page-header">
         <div>
           <h1>Einstellungen</h1>
-          <p className="subtle">Nachrichtenvorlagen für Freigabe-Anfragen und Erinnerungen.</p>
+          <p className="subtle">Branding und Nachrichtenvorlagen für Ihren Workspace.</p>
         </div>
       </div>
 
@@ -42,17 +59,32 @@ export default async function SettingsPage() {
       )}
 
       <div className="stack" style={{ maxWidth: 720 }}>
-        {templates.length === 0 && !error ? (
-          <div className="empty">
-            <div className="empty__icon">✉️</div>
-            <h2>Keine Vorlagen</h2>
-            <p className="subtle">Führen Sie den Seed aus, um die Standardvorlagen anzulegen.</p>
+        {canBrand && workspace && (
+          <div className="card">
+            <div className="card__body">
+              <h2>Branding &amp; White-Label</h2>
+              <p className="subtle" style={{ marginTop: -4, marginBottom: 12 }}>
+                Diese Angaben erscheinen auf der öffentlichen Kundenseite.
+              </p>
+              <BrandingForm workspace={workspace} />
+            </div>
           </div>
-        ) : (
-          templates.map((t) => (
-            <TemplateEditor key={t.id} template={t} variables={variables} />
-          ))
         )}
+
+        <h2 style={{ marginTop: 8 }}>Nachrichtenvorlagen</h2>
+        {!canEditTemplates && (
+          <div className="alert alert--info">
+            Sie können Vorlagen ansehen. Zum Bearbeiten ist die Rolle Inhaber/Admin nötig.
+          </div>
+        )}
+        {templates.map((t) => (
+          <TemplateEditor
+            key={t.id}
+            template={t}
+            variables={variables}
+            readOnly={!canEditTemplates}
+          />
+        ))}
       </div>
     </>
   );

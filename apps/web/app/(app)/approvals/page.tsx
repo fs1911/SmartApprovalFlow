@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { api, ApiClientError } from '@/lib/api';
+import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 
 interface CaseRow {
@@ -17,6 +18,8 @@ interface CaseRow {
 export const dynamic = 'force-dynamic';
 
 export default async function ApprovalsPage() {
+  const me = await getMe();
+  const canCreate = can(me, 'cases:create');
   let cases: CaseRow[] = [];
   let error: string | null = null;
   try {
@@ -32,9 +35,11 @@ export default async function ApprovalsPage() {
           <h1>Freigaben</h1>
           <p className="subtle">Alle Freigabeanfragen und ihr aktueller Status.</p>
         </div>
-        <Link href="/approvals/new" className="btn btn--primary">
-          + Neue Freigabe
-        </Link>
+        {canCreate && (
+          <Link href="/approvals/new" className="btn btn--primary">
+            + Neue Freigabe
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -51,9 +56,11 @@ export default async function ApprovalsPage() {
             Legen Sie Ihre erste Freigabeanfrage an. Der Kunde erhält einen sicheren Link und kann
             direkt freigeben, ablehnen oder einen Rückruf wünschen.
           </p>
-          <Link href="/approvals/new" className="btn btn--primary">
-            Erste Freigabe erstellen
-          </Link>
+          {canCreate && (
+            <Link href="/approvals/new" className="btn btn--primary">
+              Erste Freigabe erstellen
+            </Link>
+          )}
         </div>
       ) : (
         <div className="case-list">

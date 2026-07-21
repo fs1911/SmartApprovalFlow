@@ -33,6 +33,21 @@ export const errorHandlerPlugin = fp(async (app: FastifyInstance) => {
       return reply.status(err.statusCode).send(body);
     }
 
+    // Fastify surfaces client errors (malformed JSON body, schema validation,
+    // unsupported media type…) with a 4xx statusCode. Map those to a clean
+    // VALIDATION_ERROR envelope instead of a misleading 500.
+    const status = (err as { statusCode?: number }).statusCode;
+    if (typeof status === 'number' && status >= 400 && status < 500) {
+      const body: ApiErrorResponse = {
+        error: {
+          code: status === 401 ? 'UNAUTHENTICATED' : status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR',
+          message: err.message,
+          requestId,
+        },
+      };
+      return reply.status(status).send(body);
+    }
+
     req.log.error({ err }, 'Unhandled error');
     const body: ApiErrorResponse = {
       error: {

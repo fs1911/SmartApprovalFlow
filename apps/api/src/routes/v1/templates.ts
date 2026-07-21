@@ -28,7 +28,7 @@ export async function templateRoutes(app: FastifyInstance) {
   app.get(
     '/templates',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('templates:read'),
       schema: {
         tags: ['templates'],
         summary: 'List message templates for the current tenant',
@@ -48,7 +48,7 @@ export async function templateRoutes(app: FastifyInstance) {
   app.get(
     '/templates/:id',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('templates:read'),
       schema: {
         tags: ['templates'],
         summary: 'Read one message template',
@@ -70,7 +70,7 @@ export async function templateRoutes(app: FastifyInstance) {
   app.patch(
     '/templates/:id',
     {
-      preHandler: app.requireAuth,
+      preHandler: app.requirePermission('templates:write'),
       schema: {
         tags: ['templates'],
         summary: 'Update a template’s subject and/or body',

@@ -26,6 +26,7 @@ enum Role {
   ADMIN
   SERVICE_ADVISOR
   TECHNICIAN
+  VIEWER
 }
 
 enum ApprovalCaseStatus {
@@ -102,8 +103,13 @@ model Tenant {
   /// URL-safe unique handle, used for workspace selection and (later) subdomains.
   slug      String   @unique
   name      String
-  /// Optional white-label branding, prepared for partner/reseller use.
+  /// White-label branding, used on the public customer page and messages.
   brandName String?
+  /// Primary brand colour (hex, e.g. "#1f5fa8") for the public page accent.
+  brandColor String?
+  /// Public contact shown to customers (for the "questions?" hint).
+  contactEmail String?
+  contactPhone String?
   locale    String   @default("de-CH")
   timezone  String   @default("Europe/Zurich")
   currency  String   @default("CHF")

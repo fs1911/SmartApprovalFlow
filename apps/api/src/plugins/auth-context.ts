@@ -1,22 +1,27 @@
 /**
- * Auth context (Block 1 stub).
+ * Auth context + tenant-scoped RBAC (Block 4).
  *
- * The real strategy (documented in docs/api-design.md and adr-002):
+ * The real strategy (docs/api-design.md, adr-002/adr-004):
  *   - Web app users  -> short-lived JWT access token (Bearer)
- *   - Integrations   -> API keys (Authorization: Bearer saf_live_...) with scopes
- * Both resolve to the same AuthContext { tenantId, userId?, role, scopes }.
+ *   - Integrations   -> API keys with scopes
+ * Both resolve to an AuthContext { tenantId, userId?, role, scopes }, where the
+ * role always comes from the caller's *Membership in that tenant* — never a
+ * global role.
  *
- * For Block 1 we do NOT implement real credential verification yet. Instead we
- * resolve a development context from headers so the endpoints are exercisable
- * end-to-end. This is deliberately swapped for real auth in Block 5.
- *
- * Dev headers:
+ * Block 4 still uses a DEV stub for credential verification, but it is now
+ * membership-aware to exercise the real isolation path:
  *   x-saf-tenant: <tenant slug or id>   (defaults to the seeded demo tenant)
- *   x-saf-role:   OWNER|ADMIN|SERVICE_ADVISOR|TECHNICIAN
+ *   x-saf-user:   <user email or id>    (optional; if set, role comes from the
+ *                                        user's Membership — 403 if none)
+ *   x-saf-role:   OWNER|ADMIN|SERVICE_ADVISOR|TECHNICIAN|VIEWER
+ *                 (dev-only override, used when x-saf-user is not provided)
+ *
+ * Real credential verification (Block 5) replaces only `resolveContext`.
  */
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
-import type { Role } from '@saf/types';
+import type { Permission, Role } from '@saf/types';
+import { roleHasPermission } from '@saf/types';
 import { prisma } from '@saf/db';
 import { errors } from '../lib/errors.js';
 
@@ -26,65 +31,81 @@ export interface AuthContext {
   userId?: string;
   role: Role;
   scopes: string[];
-  /** How the caller authenticated. */
   via: 'session' | 'api_key' | 'dev';
 }
 
 declare module 'fastify' {
   interface FastifyRequest {
-    /** Present after `requireAuth` runs. */
     auth?: AuthContext;
+  }
+  interface FastifyInstance {
+    requireAuth: (req: FastifyRequest) => Promise<void>;
+    /** Returns a preHandler that ensures auth AND the given permission. */
+    requirePermission: (permission: Permission) => (req: FastifyRequest) => Promise<void>;
   }
 }
 
-async function resolveDevContext(req: FastifyRequest): Promise<AuthContext> {
+async function resolveContext(req: FastifyRequest): Promise<AuthContext> {
   const tenantRef = (req.headers['x-saf-tenant'] as string | undefined) ?? 'muster-garage';
-  const role = ((req.headers['x-saf-role'] as string | undefined) ?? 'SERVICE_ADVISOR') as Role;
+  const userRef = req.headers['x-saf-user'] as string | undefined;
+  const headerRole = ((req.headers['x-saf-role'] as string | undefined) ?? 'SERVICE_ADVISOR') as Role;
 
-  // NOTE: DB may be unavailable in a bare Block-1 checkout. Fall back to a
-  // synthetic context so /health and OpenAPI still work without Postgres.
+  let tenant: { id: string; slug: string } | null = null;
   try {
-    const tenant = await prisma.tenant.findFirst({
+    tenant = await prisma.tenant.findFirst({
       where: { OR: [{ slug: tenantRef }, { id: tenantRef }] },
       select: { id: true, slug: true },
     });
-    if (tenant) {
-      return {
-        tenantId: tenant.id,
-        tenantSlug: tenant.slug,
-        role,
-        scopes: ['*'],
-        via: 'dev',
-      };
-    }
   } catch {
-    // ignore — fall through to synthetic context
+    // DB unavailable (e.g. bare checkout): fall back to a synthetic context so
+    // /health and OpenAPI still work. RBAC below still applies to the role.
+    return { tenantId: 'dev-tenant', tenantSlug: tenantRef, role: headerRole, scopes: ['*'], via: 'dev' };
+  }
+  if (!tenant) throw errors.unauthenticated('Unbekannter Workspace');
+
+  // Membership-aware path: when a user is named, the role MUST come from an
+  // actual membership in this tenant (this is the real isolation check).
+  if (userRef) {
+    const user = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, OR: [{ email: userRef }, { id: userRef }] },
+      select: { id: true, memberships: { where: { tenantId: tenant.id }, select: { role: true } } },
+    });
+    const membership = user?.memberships[0];
+    if (!user || !membership) {
+      throw errors.forbidden('Keine Mitgliedschaft in diesem Workspace');
+    }
+    return {
+      tenantId: tenant.id,
+      tenantSlug: tenant.slug,
+      userId: user.id,
+      role: membership.role,
+      scopes: ['*'],
+      via: 'dev',
+    };
   }
 
-  return {
-    tenantId: 'dev-tenant',
-    tenantSlug: tenantRef,
-    role,
-    scopes: ['*'],
-    via: 'dev',
-  };
+  // Dev override: role from header (no specific user).
+  return { tenantId: tenant.id, tenantSlug: tenant.slug, role: headerRole, scopes: ['*'], via: 'dev' };
+}
+
+async function ensureAuth(req: FastifyRequest): Promise<AuthContext> {
+  if (!req.auth) req.auth = await resolveContext(req);
+  return req.auth;
 }
 
 export const authContextPlugin = fp(async (app: FastifyInstance) => {
-  /**
-   * Attach an auth context or throw 401. Register as a route `preHandler`.
-   * Endpoints under /api/v1/public/** must NOT use this (they are loginless).
-   */
   app.decorate('requireAuth', async (req: FastifyRequest) => {
-    // Block 1: always resolve a dev context. Block 5 replaces this with real
-    // JWT / API-key verification and throws errors.unauthenticated() on failure.
-    req.auth = await resolveDevContext(req);
-    if (!req.auth) throw errors.unauthenticated();
+    await ensureAuth(req);
+  });
+
+  app.decorate('requirePermission', (permission: Permission) => {
+    return async (req: FastifyRequest) => {
+      const auth = await ensureAuth(req);
+      if (!roleHasPermission(auth.role, permission)) {
+        throw errors.forbidden(
+          `Ihre Rolle (${auth.role}) hat keine Berechtigung für "${permission}".`,
+        );
+      }
+    };
   });
 });
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    requireAuth: (req: FastifyRequest) => Promise<void>;
-  }
-}
