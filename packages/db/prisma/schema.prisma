@@ -1,0 +1,419 @@
+// =============================================================================
+// Smart Approval Flow — Prisma schema (Block 1 foundation)
+//
+// Design notes:
+//  * Multi-tenant by row: almost every business row carries `tenantId`, and all
+//    queries are expected to filter by it (see docs/decisions/adr-003).
+//  * Enums mirror packages/types/src/enums.ts — keep the two in sync.
+//  * The audit trail (AuditEvent) is append-only and never updated/deleted.
+//  * ApiKey and OutboundMessage are prepared now but only lightly used until
+//    later blocks (integration readiness + notifications).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Enums -------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  ADMIN
+  SERVICE_ADVISOR
+  TECHNICIAN
+}
+
+enum ApprovalCaseStatus {
+  DRAFT
+  SENT
+  VIEWED
+  APPROVED
+  DECLINED
+  CALLBACK
+  EXPIRED
+  CANCELLED
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ItemCategory {
+  SAFETY
+  MAINTENANCE
+  REPAIR
+  DIAGNOSTIC
+  OTHER
+}
+
+enum CustomerDecision {
+  APPROVE
+  DECLINE
+  CALLBACK
+}
+
+enum MessageChannel {
+  EMAIL
+  SMS
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum AuditEventType {
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_SENT
+  CASE_LINK_VIEWED
+  CASE_APPROVED
+  CASE_DECLINED
+  CASE_CALLBACK_REQUESTED
+  CASE_EXPIRED
+  CASE_CANCELLED
+  MESSAGE_QUEUED
+  MESSAGE_SENT
+  MESSAGE_FAILED
+}
+
+enum ActorType {
+  USER
+  CUSTOMER
+  SYSTEM
+  API_KEY
+}
+
+// --- Tenancy & identity ------------------------------------------------------
+
+/// A Tenant is a workspace = one garage / workshop group. Root of isolation.
+model Tenant {
+  id        String   @id @default(uuid())
+  /// URL-safe unique handle, used for workspace selection and (later) subdomains.
+  slug      String   @unique
+  name      String
+  /// Optional white-label branding, prepared for partner/reseller use.
+  brandName String?
+  locale    String   @default("de-CH")
+  timezone  String   @default("Europe/Zurich")
+  currency  String   @default("CHF")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships    Membership[]
+  users          User[]
+  customers      Customer[]
+  vehicles       Vehicle[]
+  approvalCases  ApprovalCase[]
+  attachments    Attachment[]
+  auditEvents    AuditEvent[]
+  outboundMsgs   OutboundMessage[]
+  apiKeys        ApiKey[]
+  messageTemplates MessageTemplate[]
+
+  @@map("tenants")
+}
+
+/// A User belongs to exactly one Tenant in the MVP (see adr-003 for rationale).
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  email        String
+  name         String
+  /// Argon2/bcrypt hash. Null while auth flow is stubbed in Block 1.
+  passwordHash String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships Membership[]
+  createdCases ApprovalCase[] @relation("CaseCreatedBy")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+/// Membership links a User to a Tenant with a Role. Modeled explicitly so the
+/// jump to multi-workspace users in a later block is non-breaking.
+model Membership {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  role      Role     @default(SERVICE_ADVISOR)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@map("memberships")
+}
+
+// --- Customer & vehicle ------------------------------------------------------
+
+model Customer {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vehicles      Vehicle[]
+  approvalCases ApprovalCase[]
+
+  @@index([tenantId])
+  @@index([tenantId, email])
+  @@map("customers")
+}
+
+model Vehicle {
+  id         String   @id @default(uuid())
+  tenantId   String
+  customerId String?
+  plate      String?
+  vin        String?
+  make       String?
+  model      String?
+  year       Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer      Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  approvalCases ApprovalCase[]
+
+  @@index([tenantId])
+  @@index([tenantId, plate])
+  @@map("vehicles")
+}
+
+// --- Approval workflow (the wedge) ------------------------------------------
+
+model ApprovalCase {
+  id          String             @id @default(uuid())
+  tenantId    String
+  /// Human-friendly per-tenant sequence, e.g. "AC-2026-0142". Filled by API.
+  reference   String
+  subject     String
+  description String?
+  status      ApprovalCaseStatus @default(DRAFT)
+  urgency     Urgency            @default(MEDIUM)
+
+  customerId  String?
+  vehicleId   String?
+  createdById String?
+
+  /// When the case was first sent to the customer.
+  sentAt      DateTime?
+  /// Optional expiry for the decision window (drives EXPIRED transition).
+  expiresAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  vehicle   Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  createdBy User?     @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  items        ApprovalItem[]
+  attachments  Attachment[]
+  decisions    ApprovalDecision[]
+  auditEvents  AuditEvent[]
+  outboundMsgs OutboundMessage[]
+  accessLink   ApprovalAccessLink?
+
+  @@unique([tenantId, reference])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("approval_cases")
+}
+
+/// A single recommended line of work within a case. Named ApprovalItem; the
+/// docs also refer to the concept as WorkRecommendation.
+model ApprovalItem {
+  id             String       @id @default(uuid())
+  tenantId       String
+  approvalCaseId String
+  title          String
+  description    String?
+  category       ItemCategory @default(REPAIR)
+  /// Price band stored as minor units to avoid float rounding issues.
+  priceMinMinor  Int?
+  priceMaxMinor  Int?
+  currency       String       @default("CHF")
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  attachments  Attachment[]
+
+  @@index([approvalCaseId])
+  @@map("approval_items")
+}
+
+/// A secure, loginless access token for the customer-facing page.
+/// Separated from ApprovalCase so tokens can be rotated/revoked and hashed.
+model ApprovalAccessLink {
+  id             String    @id @default(uuid())
+  tenantId       String
+  approvalCaseId String    @unique
+  /// SHA-256 hash of the opaque token; the raw token is never stored.
+  tokenHash      String    @unique
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  firstViewedAt  DateTime?
+  createdAt      DateTime  @default(now())
+
+  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("approval_access_links")
+}
+
+/// Immutable record of a customer decision. A case may in theory receive more
+/// than one (e.g. CALLBACK then APPROVE); the latest APPROVE/DECLINE is final.
+model ApprovalDecision {
+  id             String           @id @default(uuid())
+  tenantId       String
+  approvalCaseId String
+  decision       CustomerDecision
+  note           String?
+  callbackPhone  String?
+  /// Captured for the revision-proof trail (hashed/truncated in practice).
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime         @default(now())
+
+  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([approvalCaseId])
+  @@map("approval_decisions")
+}
+
+// --- Attachments (photos are central) ---------------------------------------
+
+model Attachment {
+  id             String  @id @default(uuid())
+  tenantId       String
+  approvalCaseId String?
+  approvalItemId String?
+  /// Storage key (S3/local). The actual bytes live outside the DB.
+  storageKey     String
+  fileName       String
+  contentType    String
+  sizeBytes      Int
+  createdAt      DateTime @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase? @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  approvalItem ApprovalItem? @relation(fields: [approvalItemId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([approvalCaseId])
+  @@map("attachments")
+}
+
+// --- Audit trail (revision-proof) -------------------------------------------
+
+model AuditEvent {
+  id             String         @id @default(uuid())
+  tenantId       String
+  approvalCaseId String?
+  type           AuditEventType
+  actorType      ActorType
+  /// Nullable: SYSTEM/CUSTOMER events have no userId.
+  actorUserId    String?
+  /// Free-form label for non-user actors, e.g. customer name or "system".
+  actorLabel     String?
+  /// Arbitrary structured context (diff, channel, etc.) as JSON.
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase? @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([approvalCaseId])
+  @@map("audit_events")
+}
+
+// --- Notifications / outbound messaging -------------------------------------
+
+model OutboundMessage {
+  id             String        @id @default(uuid())
+  tenantId       String
+  approvalCaseId String?
+  channel        MessageChannel
+  status         MessageStatus @default(QUEUED)
+  toAddress      String
+  templateKey    String?
+  /// Provider message id once dispatched (prepared for Block 4).
+  providerId     String?
+  error          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase? @relation(fields: [approvalCaseId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@map("outbound_messages")
+}
+
+/// Reusable message/copy templates per tenant (Block 4). Seeded with defaults.
+model MessageTemplate {
+  id        String         @id @default(uuid())
+  tenantId  String
+  key       String
+  channel   MessageChannel
+  subject   String?
+  body      String
+  isDefault Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("message_templates")
+}
+
+// --- Integration readiness ---------------------------------------------------
+
+/// API keys for machine-to-machine integration with existing garage software.
+/// Prepared in Block 1; enforced in Block 5.
+model ApiKey {
+  id         String    @id @default(uuid())
+  tenantId   String
+  name       String
+  /// SHA-256 hash of the secret; raw key shown once at creation only.
+  keyHash    String    @unique
+  /// Short non-secret prefix for identification in UI/logs, e.g. "saf_live_ab12".
+  keyPrefix  String
+  /// Space-delimited scopes, e.g. "approval-cases:read approval-cases:write".
+  scopes     String    @default("")
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("api_keys")
+}

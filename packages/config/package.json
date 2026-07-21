@@ -1,0 +1,12 @@
+{
+  "name": "@saf/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript, ESLint and Prettier configuration for Smart Approval Flow.",
+  "files": [
+    "tsconfig.base.json",
+    "eslint-preset.cjs",
+    "prettier-preset.json"
+  ],
+  "main": "eslint-preset.cjs"
+}

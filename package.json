@@ -1,0 +1,30 @@
+{
+  "name": "smart-approval-flow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Smart Approval Flow für Garagen — digitale Freigabe von Zusatzarbeiten und Diagnosen (MVP Block 1: Foundation).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:web": "npm run dev --workspace apps/web",
+    "dev:api": "npm run dev --workspace apps/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "npm run generate --workspace packages/db",
+    "db:migrate": "npm run migrate --workspace packages/db"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}

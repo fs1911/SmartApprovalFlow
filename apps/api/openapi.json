@@ -1,0 +1,311 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Smart Approval Flow API",
+    "description": "Public REST API for Smart Approval Flow. All responses use a consistent envelope. See docs/api-design.md.",
+    "version": "1.0.0-block1"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Session JWT (users) or API key (integrations, Block 5)."
+      }
+    },
+    "schemas": {}
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "summary": "Liveness/readiness probe",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "ok"
+                        },
+                        "service": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        },
+                        "time": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "Current authenticated principal and active tenant",
+        "tags": [
+          "identity"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/{tenantId}": {
+      "get": {
+        "summary": "Fetch a tenant (must match the caller’s tenant)",
+        "tags": [
+          "identity"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "tenantId",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases": {
+      "get": {
+        "summary": "List approval cases for the current tenant",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "cursor",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "status",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an approval case",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Validated against the shared Zod schema. Supports the `Idempotency-Key` header to make retries safe.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "header",
+            "name": "idempotency-key",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}": {
+      "get": {
+        "summary": "Get one approval case with items, decisions and audit trail",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}/generate-public-link": {
+      "post": {
+        "summary": "Issue (or rotate) the secure loginless customer link",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Creates a fresh access token, marks the case as SENT (pending customer), writes an audit event and returns the full customer URL. The raw token is returned once and never stored in plaintext.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/public/approvals/{token}": {
+      "get": {
+        "summary": "Read an approval request via its secure token (no login)",
+        "tags": [
+          "public"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/public/approvals/{token}/respond": {
+      "post": {
+        "summary": "Submit a customer decision (approve / decline / callback)",
+        "tags": [
+          "public"
+        ],
+        "description": "Loginless. Idempotent via the optional Idempotency-Key header so a double-tap on mobile does not create two decisions.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local development"
+    }
+  ],
+  "tags": [
+    {
+      "name": "system",
+      "description": "Health & meta"
+    },
+    {
+      "name": "identity",
+      "description": "Current user & tenants"
+    },
+    {
+      "name": "approval-cases",
+      "description": "Approval workflow (the wedge)"
+    },
+    {
+      "name": "public",
+      "description": "Loginless customer-facing endpoints"
+    }
+  ]
+}

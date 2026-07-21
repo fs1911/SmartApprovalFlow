@@ -1,0 +1,93 @@
+/**
+ * Zod schemas — runtime validation + inferred TypeScript types.
+ *
+ * The API validates all input against these schemas and the web app reuses
+ * them for form validation, so client and server never drift.
+ */
+import { z } from 'zod';
+import { CUSTOMER_DECISION, ITEM_CATEGORY, URGENCY } from './enums.js';
+
+/** Swiss/DACH-friendly, deliberately permissive contact fields. */
+const emailSchema = z.string().email().max(254);
+const phoneSchema = z
+  .string()
+  .min(6)
+  .max(20)
+  .regex(/^[+0-9 ()/-]+$/, 'Ungültiges Telefonformat');
+
+export const priceBandSchema = z
+  .object({
+    /** Lower bound in minor units (Rappen/cents), inclusive. */
+    minMinor: z.number().int().nonnegative(),
+    /** Upper bound in minor units (Rappen/cents), inclusive. */
+    maxMinor: z.number().int().nonnegative(),
+    /** ISO 4217, default CHF. */
+    currency: z.string().length(3).default('CHF'),
+  })
+  .refine((v) => v.maxMinor >= v.minMinor, {
+    message: 'maxMinor muss >= minMinor sein',
+    path: ['maxMinor'],
+  });
+export type PriceBand = z.infer<typeof priceBandSchema>;
+
+export const approvalItemInputSchema = z.object({
+  title: z.string().min(2).max(160),
+  description: z.string().max(2000).optional(),
+  category: z.enum(ITEM_CATEGORY).default('REPAIR'),
+  priceBand: priceBandSchema.optional(),
+  /** Attachment ids already uploaded and belonging to this workspace. */
+  attachmentIds: z.array(z.string().uuid()).max(20).default([]),
+});
+export type ApprovalItemInput = z.infer<typeof approvalItemInputSchema>;
+
+export const customerInputSchema = z
+  .object({
+    name: z.string().min(1).max(160),
+    email: emailSchema.optional(),
+    phone: phoneSchema.optional(),
+  })
+  .refine((v) => v.email || v.phone, {
+    message: 'Mindestens E-Mail oder Telefon ist erforderlich',
+    path: ['email'],
+  });
+export type CustomerInput = z.infer<typeof customerInputSchema>;
+
+export const vehicleInputSchema = z.object({
+  plate: z.string().min(1).max(16).optional(),
+  vin: z.string().length(17).optional(),
+  make: z.string().max(60).optional(),
+  model: z.string().max(60).optional(),
+  year: z.number().int().min(1950).max(2100).optional(),
+});
+export type VehicleInput = z.infer<typeof vehicleInputSchema>;
+
+/** Payload to create an ApprovalCase (POST /api/v1/approval-cases). */
+export const createApprovalCaseSchema = z.object({
+  subject: z.string().min(2).max(200),
+  description: z.string().max(4000).optional(),
+  urgency: z.enum(URGENCY).default('MEDIUM'),
+  customer: customerInputSchema,
+  vehicle: vehicleInputSchema.optional(),
+  items: z.array(approvalItemInputSchema).min(1).max(30),
+  /** If true, the API issues a link and marks the case SENT immediately. */
+  sendImmediately: z.boolean().default(false),
+});
+export type CreateApprovalCaseInput = z.infer<typeof createApprovalCaseSchema>;
+
+/** Payload for the loginless customer response. */
+export const customerRespondSchema = z.object({
+  decision: z.enum(CUSTOMER_DECISION),
+  /** Optional free-text note from the customer. */
+  note: z.string().max(1000).optional(),
+  /** Optional callback phone when decision === 'CALLBACK'. */
+  callbackPhone: phoneSchema.optional(),
+});
+export type CustomerRespondInput = z.infer<typeof customerRespondSchema>;
+
+/** Common list query params for cursor pagination. */
+export const listQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.string().optional(),
+});
+export type ListQuery = z.infer<typeof listQuerySchema>;
