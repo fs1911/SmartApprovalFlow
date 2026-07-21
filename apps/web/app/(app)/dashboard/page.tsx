@@ -9,6 +9,7 @@ interface CaseRow {
   status: string;
   urgency: string;
   createdAt: string;
+  respondedAt?: string | null;
   customer?: { name: string } | null;
   vehicle?: { plate?: string | null } | null;
 }
@@ -25,12 +26,16 @@ export default async function DashboardPage() {
   }
 
   const count = (s: string) => cases.filter((c) => c.status === s).length;
-  const pending = count('SENT') + count('VIEWED');
+  const pending = count('SENT') + count('VIEWED') + count('CALLBACK');
+  const today = new Date().toISOString().slice(0, 10);
+  const answeredToday = cases.filter(
+    (c) => c.respondedAt && c.respondedAt.slice(0, 10) === today,
+  ).length;
   const stats = [
     { label: 'Wartet auf Kunde', value: pending, tone: 'info' },
+    { label: 'Heute beantwortet', value: answeredToday, tone: 'success' },
     { label: 'Freigegeben', value: count('APPROVED'), tone: 'success' },
     { label: 'Abgelehnt', value: count('DECLINED'), tone: 'danger' },
-    { label: 'Rückruf', value: count('CALLBACK'), tone: 'warning' },
   ];
 
   return (

@@ -8,17 +8,23 @@ Login**. Alles revisionssicher protokolliert.
 > belegbare Freigaben**. Kein DMS-Ersatz — ein wertvoller Layer über bestehender
 > Garagensoftware.
 
-**Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow, End-to-End) ✅
-Siehe [`docs/roadmap.md`](docs/roadmap.md).
+**Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow) ✅ ·
+Block 3 (Operational Hardening) ✅ — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
-## Was funktioniert (Block 2, End-to-End)
+## Was funktioniert (End-to-End)
 
-Interner Fall erstellen → validieren → speichern → in Liste sichtbar →
-Detailseite → sicheren Kundenlink erzeugen → Kunde reagiert loginlos
-(Freigeben / Ablehnen / Rückruf) → Entscheid gespeichert → Status aktualisiert →
-Audit-Trail geschrieben.
+Interner Fall erstellen → validieren → speichern → in Liste mit Kennzahlen →
+Detailseite → **per E-Mail an den Kunden senden** (oder Link kopieren) →
+Kunde reagiert loginlos (Freigeben / Ablehnen / Rückruf) → Entscheid gespeichert
+→ Status aktualisiert → **Timeline aus Audit-Events und Versand**.
+
+Dazu (Block 3): **manuelle Reminder**, **editierbare Nachrichtenvorlagen**,
+gehärtetes **Statusmodell mit Ablauf-Logik**, eine vertrauenswürdigere
+**öffentliche Kundenseite** und eine **Event-/Webhook-Grundlage** für spätere
+Integrationen. E-Mail-Versand läuft im Dev-Modus über einen **Console-Provider**
+(keine Credentials nötig — Nachrichten werden ins API-Log geschrieben).
 
 ## Repo-Struktur
 
@@ -67,8 +73,10 @@ Dann im Browser:
 
 - **Intern:** <http://localhost:3000> → Übersicht, Freigaben, „Neue Freigabe".
 - **API-Doku:** <http://localhost:4000/docs> (Swagger UI).
-- **Kundenseite:** auf einer Fall-Detailseite „Kundenlink erzeugen", die URL
-  öffnen (Form `…/a/{token}`) und Freigeben/Ablehnen/Rückruf testen.
+- **Kundenseite:** auf einer Fall-Detailseite „Anfrage an Kunde senden" (oder
+  „Kundenlink erzeugen"), die URL öffnen (Form `…/a/{token}`) und Freigeben/
+  Ablehnen/Rückruf testen. Die gesendete E-Mail erscheint im API-Log.
+- **Vorlagen:** unter „Einstellungen" die Anfrage-/Reminder-Texte bearbeiten.
 
 > **Auth im aktuellen Stand:** Ein Dev-Stub setzt Tenant/Rolle über Header
 > (`x-saf-tenant`, `x-saf-role`). Echte Authentifizierung folgt in Block 5 —
@@ -101,10 +109,11 @@ npm run format                      # Prettier
 | Wireframes | [`docs/wireframes.md`](docs/wireframes.md) |
 | ADRs | [`docs/decisions/`](docs/decisions/) |
 | Offene Entscheidungen | [`docs/open-questions.md`](docs/open-questions.md) |
-| Block-Summaries | [`docs/block-1-summary.md`](docs/block-1-summary.md) · [`docs/block-2-summary.md`](docs/block-2-summary.md) |
+| Block-Summaries | [`docs/block-1-summary.md`](docs/block-1-summary.md) · [`docs/block-2-summary.md`](docs/block-2-summary.md) · [`docs/block-3-summary.md`](docs/block-3-summary.md) |
 
 ## Nächster Block
 
-**Block 3 — Customer Approval Portal (Ausbau):** produktiver Foto-Upload,
-mehrere Positionen mit optionaler Einzelfreigabe, feineres Kundenerlebnis.
-Details in [`docs/block-2-summary.md`](docs/block-2-summary.md).
+**Block 4/5 — Delivery & Auth-Härtung:** realer E-Mail/SMS-Provider,
+automatische Reminder-Policy, echte Webhook-Zustellung (HMAC/Retry) und echte
+Authentifizierung (JWT + API-Keys). Details in
+[`docs/block-3-summary.md`](docs/block-3-summary.md).

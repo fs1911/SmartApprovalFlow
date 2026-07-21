@@ -54,30 +54,39 @@ async function main() {
     create: { tenantId: tenant.id, userId: advisor.id, role: 'SERVICE_ADVISOR' },
   });
 
-  const customer = await prisma.customer.create({
-    data: {
-      tenantId: tenant.id,
-      name: 'Peter Beispiel',
-      email: 'peter.beispiel@example.ch',
-      phone: '+41 79 123 45 67',
-    },
+  // Sample case is created only once (idempotent re-seed): keyed on its
+  // per-tenant reference. Re-running the seed then only refreshes templates etc.
+  const sampleRef = 'AC-2026-0001';
+  const sampleExists = await prisma.approvalCase.findUnique({
+    where: { tenantId_reference: { tenantId: tenant.id, reference: sampleRef } },
+    select: { id: true },
   });
 
-  const vehicle = await prisma.vehicle.create({
-    data: {
-      tenantId: tenant.id,
-      customerId: customer.id,
-      plate: 'ZH 123 456',
-      make: 'VW',
-      model: 'Golf',
-      year: 2018,
-    },
-  });
+  if (!sampleExists) {
+    const customer = await prisma.customer.create({
+      data: {
+        tenantId: tenant.id,
+        name: 'Peter Beispiel',
+        email: 'peter.beispiel@example.ch',
+        phone: '+41 79 123 45 67',
+      },
+    });
 
-  await prisma.approvalCase.create({
-    data: {
-      tenantId: tenant.id,
-      reference: 'AC-2026-0001',
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        tenantId: tenant.id,
+        customerId: customer.id,
+        plate: 'ZH 123 456',
+        make: 'VW',
+        model: 'Golf',
+        year: 2018,
+      },
+    });
+
+    await prisma.approvalCase.create({
+      data: {
+        tenantId: tenant.id,
+        reference: sampleRef,
       subject: 'Bremsbeläge hinten + Bremsscheiben',
       description:
         'Bei der Inspektion festgestellt: Bremsbeläge hinten unter Minimum, Bremsscheiben mit Riefen.',
@@ -131,8 +140,9 @@ async function main() {
       },
     },
   });
+  }
 
-  // Default customer-facing message templates (used from Block 4 onward).
+  // Default customer-facing message templates.
   await prisma.messageTemplate.upsert({
     where: { tenantId_key: { tenantId: tenant.id, key: 'approval_request_email' } },
     update: {},
@@ -141,10 +151,64 @@ async function main() {
       key: 'approval_request_email',
       channel: 'EMAIL',
       subject: 'Freigabe angefragt: {{subject}}',
-      body: 'Guten Tag {{customerName}}\n\nWir haben an Ihrem Fahrzeug {{vehicle}} folgende Arbeiten festgestellt. Bitte prüfen und freigeben: {{link}}',
+      body: [
+        'Guten Tag {{customerName}}',
+        '',
+        'An Ihrem Fahrzeug {{vehicle}} haben wir folgende Arbeit festgestellt:',
+        '{{subject}}',
+        '',
+        'Voraussichtliche Kosten: {{priceBand}}',
+        '',
+        'Bitte prüfen und freigeben – ganz einfach online, ohne Login:',
+        '{{link}}',
+        '',
+        'Bei Fragen erreichen Sie uns unter {{workspaceContact}}.',
+        'Freundliche Grüsse',
+        '{{workspaceName}}',
+      ].join('\n'),
       isDefault: true,
     },
   });
+
+  await prisma.messageTemplate.upsert({
+    where: { tenantId_key: { tenantId: tenant.id, key: 'approval_reminder_email' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      key: 'approval_reminder_email',
+      channel: 'EMAIL',
+      subject: 'Erinnerung: Ihre Freigabe für {{subject}}',
+      body: [
+        'Guten Tag {{customerName}}',
+        '',
+        'Wir möchten Sie freundlich an unsere offene Anfrage zu Ihrem Fahrzeug',
+        '{{vehicle}} erinnern: {{subject}} ({{priceBand}}).',
+        '',
+        'Ihre Rückmeldung genügt mit einem Klick:',
+        '{{link}}',
+        '',
+        'Freundliche Grüsse',
+        '{{workspaceName}}',
+      ].join('\n'),
+      isDefault: true,
+    },
+  });
+
+  // Prepared (inactive) demo webhook endpoint for integration readiness.
+  const existingHook = await prisma.webhookEndpoint.findFirst({
+    where: { tenantId: tenant.id, url: 'https://example.com/webhooks/saf' },
+  });
+  if (!existingHook) {
+    await prisma.webhookEndpoint.create({
+      data: {
+        tenantId: tenant.id,
+        url: 'https://example.com/webhooks/saf',
+        secret: 'whsec_demo_do_not_use',
+        events: '',
+        isActive: false,
+      },
+    });
+  }
 
   console.log('✅ Seed complete for tenant:', tenant.slug);
 }

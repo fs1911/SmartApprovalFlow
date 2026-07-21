@@ -12,6 +12,9 @@ const envSchema = z.object({
   WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
   AUTH_JWT_SECRET: z.string().min(1).default('dev-insecure-secret-change-me'),
   DATABASE_URL: z.string().optional(),
+  // Notifications. `console` needs no credentials and logs messages (dev default).
+  EMAIL_PROVIDER: z.enum(['console', 'smtp']).default('console'),
+  EMAIL_FROM: z.string().default('freigabe@example-garage.ch'),
 });
 
 const parsed = envSchema.safeParse(process.env);

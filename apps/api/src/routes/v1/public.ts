@@ -17,6 +17,8 @@ import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
 import { hashToken } from '../../lib/access-link.js';
 import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
+import { publishEvent } from '../../lib/events.js';
+import { isTerminal } from '../../lib/status.js';
 
 /** Map a customer decision to the resulting case status. */
 const DECISION_TO_STATUS: Record<CustomerDecision, ApprovalCaseStatus> = {
@@ -50,7 +52,33 @@ async function resolveByToken(rawToken: string) {
 
   if (!link) throw errors.tokenInvalid();
   if (link.revokedAt) throw errors.tokenInvalid('Link wurde zurückgezogen');
-  if (link.expiresAt && link.expiresAt.getTime() < Date.now()) throw errors.tokenExpired();
+
+  // Lazy expiry: if the window elapsed, transition the case to EXPIRED (once)
+  // and record it, then reject. No background job needed for the MVP.
+  if (link.expiresAt && link.expiresAt.getTime() < Date.now()) {
+    if (!isTerminal(link.approvalCase.status)) {
+      await prisma.$transaction([
+        prisma.approvalCase.update({ where: { id: link.approvalCaseId }, data: { status: 'EXPIRED' } }),
+        prisma.auditEvent.create({
+          data: {
+            tenantId: link.tenantId,
+            approvalCaseId: link.approvalCaseId,
+            type: 'CASE_EXPIRED',
+            actorType: 'SYSTEM',
+            actorLabel: 'system',
+            metadata: { action: 'status_changed', from: link.approvalCase.status, to: 'EXPIRED' },
+          },
+        }),
+      ]);
+      await publishEvent({
+        type: 'approval_case.expired',
+        tenantId: link.tenantId,
+        approvalCaseId: link.approvalCaseId,
+        data: { reference: link.approvalCase.reference },
+      });
+    }
+    throw errors.tokenExpired();
+  }
   return link;
 }
 
@@ -84,10 +112,7 @@ function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
     priceMinMinor: c.items.reduce((s, it) => s + (it.priceMinMinor ?? 0), 0) || null,
     priceMaxMinor: c.items.reduce((s, it) => s + (it.priceMaxMinor ?? 0), 0) || null,
     expiresAt: link.expiresAt?.toISOString() ?? null,
-    respondedAt:
-      c.status === 'APPROVED' || c.status === 'DECLINED' || c.status === 'CALLBACK'
-        ? c.updatedAt.toISOString()
-        : null,
+    respondedAt: c.respondedAt?.toISOString() ?? null,
   };
 }
 
@@ -108,17 +133,20 @@ export async function publicRoutes(app: FastifyInstance) {
 
       // Record the first view (soft signal) without downgrading a real decision.
       if (!link.firstViewedAt) {
+        const now = new Date();
         await prisma.$transaction(async (tx) => {
           await tx.approvalAccessLink.update({
             where: { id: link.id },
-            data: { firstViewedAt: new Date() },
+            data: { firstViewedAt: now },
           });
-          if (link.approvalCase.status === 'SENT') {
-            await tx.approvalCase.update({
-              where: { id: link.approvalCaseId },
-              data: { status: 'VIEWED' },
-            });
-          }
+          await tx.approvalCase.update({
+            where: { id: link.approvalCaseId },
+            data: {
+              openedAt: now,
+              // Only advance SENT → VIEWED; never override a real decision.
+              ...(link.approvalCase.status === 'SENT' ? { status: 'VIEWED' } : {}),
+            },
+          });
           await tx.auditEvent.create({
             data: {
               tenantId: link.tenantId,
@@ -129,6 +157,14 @@ export async function publicRoutes(app: FastifyInstance) {
             },
           });
         });
+        await publishEvent({
+          type: 'approval_case.viewed',
+          tenantId: link.tenantId,
+          approvalCaseId: link.approvalCaseId,
+          data: { reference: link.approvalCase.reference },
+        });
+        // Reflect the transition in the response we return below.
+        if (link.approvalCase.status === 'SENT') link.approvalCase.status = 'VIEWED';
       }
 
       return ok(toPublicView(link));
@@ -183,7 +219,16 @@ export async function publicRoutes(app: FastifyInstance) {
           },
         });
 
-        await tx.approvalCase.update({ where: { id: c.id }, data: { status: newStatus } });
+        await tx.approvalCase.update({
+          where: { id: c.id },
+          data: {
+            status: newStatus,
+            // A final decision (approve/decline) stamps respondedAt.
+            ...(newStatus === 'APPROVED' || newStatus === 'DECLINED'
+              ? { respondedAt: new Date() }
+              : {}),
+          },
+        });
 
         // Two audit events: the customer action + the resulting status change.
         await tx.auditEvent.createMany({
@@ -213,6 +258,26 @@ export async function publicRoutes(app: FastifyInstance) {
         });
 
         return decision;
+      });
+
+      // Emit domain events: the generic "responded" plus the specific outcome.
+      const specificEvent =
+        body.decision === 'APPROVE'
+          ? 'approval_case.approved'
+          : body.decision === 'DECLINE'
+            ? 'approval_case.declined'
+            : 'approval_case.callback_requested';
+      await publishEvent({
+        type: 'approval_case.responded',
+        tenantId: link.tenantId,
+        approvalCaseId: c.id,
+        data: { reference: c.reference, decision: body.decision, status: newStatus },
+      });
+      await publishEvent({
+        type: specificEvent,
+        tenantId: link.tenantId,
+        approvalCaseId: c.id,
+        data: { reference: c.reference },
       });
 
       const responseBody = ok({

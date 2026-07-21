@@ -75,6 +75,7 @@ enum AuditEventType {
   CASE_CREATED
   CASE_UPDATED
   CASE_SENT
+  CASE_REMINDER_SENT
   CASE_LINK_VIEWED
   CASE_APPROVED
   CASE_DECLINED
@@ -119,6 +120,7 @@ model Tenant {
   outboundMsgs   OutboundMessage[]
   apiKeys        ApiKey[]
   messageTemplates MessageTemplate[]
+  webhookEndpoints WebhookEndpoint[]
 
   @@map("tenants")
 }
@@ -220,6 +222,14 @@ model ApprovalCase {
 
   /// When the case was first sent to the customer.
   sentAt      DateTime?
+  /// When the customer first opened the link (mirror of the access link's
+  /// firstViewedAt, denormalised onto the case for easy listing/timeline).
+  openedAt    DateTime?
+  /// When a reminder was last sent, plus how many have gone out.
+  lastReminderAt DateTime?
+  reminderCount  Int             @default(0)
+  /// When the customer submitted a final decision.
+  respondedAt DateTime?
   /// Optional expiry for the decision window (drives EXPIRED transition).
   expiresAt   DateTime?
   createdAt   DateTime           @default(now())
@@ -395,6 +405,49 @@ model MessageTemplate {
 }
 
 // --- Integration readiness ---------------------------------------------------
+
+/// Registered webhook receiver for integration (prepared in Block 3, delivery
+/// with signing/retries in Block 5). `events` is a space-delimited allowlist of
+/// DomainEventType values; empty means "all".
+model WebhookEndpoint {
+  id         String    @id @default(uuid())
+  tenantId   String
+  url        String
+  /// Shared secret used to HMAC-sign deliveries (Block 5).
+  secret     String
+  /// Space-delimited DomainEventType allowlist; empty = subscribe to all.
+  events     String    @default("")
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([tenantId])
+  @@map("webhook_endpoints")
+}
+
+/// A single (attempted) webhook delivery. In Block 3 the dispatcher records the
+/// intent in dev mode; real HTTP delivery + retries land in Block 5.
+model WebhookDelivery {
+  id           String        @id @default(uuid())
+  tenantId     String
+  endpointId   String
+  eventType    String
+  payload      Json
+  status       MessageStatus @default(QUEUED)
+  attempts     Int           @default(0)
+  lastError    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([endpointId])
+  @@map("webhook_deliveries")
+}
 
 /// API keys for machine-to-machine integration with existing garage software.
 /// Prepared in Block 1; enforced in Block 5.

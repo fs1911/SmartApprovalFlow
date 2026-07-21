@@ -69,6 +69,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'system', description: 'Health & meta' },
         { name: 'identity', description: 'Current user & tenants' },
         { name: 'approval-cases', description: 'Approval workflow (the wedge)' },
+        { name: 'templates', description: 'Outbound message templates' },
         { name: 'public', description: 'Loginless customer-facing endpoints' },
       ],
       components: {

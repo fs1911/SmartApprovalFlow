@@ -86,26 +86,79 @@ gleicher Key mit anderem Payload → `409 IDEMPOTENCY_KEY_REUSED`. Wichtig für
 `(createdAt, id)` → stabile Ergebnisse auch bei neuen Zeilen. `meta.nextCursor`
 ist `null` am Ende.
 
-## Endpoints (Block 2)
+## Endpoints
 
-| Methode | Pfad | Auth | Zweck |
-| --- | --- | --- | --- |
-| `GET` | `/api/v1/health` | — | Liveness/Readiness |
-| `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant |
-| `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) |
-| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination) |
-| `POST` | `/api/v1/approval-cases` | ja | Fall erstellen (validiert, idempotent) |
-| `GET` | `/api/v1/approval-cases/:id` | ja | Fall-Detail inkl. Items/Audit |
-| `POST` | `/api/v1/approval-cases/:id/generate-public-link` | ja | Kundenlink erzeugen/rotieren |
-| `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) |
-| `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid (idempotent) |
+| Methode | Pfad | Auth | Zweck | Block |
+| --- | --- | --- | --- | --- |
+| `GET` | `/api/v1/health` | — | Liveness/Readiness | 1 |
+| `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant | 2 |
+| `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) | 2 |
+| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination) | 2 |
+| `POST` | `/api/v1/approval-cases` | ja | Fall erstellen (validiert, idempotent) | 2 |
+| `GET` | `/api/v1/approval-cases/:id` | ja | Fall-Detail inkl. Items/Audit | 2 |
+| `POST` | `/api/v1/approval-cases/:id/generate-public-link` | ja | Kundenlink erzeugen/rotieren | 2 |
+| `POST` | `/api/v1/approval-cases/:id/send` | ja | Anfrage versenden (Link + E-Mail) | 3 |
+| `POST` | `/api/v1/approval-cases/:id/remind` | ja | Erinnerung senden (nur offen) | 3 |
+| `GET` | `/api/v1/approval-cases/:id/timeline` | ja | Verlauf (Audit + Messages) | 3 |
+| `GET` | `/api/v1/templates` | ja | Nachrichtenvorlagen listen | 3 |
+| `GET` | `/api/v1/templates/:id` | ja | Vorlage lesen | 3 |
+| `PATCH` | `/api/v1/templates/:id` | ja | Vorlage bearbeiten (subject/body) | 3 |
+| `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
+| `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid (idempotent) | 2 |
 
-## Webhook-Strategie (für später, Block 5)
+## Notifications (Block 3)
 
-Ausgehende Webhooks pro Tenant für Events wie `approval.approved`,
-`approval.declined`, `approval.callback_requested`. Signiert (HMAC), mit Retry
-und Idempotency auf Empfängerseite. Das `AuditEvent`- und `OutboundMessage`-Modell
-ist bereits ein natürlicher Ausgangspunkt dafür.
+Ausgehende Nachrichten laufen über eine Provider-Abstraktion. Der Default
+`console` loggt E-Mails in die API-Ausgabe und braucht **keine Credentials** —
+der komplette Send-/Reminder-Flow ist ohne Provider testbar. Ein realer Provider
+(SMTP/Resend/…) implementiert `MessageProvider` und wird über `EMAIL_PROVIDER`
+gewählt; Routen ändern sich nicht. Jeder Versand persistiert eine
+`OutboundMessage` (QUEUED → SENT/FAILED). **SMS** ist als Kanal modelliert, aber
+noch ohne Transport.
+
+## Message Templates (Block 3)
+
+Pro Tenant, `subject` + `body` mit `{{placeholder}}`-Variablen. Bewusst **kein**
+Template-Engine-Overkill: unbekannte Platzhalter werden leer ersetzt (werfen
+nie); fehlt eine Vorlage, greift ein Code-Default. Variablen: `customerName`,
+`subject`, `vehicle`, `priceBand`, `link`, `expiresAt`, `workspaceName`,
+`workspaceContact`. Typen: `approval_request_email`, `approval_reminder_email`.
+
+## Statusmodell & Übergänge (Block 3)
+
+Zentrale State-Machine (`lib/status.ts`). Erlaubte Übergänge:
+
+| Von | Nach |
+| --- | --- |
+| `DRAFT` | `SENT`, `CANCELLED` |
+| `SENT` | `VIEWED`, `APPROVED`, `DECLINED`, `CALLBACK`, `EXPIRED`, `CANCELLED` |
+| `VIEWED` | `APPROVED`, `DECLINED`, `CALLBACK`, `EXPIRED`, `CANCELLED` |
+| `CALLBACK` | `APPROVED`, `DECLINED`, `EXPIRED`, `CANCELLED` |
+| `APPROVED`/`DECLINED`/`EXPIRED`/`CANCELLED` | — (terminal) |
+
+Ungültige Übergänge → `409 CASE_NOT_ACTIONABLE`. **Expiry** ist „lazy": ein
+abgelaufener Link setzt den Fall beim nächsten Zugriff einmalig auf `EXPIRED`.
+
+## Events & Webhooks (Grundlage in Block 3, Zustellung in Block 5)
+
+Nach jedem erfolgreichen Statuswechsel emittieren die Routen stabile
+**Domain-Events**: `approval_case.created`, `.sent`, `.reminder_sent`,
+`.viewed`, `.responded`, `.approved`, `.declined`, `.callback_requested`,
+`.expired`. Der Publisher (`lib/events.ts`) fächert sie an aktive
+`WebhookEndpoint`s des Tenants aus und legt je Ziel eine `WebhookDelivery`
+(QUEUED) an; Fehler sind für den Haupt-Request **non-fatal**.
+
+Payload-Form:
+
+```json
+{ "type": "approval_case.approved", "approvalCaseId": "…",
+  "data": { "reference": "AC-2026-0007" }, "occurredAt": "…" }
+```
+
+Die eigentliche HTTP-Zustellung mit **HMAC-Signatur, Retry und Backoff** ist
+Block 5 und berührt nur den Delivery-Worker, nicht die Aufrufstellen. Das
+`AuditEvent` bleibt der interne Nachweis, die Domain-Events sind der externe
+Vertrag.
 
 ## OpenAPI-Strategie
 

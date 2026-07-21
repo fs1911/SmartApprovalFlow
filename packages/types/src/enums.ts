@@ -69,6 +69,7 @@ export const AUDIT_EVENT_TYPE = [
   'CASE_CREATED',
   'CASE_UPDATED',
   'CASE_SENT',
+  'CASE_REMINDER_SENT',
   'CASE_LINK_VIEWED',
   'CASE_APPROVED',
   'CASE_DECLINED',
@@ -80,6 +81,24 @@ export const AUDIT_EVENT_TYPE = [
   'MESSAGE_FAILED',
 ] as const;
 export type AuditEventType = (typeof AUDIT_EVENT_TYPE)[number];
+
+/**
+ * Domain events for integration readiness (webhooks, Block 5 delivery).
+ * Stable, dot-namespaced names that external systems can subscribe to.
+ * These are the *contract*; the audit trail is the internal record.
+ */
+export const DOMAIN_EVENT_TYPE = [
+  'approval_case.created',
+  'approval_case.sent',
+  'approval_case.reminder_sent',
+  'approval_case.viewed',
+  'approval_case.responded',
+  'approval_case.approved',
+  'approval_case.declined',
+  'approval_case.callback_requested',
+  'approval_case.expired',
+] as const;
+export type DomainEventType = (typeof DOMAIN_EVENT_TYPE)[number];
 
 /** Who or what triggered an audit event. */
 export const ACTOR_TYPE = ['USER', 'CUSTOMER', 'SYSTEM', 'API_KEY'] as const;

@@ -4,6 +4,7 @@ import { formatPriceBand, AUDIT_LABELS } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
+import { CaseActions } from './_case-actions';
 
 interface CaseDetail {
   id: string;
@@ -14,6 +15,10 @@ interface CaseDetail {
   urgency: string;
   createdAt: string;
   sentAt?: string | null;
+  openedAt?: string | null;
+  lastReminderAt?: string | null;
+  reminderCount?: number;
+  respondedAt?: string | null;
   customer?: { name: string; email?: string | null; phone?: string | null } | null;
   vehicle?: {
     plate?: string | null;
@@ -157,6 +162,15 @@ export default async function ApprovalDetailPage({
 
         {/* Right column */}
         <div className="stack" style={{ flex: '1 1 300px' }}>
+          {!['APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'].includes(c.status) && (
+            <div className="card">
+              <div className="card__body">
+                <h2>Versand</h2>
+                <CaseActions caseId={c.id} status={c.status} />
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <div className="card__body">
               <h2>Kundenlink</h2>
@@ -187,7 +201,7 @@ export default async function ApprovalDetailPage({
 
           <div className="card">
             <div className="card__body">
-              <h2>Meta</h2>
+              <h2>Versanddetails</h2>
               <dl className="dl">
                 <dt>Referenz</dt>
                 <dd>{c.reference}</dd>
@@ -195,6 +209,15 @@ export default async function ApprovalDetailPage({
                 <dd>{fmtDate(c.createdAt)}</dd>
                 <dt>Gesendet</dt>
                 <dd>{c.sentAt ? fmtDate(c.sentAt) : '—'}</dd>
+                <dt>Geöffnet</dt>
+                <dd>{c.openedAt ? fmtDate(c.openedAt) : 'noch nicht'}</dd>
+                <dt>Erinnerungen</dt>
+                <dd>
+                  {c.reminderCount ? `${c.reminderCount}×` : '—'}
+                  {c.lastReminderAt ? ` (zuletzt ${fmtDate(c.lastReminderAt)})` : ''}
+                </dd>
+                <dt>Beantwortet</dt>
+                <dd>{c.respondedAt ? fmtDate(c.respondedAt) : '—'}</dd>
               </dl>
             </div>
           </div>

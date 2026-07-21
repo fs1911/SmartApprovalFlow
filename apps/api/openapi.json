@@ -236,6 +236,167 @@
         }
       }
     },
+    "/api/v1/approval-cases/{id}/send": {
+      "post": {
+        "summary": "Send the approval request (issues link + e-mails the customer)",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Rotates a fresh secure link, e-mails the customer using the initial-request template, moves the case to SENT and records the send in the audit trail and outbound messages. Emits approval_case.sent.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}/remind": {
+      "post": {
+        "summary": "Send a reminder for a pending case",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Only allowed while a customer response is still expected (SENT/VIEWED/CALLBACK). Rotates the link, e-mails the reminder template, increments the reminder counter and records it. Emits approval_case.reminder_sent.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}/timeline": {
+      "get": {
+        "summary": "Merged, chronological history of a case (audit + messages)",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "summary": "List message templates for the current tenant",
+        "tags": [
+          "templates"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "summary": "Read one message template",
+        "tags": [
+          "templates"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update a template’s subject and/or body",
+        "tags": [
+          "templates"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/public/approvals/{token}": {
       "get": {
         "summary": "Read an approval request via its secure token (no login)",
@@ -302,6 +463,10 @@
     {
       "name": "approval-cases",
       "description": "Approval workflow (the wedge)"
+    },
+    {
+      "name": "templates",
+      "description": "Outbound message templates"
     },
     {
       "name": "public",

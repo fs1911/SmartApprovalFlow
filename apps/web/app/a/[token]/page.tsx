@@ -61,8 +61,13 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
               <div className="empty__icon">🔒</div>
               <h2>Link nicht verfügbar</h2>
               <p className="subtle">{errorMsg}</p>
+              <p className="subtle" style={{ marginTop: 12 }}>
+                Bitte wenden Sie sich direkt an Ihre Werkstatt – gerne stellen wir Ihnen einen neuen
+                Link aus.
+              </p>
             </div>
           </div>
+          <div className="public-foot">Bereitgestellt über Smart Approval Flow</div>
         </div>
       </div>
     );
@@ -103,7 +108,12 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
               )}
             </div>
 
-            {view.description && <p>{view.description}</p>}
+            <p style={{ margin: 0 }}>
+              Bei der Kontrolle Ihres Fahrzeugs haben wir eine empfohlene Arbeit festgestellt. Bitte
+              prüfen Sie kurz und geben Sie uns Bescheid – das dauert weniger als eine Minute.
+            </p>
+
+            {view.description && <p className="subtle">{view.description}</p>}
 
             <div>
               {view.items.map((it, i) => (
@@ -146,6 +156,20 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
             )}
 
             <ActionsPanel token={params.token} initialStatus={view.status} />
+
+            <p
+              className="subtle"
+              style={{ textAlign: 'center', fontSize: 'var(--text-xs)', margin: 0 }}
+            >
+              Unsicher? Wählen Sie „Rückruf wünschen“ – wir beraten Sie gerne persönlich.
+              {view.expiresAt && (
+                <>
+                  {' '}
+                  Dieser Link ist bis zum {new Date(view.expiresAt).toLocaleDateString('de-CH')}{' '}
+                  gültig.
+                </>
+              )}
+            </p>
           </div>
         </div>
 

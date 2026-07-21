@@ -19,6 +19,11 @@ import { errors } from '../../lib/errors.js';
 import { encodeCursor, decodeCursor } from '../../lib/pagination.js';
 import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
 import { issueAccessToken, defaultLinkExpiry } from '../../lib/access-link.js';
+import { dispatchMessage } from '../../lib/notifications.js';
+import { renderTemplate } from '../../lib/templates.js';
+import { buildCaseContext } from '../../lib/case-context.js';
+import { publishEvent } from '../../lib/events.js';
+import { isPending } from '../../lib/status.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -310,4 +315,267 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       return reply.status(201).send(ok({ url, token, expiresAt: expiresAt.toISOString() }));
     },
   );
+
+  // --- Send the approval request to the customer ---------------------------
+  app.post(
+    '/approval-cases/:id/send',
+    {
+      preHandler: app.requireAuth,
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Send the approval request (issues link + e-mails the customer)',
+        description:
+          'Rotates a fresh secure link, e-mails the customer using the initial-request template, moves the case to SENT and records the send in the audit trail and outbound messages. Emits approval_case.sent.',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const c = await loadCaseForMessaging(auth.tenantId, id);
+
+      if (c.status === 'APPROVED' || c.status === 'DECLINED' || c.status === 'EXPIRED') {
+        throw errors.caseNotActionable('Dieser Fall ist bereits abgeschlossen und kann nicht gesendet werden.');
+      }
+      const toAddress = c.customer?.email;
+      if (!toAddress) {
+        throw errors.validation('Für den E-Mail-Versand fehlt die Kundenadresse.', [
+          { path: 'customer.email', message: 'E-Mail-Adresse erforderlich' },
+        ]);
+      }
+
+      const link = await issueLink(auth.tenantId, id);
+      const rendered = await renderCaseTemplate(auth.tenantId, 'approval_request_email', c, link.url);
+
+      const message = await dispatchMessage({
+        tenantId: auth.tenantId,
+        approvalCaseId: id,
+        channel: 'EMAIL',
+        toAddress,
+        templateKey: 'approval_request_email',
+        subject: rendered.subject,
+        body: rendered.body,
+      });
+
+      await prisma.$transaction([
+        prisma.approvalCase.update({
+          where: { id },
+          data: { status: 'SENT', sentAt: c.sentAt ?? new Date() },
+        }),
+        prisma.auditEvent.create({
+          data: {
+            tenantId: auth.tenantId,
+            approvalCaseId: id,
+            type: 'CASE_SENT',
+            actorType: auth.userId ? 'USER' : 'SYSTEM',
+            actorUserId: auth.userId ?? null,
+            metadata: { channel: 'EMAIL', to: toAddress, messageStatus: message.status },
+          },
+        }),
+      ]);
+
+      await publishEvent({
+        type: 'approval_case.sent',
+        tenantId: auth.tenantId,
+        approvalCaseId: id,
+        data: { reference: c.reference, channel: 'EMAIL' },
+      });
+
+      return reply.status(200).send(
+        ok({ status: 'SENT', channel: 'EMAIL', messageStatus: message.status, link: link.url }),
+      );
+    },
+  );
+
+  // --- Send a reminder -----------------------------------------------------
+  app.post(
+    '/approval-cases/:id/remind',
+    {
+      preHandler: app.requireAuth,
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Send a reminder for a pending case',
+        description:
+          'Only allowed while a customer response is still expected (SENT/VIEWED/CALLBACK). Rotates the link, e-mails the reminder template, increments the reminder counter and records it. Emits approval_case.reminder_sent.',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const c = await loadCaseForMessaging(auth.tenantId, id);
+
+      if (!isPending(c.status)) {
+        throw errors.caseNotActionable(
+          'Eine Erinnerung ist nur möglich, solange der Fall auf eine Kundenreaktion wartet.',
+        );
+      }
+      const toAddress = c.customer?.email;
+      if (!toAddress) {
+        throw errors.validation('Für den E-Mail-Versand fehlt die Kundenadresse.', [
+          { path: 'customer.email', message: 'E-Mail-Adresse erforderlich' },
+        ]);
+      }
+
+      const link = await issueLink(auth.tenantId, id);
+      const rendered = await renderCaseTemplate(auth.tenantId, 'approval_reminder_email', c, link.url);
+
+      const message = await dispatchMessage({
+        tenantId: auth.tenantId,
+        approvalCaseId: id,
+        channel: 'EMAIL',
+        toAddress,
+        templateKey: 'approval_reminder_email',
+        subject: rendered.subject,
+        body: rendered.body,
+      });
+
+      await prisma.$transaction([
+        prisma.approvalCase.update({
+          where: { id },
+          data: { lastReminderAt: new Date(), reminderCount: { increment: 1 } },
+        }),
+        prisma.auditEvent.create({
+          data: {
+            tenantId: auth.tenantId,
+            approvalCaseId: id,
+            type: 'CASE_REMINDER_SENT',
+            actorType: auth.userId ? 'USER' : 'SYSTEM',
+            actorUserId: auth.userId ?? null,
+            metadata: { channel: 'EMAIL', to: toAddress, messageStatus: message.status },
+          },
+        }),
+      ]);
+
+      await publishEvent({
+        type: 'approval_case.reminder_sent',
+        tenantId: auth.tenantId,
+        approvalCaseId: id,
+        data: { reference: c.reference, reminderCount: c.reminderCount + 1 },
+      });
+
+      return reply.status(200).send(
+        ok({ status: c.status, channel: 'EMAIL', messageStatus: message.status, link: link.url }),
+      );
+    },
+  );
+
+  // --- Timeline (human-readable history) -----------------------------------
+  app.get(
+    '/approval-cases/:id/timeline',
+    {
+      preHandler: app.requireAuth,
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Merged, chronological history of a case (audit + messages)',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+
+      const found = await prisma.approvalCase.findFirst({
+        where: { id, tenantId: auth.tenantId },
+        select: { id: true },
+      });
+      if (!found) throw errors.notFound('Approval-Fall nicht gefunden');
+
+      const [events, messages] = await Promise.all([
+        prisma.auditEvent.findMany({
+          where: { approvalCaseId: id },
+          orderBy: { createdAt: 'asc' },
+        }),
+        prisma.outboundMessage.findMany({
+          where: { approvalCaseId: id },
+          orderBy: { createdAt: 'asc' },
+        }),
+      ]);
+
+      const timeline = [
+        ...events.map((e) => ({
+          at: e.createdAt.toISOString(),
+          kind: 'audit' as const,
+          type: e.type,
+          actorType: e.actorType,
+          actorLabel: e.actorLabel,
+          metadata: e.metadata,
+        })),
+        ...messages.map((m) => ({
+          at: m.createdAt.toISOString(),
+          kind: 'message' as const,
+          type: `MESSAGE_${m.status}`,
+          channel: m.channel,
+          to: m.toAddress,
+          templateKey: m.templateKey,
+        })),
+      ].sort((a, b) => a.at.localeCompare(b.at));
+
+      return ok(timeline);
+    },
+  );
+}
+
+// --- Module-level helpers for the messaging flows --------------------------
+
+/** Load a case with everything needed to render + address a message. */
+async function loadCaseForMessaging(tenantId: string, id: string) {
+  const c = await prisma.approvalCase.findFirst({
+    where: { id, tenantId },
+    include: {
+      items: true,
+      customer: true,
+      vehicle: true,
+      tenant: { select: { name: true, brandName: true, currency: true } },
+    },
+  });
+  if (!c) throw errors.notFound('Approval-Fall nicht gefunden');
+  return c;
+}
+
+/** Issue a fresh access link for a case and return its public URL. */
+async function issueLink(tenantId: string, caseId: string) {
+  const { token, tokenHash } = issueAccessToken();
+  const expiresAt = defaultLinkExpiry();
+  await prisma.approvalAccessLink.upsert({
+    where: { approvalCaseId: caseId },
+    update: { tokenHash, expiresAt, revokedAt: null, firstViewedAt: null },
+    create: { tenantId, approvalCaseId: caseId, tokenHash, expiresAt },
+  });
+  return { token, expiresAt, url: `${config.WEB_BASE_URL}/a/${token}` };
+}
+
+/** Fallback templates used when a tenant hasn't customised one. */
+const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
+  approval_request_email: {
+    subject: 'Freigabe angefragt: {{subject}}',
+    body: 'Guten Tag {{customerName}}\n\n{{subject}} ({{priceBand}}).\nBitte hier freigeben: {{link}}\n\n{{workspaceName}}',
+  },
+  approval_reminder_email: {
+    subject: 'Erinnerung: {{subject}}',
+    body: 'Guten Tag {{customerName}}\n\nErinnerung zu {{subject}} ({{priceBand}}).\n{{link}}\n\n{{workspaceName}}',
+  },
+};
+
+/** Look up a tenant template (or fall back) and render it for a case. */
+async function renderCaseTemplate(
+  tenantId: string,
+  key: string,
+  c: Awaited<ReturnType<typeof loadCaseForMessaging>>,
+  linkUrl: string,
+) {
+  const tpl =
+    (await prisma.messageTemplate.findUnique({
+      where: { tenantId_key: { tenantId, key } },
+      select: { subject: true, body: true },
+    })) ?? DEFAULT_TEMPLATES[key] ?? DEFAULT_TEMPLATES.approval_request_email!;
+
+  const ctx = buildCaseContext(c, linkUrl);
+  return {
+    subject: renderTemplate(tpl.subject ?? '', ctx),
+    body: renderTemplate(tpl.body, ctx),
+  };
 }

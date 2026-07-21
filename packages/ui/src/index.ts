@@ -27,7 +27,8 @@ export const STATUS_PRESENTATION: Record<
 export const AUDIT_LABELS: Record<string, string> = {
   CASE_CREATED: 'Fall erstellt',
   CASE_UPDATED: 'Fall aktualisiert',
-  CASE_SENT: 'Freigabelink erzeugt',
+  CASE_SENT: 'Anfrage gesendet',
+  CASE_REMINDER_SENT: 'Erinnerung gesendet',
   CASE_LINK_VIEWED: 'Kunde hat den Link geöffnet',
   CASE_APPROVED: 'Kunde hat freigegeben',
   CASE_DECLINED: 'Kunde hat abgelehnt',

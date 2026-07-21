@@ -18,9 +18,17 @@ Kanonische Quelle im Code: `packages/db/prisma/schema.prisma` (Struktur) und
 | **ApprovalDecision** | Unveränderlicher Kundenentscheid (approve/decline/callback) inkl. Kontext. |
 | **Attachment** | Foto/Datei; Bytes extern (Storage-Key), an Fall oder Item. |
 | **AuditEvent** | Append-only Ereignis; revisionssicherer Verlauf inkl. loginloser Kundenaktionen. |
-| **OutboundMessage** | Ausgehende Nachricht (E-Mail/SMS); Versand produktiv in Block 4. |
-| **MessageTemplate** | Wiederverwendbare Vorlagen pro Tenant. |
+| **OutboundMessage** | Ausgehende Nachricht (E-Mail/SMS) mit Status QUEUED→SENT/FAILED; E-Mail-Versand aktiv seit Block 3. |
+| **MessageTemplate** | Wiederverwendbare Vorlagen pro Tenant (`{{placeholder}}`). |
+| **WebhookEndpoint** | Registrierter Webhook-Empfänger (URL, Secret, Event-Allowlist, aktiv/inaktiv); Zustellung Block 5. |
+| **WebhookDelivery** | Einzelne (geplante) Webhook-Zustellung mit Payload/Status; realer HTTP-Call in Block 5. |
 | **ApiKey** | M2M-Schlüssel mit Scopes für Integrationen; aktiv ab Block 5. |
+
+### ApprovalCase — Zeitstempel & Zähler (Block 3)
+
+`sentAt` (erstmals gesendet), `openedAt` (Kunde hat Link erstmals geöffnet),
+`lastReminderAt` + `reminderCount` (Erinnerungen), `respondedAt` (finaler
+Entscheid), `expiresAt` (Ablauf des Fensters, treibt Lazy-Expiry → `EXPIRED`).
 
 ## Wichtige Beziehungen
 
@@ -64,10 +72,15 @@ Zusätzlich `CANCELLED` für den von der Garage zurückgezogenen Fall.
 
 ## Audit-Event-Typen (Auszug)
 
-`CASE_CREATED`, `CASE_SENT` (Link erzeugt), `CASE_LINK_VIEWED`,
+`CASE_CREATED`, `CASE_SENT`, `CASE_REMINDER_SENT`, `CASE_LINK_VIEWED`,
 `CASE_APPROVED`, `CASE_DECLINED`, `CASE_CALLBACK_REQUESTED`, `CASE_EXPIRED`,
 `CASE_CANCELLED`, sowie `MESSAGE_*`. Jeder Statuswechsel schreibt zusätzlich ein
 `SYSTEM`-Event mit `metadata.action = "status_changed"` (from → to).
+
+**Audit vs. Domain-Events:** Der `AuditEvent` ist der *interne, revisionssichere*
+Nachweis. Davon getrennt gibt es *externe* Domain-Events (`DomainEventType`,
+z. B. `approval_case.approved`) als Integrationsvertrag, die über
+`WebhookEndpoint`/`WebhookDelivery` zugestellt werden (siehe `api-design.md`).
 
 ## Geld & Preisband
 
