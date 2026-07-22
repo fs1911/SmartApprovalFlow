@@ -7,10 +7,11 @@
  */
 import { cookies } from 'next/headers';
 import type { ApiResponse, ApiSuccessResponse } from '@saf/types';
+import { webEnv } from './env';
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
-const DEV_TENANT = process.env.SAF_DEV_TENANT ?? 'muster-garage';
-const DEFAULT_ROLE = process.env.SAF_DEV_ROLE ?? 'OWNER';
+const BASE = webEnv.apiBaseUrl;
+const DEV_TENANT = webEnv.devTenant;
+const DEFAULT_ROLE = webEnv.devRole;
 
 /** Cookie name used by the dev role switcher to impersonate a role. */
 export const ROLE_COOKIE = 'saf_role';

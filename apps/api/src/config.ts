@@ -12,9 +12,28 @@ const envSchema = z.object({
   WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
   AUTH_JWT_SECRET: z.string().min(1).default('dev-insecure-secret-change-me'),
   DATABASE_URL: z.string().optional(),
-  // Notifications. `console` needs no credentials and logs messages (dev default).
-  EMAIL_PROVIDER: z.enum(['console', 'smtp']).default('console'),
+
+  // --- Notifications -------------------------------------------------------
+  // `console` (default) logs messages and needs no credentials. `resend` sends
+  // real e-mail, but only when RESEND_API_KEY is present — otherwise the code
+  // falls back to console (never a silent no-op, never a crash).
+  EMAIL_PROVIDER: z.enum(['console', 'resend', 'smtp']).default('console'),
   EMAIL_FROM: z.string().default('freigabe@example-garage.ch'),
+  RESEND_API_KEY: z.string().optional(),
+
+  // --- Storage (attachments) ----------------------------------------------
+  // `local` (default) writes to the filesystem and works with no credentials.
+  // `supabase` / `r2` are real drivers, activated once their env is set.
+  STORAGE_DRIVER: z.enum(['local', 'supabase', 'r2']).default('local'),
+  STORAGE_LOCAL_DIR: z.string().default('./.uploads'),
+  // Cloud storage (optional; only read by the matching driver).
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().default('attachments'),
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET: z.string().default('attachments'),
 });
 
 const parsed = envSchema.safeParse(process.env);

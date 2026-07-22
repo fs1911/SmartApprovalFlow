@@ -47,6 +47,46 @@ class ConsoleProvider implements MessageProvider {
   }
 }
 
+/**
+ * Real e-mail via Resend (https://resend.com). Thin adapter over the HTTP API —
+ * no SDK dependency. Only constructed when a RESEND_API_KEY is configured, so a
+ * dev checkout without the key never reaches this path.
+ */
+class ResendProvider implements MessageProvider {
+  readonly name = 'resend';
+  constructor(
+    private readonly apiKey: string,
+    private readonly from: string,
+  ) {}
+
+  async send(msg: OutboundEmail): Promise<SendResult> {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: this.from,
+          to: [msg.to],
+          subject: msg.subject,
+          // Plain-text body; HTML templating is a later concern.
+          text: msg.body,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        return { ok: false, error: `Resend ${res.status}: ${detail.slice(0, 200)}` };
+      }
+      const json = (await res.json().catch(() => ({}))) as { id?: string };
+      return { ok: true, providerId: json.id ?? 'resend' };
+    } catch (err) {
+      return { ok: false, error: `Resend request failed: ${(err as Error).message}` };
+    }
+  }
+}
+
 /** Placeholder for SMS until a real provider is connected. */
 class DisabledSmsProvider implements MessageProvider {
   readonly name = 'sms-disabled';
@@ -55,15 +95,32 @@ class DisabledSmsProvider implements MessageProvider {
   }
 }
 
+/**
+ * Decide which e-mail provider is *effectively* active, given configuration.
+ * Pure function so the fallback rules are unit-testable. Choosing `resend`
+ * without a key degrades to `console` (with a warning) rather than failing.
+ */
+export function resolveEmailProviderName(cfg = {
+  provider: config.EMAIL_PROVIDER,
+  hasResendKey: !!config.RESEND_API_KEY,
+}): 'console' | 'resend' {
+  if (cfg.provider === 'resend') {
+    if (cfg.hasResendKey) return 'resend';
+    // eslint-disable-next-line no-console
+    console.warn('⚠️  EMAIL_PROVIDER=resend but RESEND_API_KEY is missing — using console provider.');
+    return 'console';
+  }
+  // `smtp` is reserved but not implemented yet → console.
+  return 'console';
+}
+
 function getProvider(channel: MessageChannel): MessageProvider {
   if (channel === 'SMS') return new DisabledSmsProvider();
   // channel === 'EMAIL'
-  switch (config.EMAIL_PROVIDER) {
-    // case 'smtp': return new SmtpProvider();   // Block 4/5: plug in here
-    case 'console':
-    default:
-      return new ConsoleProvider();
+  if (resolveEmailProviderName() === 'resend') {
+    return new ResendProvider(config.RESEND_API_KEY!, config.EMAIL_FROM);
   }
+  return new ConsoleProvider();
 }
 
 /**

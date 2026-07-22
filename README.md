@@ -10,8 +10,8 @@ Login**. Alles revisionssicher protokolliert.
 
 **Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow) ✅ ·
 Block 3 (Operational Hardening) ✅ · Block 4 (Multi-Tenant-B2B-Reife) ✅ ·
-Block 5 (Öffentlicher kommerzieller Layer) ✅ — siehe
-[`docs/roadmap.md`](docs/roadmap.md).
+Block 5 (Öffentlicher kommerzieller Layer) ✅ · Block 6 (Infrastruktur &
+Provider-Readiness) ✅ — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
@@ -133,7 +133,8 @@ npm run format                      # Prettier
 | Offene Entscheidungen | [`docs/open-questions.md`](docs/open-questions.md) |
 | Marketing / GTM | [`website-ia.md`](docs/website-ia.md) · [`messaging-architecture.md`](docs/messaging-architecture.md) · [`conversion-strategy.md`](docs/conversion-strategy.md) · [`go-to-market-launch-plan.md`](docs/go-to-market-launch-plan.md) |
 | Billing (Vorbereitung) | [`billing-strategy.md`](docs/billing-strategy.md) · [`pricing-rationale.md`](docs/pricing-rationale.md) · [`payment-provider-evaluation.md`](docs/payment-provider-evaluation.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) |
+| Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) |
 
 ## Rollen ausprobieren
 
@@ -143,9 +144,16 @@ Versand-Aktionen verschwinden für Viewer/Technician, „Auswertung"/„Team" nu
 den passenden Rechten. Die Berechtigungsmatrix steht in
 [`docs/api-design.md`](docs/api-design.md).
 
+## Provider aktivieren (optional)
+
+Alles läuft ohne externe Credentials (console-E-Mail, local-Storage). Zum
+Aktivieren realer Provider: `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` bzw.
+`STORAGE_DRIVER=supabase|r2` + deren Keys. Ohne Credentials fällt der Code sicher
+zurück. Siehe [`docs/env-and-secrets.md`](docs/env-and-secrets.md).
+
 ## Nächster Block
 
-**Block 6 — Infrastruktur & Provider-Readiness:** Hosting-/Deployment-Zielbild,
-Rollen von Supabase/Cloudflare/Resend, Storage-/Token-/Domain-Strategie,
-ENV/Secrets und ein Dev/Staging/Production-Modell — vorbereitet, ohne sofortige
-harte Live-Anbindung. Details in [`docs/block-5-summary.md`](docs/block-5-summary.md).
+**Block 7 — Auth- & Integrations-Härtung:** echte Authentifizierung
+(JWT + API-Keys/Scopes), Rate-Limiting, persistente Idempotency und echte
+Webhook-Zustellung (HMAC/Retry) — aufbauend auf der Infrastruktur aus Block 6.
+Details in [`docs/block-6-summary.md`](docs/block-6-summary.md).
