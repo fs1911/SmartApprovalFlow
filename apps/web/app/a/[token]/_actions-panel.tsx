@@ -61,13 +61,18 @@ export function ActionsPanel({
 
   return (
     <div className="stack">
-      {result && !result.ok && <div className="alert alert--danger">{result.error}</div>}
+      {result && !result.ok && (
+        <div className="alert alert--danger" role="alert">
+          {result.error}
+        </div>
+      )}
 
       {mode === 'idle' && (
         <div className="public-actions">
           <button
             className="btn btn--success btn--lg"
             disabled={busy !== null}
+            aria-busy={busy === 'APPROVE'}
             onClick={() => submit('APPROVE')}
           >
             {busy === 'APPROVE' ? 'Wird gesendet…' : '✓ Alle Arbeiten freigeben'}
@@ -109,14 +114,20 @@ export function ActionsPanel({
                   {it.priceLabel}
                 </div>
               </div>
-              <div className="row" style={{ gap: 6 }}>
+              <div className="row" style={{ gap: 6 }} role="group" aria-label={`Entscheid für ${it.title}`}>
                 <button
+                  type="button"
+                  aria-label={`${it.title} freigeben`}
+                  aria-pressed={choices[it.id] === 'APPROVE'}
                   className={`btn ${choices[it.id] === 'APPROVE' ? 'btn--success' : 'btn--ghost'}`}
                   onClick={() => setChoices((c) => ({ ...c, [it.id]: 'APPROVE' }))}
                 >
                   ✓
                 </button>
                 <button
+                  type="button"
+                  aria-label={`${it.title} ablehnen`}
+                  aria-pressed={choices[it.id] === 'DECLINE'}
                   className={`btn ${choices[it.id] === 'DECLINE' ? 'btn--danger' : 'btn--ghost'}`}
                   onClick={() => setChoices((c) => ({ ...c, [it.id]: 'DECLINE' }))}
                 >
@@ -128,6 +139,7 @@ export function ActionsPanel({
           <button
             className="btn btn--primary btn--lg"
             disabled={busy !== null}
+            aria-busy={busy === 'items'}
             onClick={() => void submitItems()}
           >
             {busy === 'items' ? 'Wird gesendet…' : 'Auswahl bestätigen'}
@@ -213,7 +225,7 @@ function SuccessState({ status }: { status: string }) {
   };
   const s = map[status] ?? map.APPROVED!;
   return (
-    <div style={{ textAlign: 'center', padding: '12px 0' }}>
+    <div style={{ textAlign: 'center', padding: '12px 0' }} role="status" aria-live="polite">
       <div
         style={{
           fontSize: '2.5rem',

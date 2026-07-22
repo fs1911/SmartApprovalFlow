@@ -149,18 +149,31 @@ export function AttachmentsPanel({
               </select>
             </div>
           )}
+          <label htmlFor="att-file" style={{ fontSize: 'var(--text-xs)' }}>
+            Foto hochladen (JPEG, PNG, WebP, HEIC · max. 15 MB)
+          </label>
           <input
+            id="att-file"
             ref={fileRef}
             type="file"
             accept={ALLOWED.join(',')}
             disabled={busy}
+            aria-busy={busy}
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) void onFile(f);
             }}
           />
-          {busy && <p className="subtle" style={{ margin: 0 }}>Wird hochgeladen…</p>}
-          {error && <div className="alert alert--danger">{error}</div>}
+          {busy && (
+            <p className="subtle" style={{ margin: 0 }} aria-live="polite">
+              Wird hochgeladen…
+            </p>
+          )}
+          {error && (
+            <div className="alert alert--danger" role="alert">
+              {error}
+            </div>
+          )}
         </div>
       )}
     </div>

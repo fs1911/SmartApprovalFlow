@@ -17,7 +17,18 @@ import { registerV1Routes } from './routes/v1/index.js';
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
-      level: config.NODE_ENV === 'production' ? 'info' : 'debug',
+      level: config.LOG_LEVEL ?? (config.NODE_ENV === 'production' ? 'info' : 'debug'),
+      // Never log secrets: redact auth headers, cookies and API keys. Applies to
+      // the structured request/response log records pino emits.
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers["x-saf-sink-secret"]',
+          'req.headers["idempotency-key"]',
+        ],
+        censor: '[redacted]',
+      },
       transport:
         config.NODE_ENV === 'development'
           ? { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } }

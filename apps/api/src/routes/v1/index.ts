@@ -13,6 +13,7 @@ import { reportingRoutes } from './reporting.js';
 import { apiKeyRoutes } from './api-keys.js';
 import { webhookRoutes } from './webhooks.js';
 import { reminderRoutes } from './reminders.js';
+import { maintenanceRoutes } from './maintenance.js';
 import { uploadRoutes } from './uploads.js';
 import { publicRoutes } from './public.js';
 
@@ -28,6 +29,7 @@ export async function registerV1Routes(app: FastifyInstance) {
   await app.register(apiKeyRoutes);
   await app.register(webhookRoutes);
   await app.register(reminderRoutes);
+  await app.register(maintenanceRoutes);
   await app.register(uploadRoutes);
   await app.register(publicRoutes);
 }

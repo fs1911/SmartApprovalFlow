@@ -9,6 +9,7 @@ import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
 import type { ApiErrorResponse, ApiFieldError } from '@saf/types';
 import { ApiException } from '../lib/errors.js';
+import { captureException } from '../lib/monitoring.js';
 import { isProd } from '../config.js';
 
 export const errorHandlerPlugin = fp(async (app: FastifyInstance) => {
@@ -55,6 +56,12 @@ export const errorHandlerPlugin = fp(async (app: FastifyInstance) => {
     }
 
     req.log.error({ err }, 'Unhandled error');
+    // Report unexpected (5xx) errors to the monitoring seam (no-op by default).
+    captureException(err, {
+      requestId,
+      tenantId: req.auth?.tenantId,
+      route: `${req.method} ${req.routeOptions?.url ?? req.url}`,
+    });
     const body: ApiErrorResponse = {
       error: {
         code: 'INTERNAL_ERROR',

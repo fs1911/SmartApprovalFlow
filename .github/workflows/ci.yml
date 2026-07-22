@@ -1,0 +1,79 @@
+# CI for Smart Approval Flow (Block 9).
+#
+# Mirrors `npm run verify` locally, plus a Postgres service so the integration
+# tests (apps/api/src/test/integration.test.ts) run against a real database.
+# Everything here works without any external accounts.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: saf
+          POSTGRES_PASSWORD: saf
+          POSTGRES_DB: smart_approval_flow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saf"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://saf:saf@localhost:5432/smart_approval_flow?schema=public
+      # Deterministic, non-secret test values. NODE_ENV=test keeps the dev-header
+      # auth path enabled for the integration suite.
+      NODE_ENV: test
+      AUTH_JWT_SECRET: ci-insecure-secret
+      EMAIL_PROVIDER: console
+      STORAGE_DRIVER: local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+
+      - name: Seed database (integration tests need the demo tenant)
+        run: npm run seed --workspace packages/db
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+
+      # Style check is informational for now: Prettier is not yet enforced
+      # repo-wide and ESLint's flat-config migration is a deferred task (see
+      # docs/testing-and-ci.md). It surfaces drift without blocking the build.
+      - name: Format check (informational)
+        run: npm run format:check
+        continue-on-error: true

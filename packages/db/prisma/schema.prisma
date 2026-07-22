@@ -360,6 +360,9 @@ model Attachment {
 
   @@index([tenantId])
   @@index([approvalCaseId])
+  // Supports the orphan-attachment cleanup query (Block 9): never-uploaded rows
+  // older than the retention window.
+  @@index([tenantId, uploadedAt])
   @@map("attachments")
 }
 

@@ -21,6 +21,7 @@ export const API_ERROR_CODES = [
   'TOKEN_INVALID',
   'TOKEN_EXPIRED',
   'CASE_NOT_ACTIONABLE',
+  'SERVICE_UNAVAILABLE',
   'INTERNAL_ERROR',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

@@ -1,8 +1,17 @@
 /**
- * System endpoints: liveness/readiness. No auth.
+ * System endpoints: liveness + readiness. No auth.
+ *
+ *   GET /health        liveness — the process is up (never touches the DB).
+ *   GET /health/ready  readiness — also checks the database is reachable, so an
+ *                      orchestrator can hold traffic until dependencies are up.
  */
 import type { FastifyInstance } from 'fastify';
+import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
+import { errors } from '../../lib/errors.js';
+
+const SERVICE = 'smart-approval-flow-api';
+const VERSION = '1.0.0-block1';
 
 export async function systemRoutes(app: FastifyInstance) {
   app.get(
@@ -10,7 +19,7 @@ export async function systemRoutes(app: FastifyInstance) {
     {
       schema: {
         tags: ['system'],
-        summary: 'Liveness/readiness probe',
+        summary: 'Liveness probe (process up)',
         response: {
           200: {
             type: 'object',
@@ -29,12 +38,32 @@ export async function systemRoutes(app: FastifyInstance) {
         },
       },
     },
-    async () =>
-      ok({
-        status: 'ok',
-        service: 'smart-approval-flow-api',
-        version: '1.0.0-block1',
+    async () => ok({ status: 'ok', service: SERVICE, version: VERSION, time: new Date().toISOString() }),
+  );
+
+  app.get(
+    '/health/ready',
+    {
+      schema: {
+        tags: ['system'],
+        summary: 'Readiness probe (process + database reachable)',
+      },
+    },
+    async () => {
+      const started = Date.now();
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch {
+        // 503 → orchestrators keep the instance out of rotation until the DB is up.
+        throw errors.serviceUnavailable('Datenbank nicht erreichbar');
+      }
+      return ok({
+        status: 'ready',
+        service: SERVICE,
+        version: VERSION,
+        checks: { database: { ok: true, latencyMs: Date.now() - started } },
         time: new Date().toISOString(),
-      }),
+      });
+    },
   );
 }

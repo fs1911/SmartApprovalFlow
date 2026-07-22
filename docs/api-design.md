@@ -119,7 +119,9 @@ ist `null` am Ende.
 
 | Methode | Pfad | Auth | Zweck | Block |
 | --- | --- | --- | --- | --- |
-| `GET` | `/api/v1/health` | — | Liveness/Readiness | 1 |
+| `GET` | `/api/v1/health` | — | Liveness (Prozess up) | 1 |
+| `GET` | `/api/v1/health/ready` | — | Readiness (Prozess + DB, sonst 503) | 9 |
+| `POST` | `/api/v1/maintenance/cleanup` | `members:manage` | Retention-Cleanup (Idempotency/Webhooks/Attachments) | 9 |
 | `POST` | `/api/v1/auth/login` | — | Login → Session-JWT (rate-limited) | 7 |
 | `POST` | `/api/v1/auth/logout` | — | Logout (stateless) | 7 |
 | `GET` | `/api/v1/auth/session` | ja | Aktuelle Sitzung | 7 |

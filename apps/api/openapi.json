@@ -18,7 +18,7 @@
   "paths": {
     "/api/v1/health": {
       "get": {
-        "summary": "Liveness/readiness probe",
+        "summary": "Liveness probe (process up)",
         "tags": [
           "system"
         ],
@@ -53,6 +53,19 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/health/ready": {
+      "get": {
+        "summary": "Readiness probe (process + database reachable)",
+        "tags": [
+          "system"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
           }
         }
       }
@@ -734,6 +747,25 @@
           "approval-cases"
         ],
         "description": "Evaluates every pending case against the configured reminder policy and sends the ones that are due. Safe to call repeatedly. Returns a summary of evaluated / sent / skipped.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/maintenance/cleanup": {
+      "post": {
+        "summary": "Run retention cleanup for this tenant",
+        "tags": [
+          "system"
+        ],
+        "description": "Removes expired idempotency records, terminal webhook deliveries past the retention window, and orphaned (never-uploaded) attachments. Safe to call repeatedly; returns the counts removed.",
         "security": [
           {
             "bearerAuth": []

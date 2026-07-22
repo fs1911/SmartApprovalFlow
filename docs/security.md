@@ -18,6 +18,14 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
 - **Webhooks:** HMAC-signiert; Empfänger verifizieren die Signatur.
 - **Fehler-Envelope:** einheitlich; keine internen Details in Produktion;
   `X-Request-Id` zur Korrelation.
+- **Log-Redaction (Block 9):** `authorization`/`cookie`-Header,
+  `x-saf-sink-secret` und `idempotency-key` werden aus den Logs zensiert.
+- **Retention (Block 9):** abgelaufene Idempotency-Records, alte Webhook-
+  Zustellungen und verwaiste Attachments werden per `POST /maintenance/cleanup`
+  aufgeräumt (tenant-scoped) — siehe `docs/retention-and-cleanup.md`. Der
+  Audit-Trail bleibt unangetastet.
+- **Error-Monitoring (Block 9):** unerwartete 5xx werden über einen Seam
+  gemeldet (Default No-Op, real via `ERROR_MONITORING`+DSN) — `docs/observability.md`.
 
 ## Bedrohungen & Massnahmen (Auszug)
 

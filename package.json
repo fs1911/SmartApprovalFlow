@@ -20,6 +20,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present",
+    "verify": "npm run typecheck && npm run build && npm run test",
     "db:generate": "npm run generate --workspace packages/db",
     "db:migrate": "npm run migrate --workspace packages/db"
   },

@@ -12,8 +12,8 @@ Login**. Alles revisionssicher protokolliert.
 Block 3 (Operational Hardening) ✅ · Block 4 (Multi-Tenant-B2B-Reife) ✅ ·
 Block 5 (Öffentlicher kommerzieller Layer) ✅ · Block 6 (Infrastruktur &
 Provider-Readiness) ✅ · Block 7 (Auth- & Integrations-Härtung) ✅ ·
-Block 8 (Portal-Ausbau & Delivery) ✅ — siehe
-[`docs/roadmap.md`](docs/roadmap.md).
+Block 8 (Portal-Ausbau & Delivery) ✅ · Block 9 (Qualitäts- & Betriebsreife) ✅
+— siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
@@ -149,7 +149,8 @@ npm run format                      # Prettier
 | Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
 | Auth / Sicherheit | [`api-design.md`](docs/api-design.md) · [`security.md`](docs/security.md) · [`webhooks.md`](docs/webhooks.md) |
 | Portal / Delivery (Block 8) | [`storage-strategy.md`](docs/storage-strategy.md) · [`reminders.md`](docs/reminders.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) |
+| Betrieb / Qualität (Block 9) | [`testing-and-ci.md`](docs/testing-and-ci.md) · [`observability.md`](docs/observability.md) · [`retention-and-cleanup.md`](docs/retention-and-cleanup.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) |
 
 ## Rollen ausprobieren
 
@@ -166,10 +167,19 @@ Aktivieren realer Provider: `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` bzw.
 `STORAGE_DRIVER=supabase|r2` + deren Keys. Ohne Credentials fällt der Code sicher
 zurück. Siehe [`docs/env-and-secrets.md`](docs/env-and-secrets.md).
 
+## Tests & CI
+
+```bash
+npm run verify        # typecheck + build + test (alle Workspaces)
+```
+
+CI (`.github/workflows/ci.yml`) spiegelt dies mit einem Postgres-Service für die
+Integrationstests. Details: [`docs/testing-and-ci.md`](docs/testing-and-ci.md).
+
 ## Nächster Block
 
-**Block 9 — Qualitäts- & Betriebsreife:** automatisierte Tests/CI,
-Observability/Logging/Fehler-Monitoring-Vorbereitung, Performance/Pagination-
-Feinschliff, Retention-/Cleanup-Jobs (Idempotency/Webhooks/Attachments) sowie
-Barrierefreiheit und finaler UX-Polish. Details in
-[`docs/block-8-summary.md`](docs/block-8-summary.md).
+**Block 10 — Onboarding & Self-Service-Aktivierung:** geführtes Werkstatt-
+Onboarding (Workspace, Branding, erste Nutzer/Rollen, Beispiel-Fall),
+Nutzer-Einladungen und Passwort-Setzen/Reset, Empty-States/In-App-Guidance sowie
+eine schlanke Aktivierungsmetrik. Details in
+[`docs/block-9-summary.md`](docs/block-9-summary.md).

@@ -6,6 +6,8 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  // Optional explicit log level; otherwise derived from NODE_ENV.
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
   API_PORT: z.coerce.number().int().default(4000),
   API_HOST: z.string().default('0.0.0.0'),
   API_BASE_URL: z.string().url().default('http://localhost:4000'),
@@ -45,6 +47,18 @@ const envSchema = z.object({
   // --- Attachments (Block 8) ----------------------------------------------
   // Server-side guard rails re-checked when the bytes actually arrive.
   ATTACHMENT_MAX_BYTES: z.coerce.number().int().default(15 * 1024 * 1024),
+
+  // --- Observability (Block 9) --------------------------------------------
+  // Error monitoring: `none` (default, no-op) or an HTTP ingest backend chosen
+  // via a DSN. Without a DSN the code degrades to no-op. TODO PROVIDER SETUP.
+  ERROR_MONITORING: z.enum(['none', 'sentry', 'http']).default('none'),
+  ERROR_MONITORING_DSN: z.string().optional(),
+
+  // --- Retention / cleanup (Block 9) --------------------------------------
+  // Per-tenant cleanup thresholds, triggered via POST /maintenance/cleanup.
+  // Idempotency uses each record's own expiresAt; these bound the rest.
+  RETENTION_WEBHOOK_DAYS: z.coerce.number().int().default(30),
+  RETENTION_ORPHAN_ATTACHMENT_HOURS: z.coerce.number().int().default(24),
 
   // --- Notifications -------------------------------------------------------
   // `console` (default) logs messages and needs no credentials. `resend` sends
