@@ -1,7 +1,18 @@
 # Webhooks
 
 Ausgehende Webhooks für Integrationen. Grundlage in Block 3 (Event-Publisher +
-`WebhookEndpoint`/`WebhookDelivery`), echte Zustellung in Block 7.
+`WebhookEndpoint`/`WebhookDelivery`), echte Zustellung in Block 7,
+**Self-Service-Verwaltung in Block 12**.
+
+## Self-Service-Verwaltung (Block 12)
+
+Owner/Admin verwalten Endpoints unter Einstellungen → Entwickler oder per API
+(`members:manage`): anlegen (`POST /webhook-endpoints`, Secret **einmalig**),
+listen (ohne Secret), aktualisieren (URL/Events/aktiv), **Secret rotieren**,
+**Testzustellung** auslösen (signiert, gegen den Dev-Sink lokal verifizierbar),
+Zustellungen einsehen (`GET …/:id/deliveries`, Cursor-Pagination) und löschen.
+Die Event-Allowlist ist leer = alle Events (reine Funktion `matchesEventAllowlist`,
+unit-getestet). Anleitung + Verifikations-Snippet: `docs/integrations-guide.md`.
 
 ## Event-Contract
 

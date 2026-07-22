@@ -3,6 +3,7 @@ import { getMe, can } from '@/lib/session';
 import { TemplateEditor } from './_template-editor';
 import { BrandingForm } from './_branding-form';
 import { PlanPanel, type BillingData } from './_plan-panel';
+import { DeveloperPanel, type DeveloperData } from './_developer-panel';
 
 interface Template {
   id: string;
@@ -28,23 +29,39 @@ export default async function SettingsPage() {
   const canEditTemplates = can(me, 'templates:write');
 
   const canWorkspaceRead = can(me, 'workspace:read');
+  const canManageMembers = can(me, 'members:manage');
 
   let templates: Template[] = [];
   let variables: string[] = [];
   let workspace: Workspace | null = null;
   let billing: BillingData | null = null;
+  let developer: DeveloperData | null = null;
   let error: string | null = null;
 
   try {
-    const [tpl, ws, bill] = await Promise.all([
+    const [tpl, ws, bill, keys, hooks] = await Promise.all([
       api.request<{ templates: Template[]; variables: string[] }>('/api/v1/templates'),
       canBrand ? api.request<Workspace>('/api/v1/workspace') : Promise.resolve(null),
       canWorkspaceRead ? api.request<BillingData>('/api/v1/billing') : Promise.resolve(null),
+      canManageMembers
+        ? api.request<{ keys: DeveloperData['apiKeys']; availableScopes: string[] }>('/api/v1/api-keys')
+        : Promise.resolve(null),
+      canManageMembers
+        ? api.request<{ endpoints: DeveloperData['webhooks']; availableEvents: string[] }>('/api/v1/webhook-endpoints')
+        : Promise.resolve(null),
     ]);
     templates = tpl.templates;
     variables = tpl.variables;
     workspace = ws;
     billing = bill;
+    if (keys && hooks) {
+      developer = {
+        apiKeys: keys.keys,
+        availableScopes: keys.availableScopes,
+        webhooks: hooks.endpoints,
+        availableEvents: hooks.availableEvents,
+      };
+    }
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -93,6 +110,8 @@ export default async function SettingsPage() {
             readOnly={!canEditTemplates}
           />
         ))}
+
+        {developer && <DeveloperPanel data={developer} />}
       </div>
     </>
   );

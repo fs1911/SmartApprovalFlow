@@ -14,7 +14,8 @@ Block 5 (Öffentlicher kommerzieller Layer) ✅ · Block 6 (Infrastruktur &
 Provider-Readiness) ✅ · Block 7 (Auth- & Integrations-Härtung) ✅ ·
 Block 8 (Portal-Ausbau & Delivery) ✅ · Block 9 (Qualitäts- & Betriebsreife) ✅ ·
 Block 10 (Onboarding & Self-Service-Aktivierung) ✅ ·
-Block 11 (Billing- & Plan-Enforcement) ✅
+Block 11 (Billing- & Plan-Enforcement) ✅ ·
+Block 12 (Integrations- & API-Ökosystem) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
@@ -65,6 +66,12 @@ Enforcement (`PLAN_LIMIT_REACHED`), Plan-/Nutzungsanzeige mit Upgrade-Pfad in de
 Einstellungen und ein **Billing-Provider-Adapter** (Mock-Default, Stripe
 vorbereitet) inkl. signaturgeprüftem, idempotentem Webhook — lokal ohne
 Zahlungs-Account testbar.
+
+Und (Block 12): das **Integrations-Ökosystem** — **Self-Service-Webhooks**
+(Endpoints anlegen/testen/rotieren/löschen, Event-Allowlist, Zustellungshistorie),
+**eingehende Integration per API-Key** (Fall-Erstellung mit Scopes, Idempotency,
+`whoami`) und ein **Integrations-Guide** mit curl-Rezepten und Signatur-
+Verifikation. Alles lokal gegen den Dev-Sink testbar.
 
 ### Bereiche der Web-App
 
@@ -168,7 +175,8 @@ npm run format                      # Prettier
 | Betrieb / Qualität (Block 9) | [`testing-and-ci.md`](docs/testing-and-ci.md) · [`observability.md`](docs/observability.md) · [`retention-and-cleanup.md`](docs/retention-and-cleanup.md) |
 | Onboarding (Block 10) | [`onboarding-and-invitations.md`](docs/onboarding-and-invitations.md) |
 | Billing (Block 11) | [`billing-and-plans.md`](docs/billing-and-plans.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) |
+| Integrationen (Block 12) | [`integrations-guide.md`](docs/integrations-guide.md) · [`webhooks.md`](docs/webhooks.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) |
 
 ## Rollen ausprobieren
 
@@ -196,8 +204,7 @@ Integrationstests. Details: [`docs/testing-and-ci.md`](docs/testing-and-ci.md).
 
 ## Nächster Block
 
-**Block 12 — Integrations- & API-Ökosystem:** öffentliche API-Dokumentation und
-Developer-Experience, Self-Service-Verwaltung ausgehender Webhooks (anlegen,
-testen, Secrets rotieren), eingehende Integration (Fall-Erstellung per API-Key)
-und Beispiel-Rezepte. Details in
-[`docs/block-11-summary.md`](docs/block-11-summary.md).
+**Block 13 — Reporting- & Insights-Ausbau:** aussagekräftige Kennzahlen und
+Trends (Freigabequote, Reaktionszeiten, Umsatz aus freigegebenen Positionen),
+Zeitraum-Filter, CSV-Export und ein verständliches Dashboard. Details in
+[`docs/block-12-summary.md`](docs/block-12-summary.md).

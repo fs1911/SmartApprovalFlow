@@ -17,6 +17,16 @@ export function signPayload(secret: string, rawBody: string): string {
   return `sha256=${createHmac('sha256', secret).update(rawBody).digest('hex')}`;
 }
 
+/**
+ * Does an endpoint's space-delimited event allowlist include this event type?
+ * An empty allowlist means "subscribe to all events". Pure → unit-tested and
+ * shared by the event publisher and the self-service webhook UI (Block 12).
+ */
+export function matchesEventAllowlist(events: string, type: string): boolean {
+  const list = events.trim().split(/\s+/).filter(Boolean);
+  return list.length === 0 || list.includes(type);
+}
+
 /** Verify a signature header (exposed for the dev sink + tests). */
 export function verifySignature(secret: string, rawBody: string, signature: string): boolean {
   const expected = signPayload(secret, rawBody);
@@ -85,6 +95,19 @@ async function deliverOne(d: DeliveryWithEndpoint): Promise<'SENT' | 'RETRY' | '
     },
   });
   return exhausted ? 'FAILED' : 'RETRY';
+}
+
+/**
+ * Deliver one specific delivery immediately (used by the "test delivery" button
+ * so the freshly-created delivery is processed regardless of any backlog).
+ */
+export async function deliverNow(deliveryId: string): Promise<'SENT' | 'RETRY' | 'FAILED' | null> {
+  const d = await prisma.webhookDelivery.findUnique({
+    where: { id: deliveryId },
+    include: { endpoint: { select: { url: true, secret: true, isActive: true } } },
+  });
+  if (!d) return null;
+  return deliverOne(d as DeliveryWithEndpoint);
 }
 
 /** Process due deliveries. Returns a summary. Safe to call repeatedly. */

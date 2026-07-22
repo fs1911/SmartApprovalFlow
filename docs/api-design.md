@@ -162,7 +162,15 @@ ist `null` am Ende.
 | `GET` | `/api/v1/api-keys` | `members:manage` | API-Keys listen | 7 |
 | `POST` | `/api/v1/api-keys` | `members:manage` | API-Key erstellen (Klartext einmalig) | 7 |
 | `DELETE` | `/api/v1/api-keys/:id` | `members:manage` | API-Key widerrufen | 7 |
+| `GET` | `/api/v1/integration/whoami` | ja | Credentials prüfen (Tenant/Scopes) | 12 |
 | `POST` | `/api/v1/webhooks/deliver` | `members:manage` | Ausstehende Webhooks zustellen | 7 |
+| `POST` | `/api/v1/webhook-endpoints` | `members:manage` | Webhook-Endpoint anlegen (Secret einmalig) | 12 |
+| `GET` | `/api/v1/webhook-endpoints` | `members:manage` | Endpoints listen (ohne Secret) | 12 |
+| `PATCH` | `/api/v1/webhook-endpoints/:id` | `members:manage` | URL/Events/aktiv ändern | 12 |
+| `POST` | `/api/v1/webhook-endpoints/:id/rotate-secret` | `members:manage` | Signatur-Secret rotieren | 12 |
+| `POST` | `/api/v1/webhook-endpoints/:id/test` | `members:manage` | Signierte Testzustellung | 12 |
+| `DELETE` | `/api/v1/webhook-endpoints/:id` | `members:manage` | Endpoint löschen | 12 |
+| `GET` | `/api/v1/webhook-endpoints/:id/deliveries` | `members:manage` | Zustellungen (Cursor-Pagination) | 12 |
 | `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid, ganzer Fall (idempotent) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond-items` | — | Kundenentscheid pro Position (aggregiert) | 8 |

@@ -30,6 +30,11 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
   Vergleich) und idempotent verarbeitet; Plan-Limits werden server-seitig
   durchgesetzt (`PLAN_LIMIT_REACHED`) — `docs/billing-and-plans.md`. Provider-
   Secrets (Stripe) sind `TODO PROVIDER SETUP` und werden nie committet.
+- **Integrationen (Block 12):** API-Keys tragen Scopes (⊆ Permission-Matrix), ein
+  Enforcement-Pfad; ausgehende Webhooks sind HMAC-signiert, Secrets werden nur bei
+  Erstellung/Rotation angezeigt. Deferred: Verschlüsselung der Webhook-Secrets
+  at-rest (heute Klartext gespeichert, da zum Signieren nötig) —
+  `docs/integrations-guide.md`.
 
 ## Bedrohungen & Massnahmen (Auszug)
 

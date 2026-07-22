@@ -13,6 +13,7 @@
 import type { DomainEventType } from '@saf/types';
 import { prisma, Prisma } from '@saf/db';
 import { config } from '../config.js';
+import { matchesEventAllowlist } from './webhooks.js';
 
 export interface DomainEvent {
   type: DomainEventType;
@@ -20,12 +21,6 @@ export interface DomainEvent {
   approvalCaseId?: string;
   /** Customer-safe-ish payload for subscribers. Keep it stable. */
   data: Record<string, unknown>;
-}
-
-/** Does an endpoint's allowlist include this event? Empty list = all events. */
-function subscribes(events: string, type: DomainEventType): boolean {
-  const list = events.trim().split(/\s+/).filter(Boolean);
-  return list.length === 0 || list.includes(type);
 }
 
 export async function publishEvent(event: DomainEvent): Promise<void> {
@@ -36,7 +31,7 @@ export async function publishEvent(event: DomainEvent): Promise<void> {
       select: { id: true, events: true, url: true },
     });
 
-    const targets = endpoints.filter((e) => subscribes(e.events, event.type));
+    const targets = endpoints.filter((e) => matchesEventAllowlist(e.events, event.type));
     if (targets.length === 0) {
       if (config.NODE_ENV !== 'production') {
         // eslint-disable-next-line no-console
