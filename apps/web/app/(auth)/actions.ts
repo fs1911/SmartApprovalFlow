@@ -43,3 +43,69 @@ export async function logout(): Promise<void> {
   cookies().delete(ROLE_COOKIE);
   redirect('/login');
 }
+
+// --- Onboarding: password reset + invitation acceptance (Block 10) ---------
+
+export interface SimpleState {
+  ok?: boolean;
+  error?: string;
+}
+
+/** Always reports success — the API is uniform to prevent user enumeration. */
+export async function requestPasswordReset(_prev: SimpleState, formData: FormData): Promise<SimpleState> {
+  const email = String(formData.get('email') ?? '').trim();
+  if (!email) return { error: 'Bitte E-Mail eingeben.' };
+  try {
+    await api.request('/api/v1/auth/forgot-password', {
+      method: 'POST',
+      publicRoute: true,
+      body: { email },
+    });
+  } catch {
+    /* uniform: never leak status */
+  }
+  return { ok: true };
+}
+
+export async function resetPassword(token: string, _prev: SimpleState, formData: FormData): Promise<SimpleState> {
+  const password = String(formData.get('password') ?? '');
+  if (password.length < 8) return { error: 'Passwort muss mindestens 8 Zeichen haben.' };
+  try {
+    await api.request('/api/v1/auth/reset-password', {
+      method: 'POST',
+      publicRoute: true,
+      body: { token, password },
+    });
+  } catch (e) {
+    return { error: e instanceof ApiClientError ? e.message : 'Zurücksetzen fehlgeschlagen.' };
+  }
+  return { ok: true };
+}
+
+/** Accept an invitation, set the password, and start a session (auto-login). */
+export async function acceptInvite(token: string, _prev: SimpleState, formData: FormData): Promise<SimpleState> {
+  const name = String(formData.get('name') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  if (password.length < 8) return { error: 'Passwort muss mindestens 8 Zeichen haben.' };
+
+  let sessionToken: string;
+  try {
+    const res = await api.request<{ token: string }>('/api/v1/invitations/accept', {
+      method: 'POST',
+      publicRoute: true,
+      body: { token, name: name || undefined, password },
+    });
+    sessionToken = res.token;
+  } catch (e) {
+    return { error: e instanceof ApiClientError ? e.message : 'Einladung konnte nicht angenommen werden.' };
+  }
+
+  cookies().set(SESSION_COOKIE, sessionToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 12,
+  });
+  redirect('/dashboard');
+}

@@ -15,6 +15,9 @@ const envSchema = z.object({
   AUTH_JWT_SECRET: z.string().min(1).default('dev-insecure-secret-change-me'),
   // Access-token lifetime (jose duration string, e.g. "2h", "30m").
   AUTH_SESSION_TTL: z.string().default('12h'),
+  // Onboarding token lifetimes (Block 10), in hours.
+  INVITE_TTL_HOURS: z.coerce.number().int().default(168), // 7 days
+  PASSWORD_RESET_TTL_HOURS: z.coerce.number().int().default(2),
   DATABASE_URL: z.string().optional(),
 
   // --- Rate limiting -------------------------------------------------------

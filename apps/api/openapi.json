@@ -96,6 +96,33 @@
         }
       }
     },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "summary": "Request a password reset link",
+        "tags": [
+          "auth"
+        ],
+        "description": "Always responds success — never reveals whether the e-mail exists (anti-enumeration). If a matching active user exists, a reset link is e-mailed.",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "summary": "Set a new password using a reset token",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/auth/session": {
       "get": {
         "summary": "Current session principal",
@@ -582,6 +609,118 @@
             "name": "id",
             "required": true
           }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/invitations": {
+      "post": {
+        "summary": "Invite a new member (e-mails a secure set-password link)",
+        "tags": [
+          "members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "List pending invitations",
+        "tags": [
+          "members"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/{id}": {
+      "delete": {
+        "summary": "Revoke a pending invitation",
+        "tags": [
+          "members"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/invitations/accept": {
+      "post": {
+        "summary": "Accept an invitation and set a password (loginless)",
+        "tags": [
+          "members"
+        ],
+        "description": "Creates the user + membership and returns a session so the invitee is logged in.",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding": {
+      "get": {
+        "summary": "Onboarding checklist + activation signals for the workspace",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/onboarding/sample-case": {
+      "post": {
+        "summary": "Create a risk-free sample approval case to try the flow",
+        "tags": [
+          "workspace"
         ],
         "security": [
           {

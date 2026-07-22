@@ -39,10 +39,20 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
 | Missbrauch der Public-Endpoints | strengeres Rate-Limit, kurze Token-Gültigkeit |
 | Rechte-Eskalation via API-Key | Scopes ⊆ Permission-Matrix; Owner-Only-Regeln |
 
+## Onboarding-Tokens (Block 10)
+
+- **Einladungen** und **Passwort-Reset** nutzen gehashte, einmalige, ablaufende
+  Tokens (`VerificationToken`, nur SHA-256 gespeichert) — siehe
+  `docs/onboarding-and-invitations.md`.
+- `forgot-password` antwortet **uniform** (immer `200`) → keine User-Enumeration;
+  beide Endpoints sind login-rate-limited. Reset verbraucht den Token einmalig
+  und widerruft übrige offene Reset-Tokens des Nutzers.
+
 ## Bewusst offen / Deferred (Backlog)
 
 - **Refresh-Token-Rotation** und **JWT-Revocation-Liste** (heute: kurze TTL).
-- **Passwort-Reset**-Flow und **Login-Throttling pro Konto** (heute pro IP).
+- **Login-Throttling pro Konto** (heute pro IP). Passwort-Reset ist ab Block 10
+  vorhanden.
 - **CSRF:** aktuell Bearer-Token (kein Cookie-basiertes Auto-Send an die API);
   bei Cookie-Auth wäre CSRF-Schutz nötig.
 - **Audit von Admin-Aktionen** (Rollenwechsel, Key-Erstellung) ausbauen.

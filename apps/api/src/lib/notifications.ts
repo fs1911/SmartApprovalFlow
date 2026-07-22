@@ -130,7 +130,8 @@ function getProvider(channel: MessageChannel): MessageProvider {
  */
 export async function dispatchMessage(opts: {
   tenantId: string;
-  approvalCaseId: string;
+  /** Optional: transactional messages (invites, resets) have no case. */
+  approvalCaseId?: string;
   channel: MessageChannel;
   toAddress: string;
   templateKey: string;
@@ -140,7 +141,7 @@ export async function dispatchMessage(opts: {
   const message = await prisma.outboundMessage.create({
     data: {
       tenantId: opts.tenantId,
-      approvalCaseId: opts.approvalCaseId,
+      approvalCaseId: opts.approvalCaseId ?? null,
       channel: opts.channel,
       toAddress: opts.toAddress,
       templateKey: opts.templateKey,

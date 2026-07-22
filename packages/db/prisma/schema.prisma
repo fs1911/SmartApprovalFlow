@@ -87,6 +87,11 @@ enum AuditEventType {
   CASE_CANCELLED
   CASE_ITEM_DECIDED
   CASE_ATTACHMENT_ADDED
+  MEMBER_INVITED
+  MEMBER_JOINED
+  MEMBER_INVITE_REVOKED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
   MESSAGE_QUEUED
   MESSAGE_SENT
   MESSAGE_FAILED
@@ -97,6 +102,13 @@ enum ActorType {
   CUSTOMER
   SYSTEM
   API_KEY
+}
+
+/// Kind of a single-use verification token (Block 10). INVITE onboards a new
+/// member; PASSWORD_RESET lets an existing user set a new password.
+enum VerificationTokenType {
+  INVITE
+  PASSWORD_RESET
 }
 
 // --- Tenancy & identity ------------------------------------------------------
@@ -131,6 +143,7 @@ model Tenant {
   apiKeys        ApiKey[]
   messageTemplates MessageTemplate[]
   webhookEndpoints WebhookEndpoint[]
+  verificationTokens VerificationToken[]
 
   @@map("tenants")
 }
@@ -497,6 +510,36 @@ model IdempotencyRecord {
   @@unique([tenantId, key])
   @@index([expiresAt])
   @@map("idempotency_records")
+}
+
+/// Single-use, hashed verification token (Block 10) for member invitations and
+/// password resets. Only the SHA-256 hash is stored — the raw token lives only
+/// in the e-mailed link. `consumedAt`/`revokedAt`/`expiresAt` gate validity.
+model VerificationToken {
+  id          String                @id @default(uuid())
+  tenantId    String
+  type        VerificationTokenType
+  /// SHA-256 of the opaque token; the raw token is never stored.
+  tokenHash   String                @unique
+  /// Target e-mail (invite recipient, or the resetting user's e-mail).
+  email       String
+  /// INVITE only: role to grant on acceptance.
+  role        Role?
+  /// PASSWORD_RESET only: the user being reset.
+  userId      String?
+  /// INVITE only: who sent the invitation.
+  invitedById String?
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime              @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("verification_tokens")
 }
 
 /// API keys for machine-to-machine integration with existing garage software.

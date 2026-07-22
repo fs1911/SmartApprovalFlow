@@ -125,6 +125,8 @@ ist `null` am Ende.
 | `POST` | `/api/v1/auth/login` | — | Login → Session-JWT (rate-limited) | 7 |
 | `POST` | `/api/v1/auth/logout` | — | Logout (stateless) | 7 |
 | `GET` | `/api/v1/auth/session` | ja | Aktuelle Sitzung | 7 |
+| `POST` | `/api/v1/auth/forgot-password` | — | Reset anfordern (uniform, rate-limited) | 10 |
+| `POST` | `/api/v1/auth/reset-password` | — | Passwort per Token setzen | 10 |
 | `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant | 2 |
 | `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) | 2 |
 | `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination) | 2 |
@@ -145,6 +147,12 @@ ist `null` am Ende.
 | `PATCH` | `/api/v1/templates/:id` | ja | Vorlage bearbeiten (subject/body) | 3 |
 | `GET` | `/api/v1/members` | `members:read` | Mitglieder + Rollen listen | 4 |
 | `PATCH` | `/api/v1/members/:id` | `members:manage` | Rolle zuweisen (Guardrails) | 4 |
+| `POST` | `/api/v1/invitations` | `members:manage` | Mitglied einladen (E-Mail-Link) | 10 |
+| `GET` | `/api/v1/invitations` | `members:read` | Offene Einladungen listen | 10 |
+| `DELETE` | `/api/v1/invitations/:id` | `members:manage` | Einladung widerrufen | 10 |
+| `POST` | `/api/v1/invitations/accept` | — | Einladung annehmen + Passwort setzen | 10 |
+| `GET` | `/api/v1/onboarding` | `workspace:read` | Onboarding-Checkliste + Aktivierung | 10 |
+| `POST` | `/api/v1/onboarding/sample-case` | `cases:create` | Beispiel-Fall anlegen | 10 |
 | `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
 | `GET` | `/api/v1/reporting/summary` | `reporting:read` | Operative Kennzahlen | 4 |

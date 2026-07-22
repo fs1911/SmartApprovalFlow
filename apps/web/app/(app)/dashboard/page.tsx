@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+import { OnboardingWidget, type OnboardingData } from './_onboarding-widget';
 
 interface CaseRow {
   id: string;
@@ -20,10 +21,15 @@ export const dynamic = 'force-dynamic';
 export default async function DashboardPage() {
   const me = await getMe();
   const canCreate = can(me, 'cases:create');
+  const canSeeOnboarding = can(me, 'workspace:read');
   let cases: CaseRow[] = [];
+  let onboarding: OnboardingData | null = null;
   let error: string | null = null;
   try {
     cases = await api.request<CaseRow[]>('/api/v1/approval-cases?limit=50');
+    if (canSeeOnboarding) {
+      onboarding = await api.request<OnboardingData>('/api/v1/onboarding');
+    }
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -61,6 +67,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {onboarding && <OnboardingWidget data={onboarding} />}
+
       <div className="row" style={{ marginBottom: 24 }}>
         {stats.map((s) => (
           <div key={s.label} className="card" style={{ flex: '1 1 160px' }}>
@@ -81,9 +89,17 @@ export default async function DashboardPage() {
             <Link href="/approvals">Alle ansehen →</Link>
           </div>
           {cases.length === 0 ? (
-            <p className="subtle" style={{ marginTop: 12 }}>
-              Noch keine Freigaben vorhanden.
-            </p>
+            <div style={{ marginTop: 12, textAlign: 'center', padding: '24px 0' }}>
+              <div className="empty__icon" aria-hidden>📋</div>
+              <p className="subtle" style={{ margin: '8px 0 12px' }}>
+                Noch keine Freigaben. Legen Sie Ihre erste digitale Kundenfreigabe an.
+              </p>
+              {canCreate && (
+                <Link href="/approvals/new" className="btn btn--primary">
+                  + Erste Freigabe erstellen
+                </Link>
+              )}
+            </div>
           ) : (
             <div className="case-list" style={{ marginTop: 16 }}>
               {cases.slice(0, 6).map((c) => (

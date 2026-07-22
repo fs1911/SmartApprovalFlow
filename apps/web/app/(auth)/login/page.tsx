@@ -30,6 +30,9 @@ export default function LoginPage() {
           <div className="card__body">
             <h1 style={{ fontSize: 'var(--text-xl)', marginBottom: 'var(--space-4)' }}>Anmelden</h1>
             <LoginForm />
+            <p className="subtle" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-3)' }}>
+              <Link href="/forgot-password">Passwort vergessen?</Link>
+            </p>
             {isDev && (
               <p className="subtle" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-4)' }}>
                 Dev-Login: <code>owner@muster-garage.ch</code> / <code>password123</code>

@@ -5,7 +5,7 @@
  * them for form validation, so client and server never drift.
  */
 import { z } from 'zod';
-import { CUSTOMER_DECISION, ITEM_CATEGORY, URGENCY } from './enums.js';
+import { CUSTOMER_DECISION, ITEM_CATEGORY, ROLES, URGENCY } from './enums.js';
 
 /** Swiss/DACH-friendly, deliberately permissive contact fields. */
 const emailSchema = z.string().email().max(254);
@@ -122,6 +122,41 @@ export const createAttachmentSchema = z.object({
   approvalItemId: z.string().uuid().optional(),
 });
 export type CreateAttachmentInput = z.infer<typeof createAttachmentSchema>;
+
+// --- Onboarding: invitations & password reset (Block 10) -------------------
+
+/** A reasonably strong password without being hostile (Swiss/DACH B2B). */
+const passwordSchema = z.string().min(8).max(200);
+
+/** Invite a new member (POST /api/v1/invitations). OWNER role excluded here —
+ *  ownership is transferred explicitly, not invited. */
+export const inviteCreateSchema = z.object({
+  email: emailSchema,
+  role: z.enum(ROLES).refine((r) => r !== 'OWNER', {
+    message: 'Die Inhaber-Rolle kann nicht per Einladung vergeben werden.',
+  }),
+  name: z.string().min(1).max(160).optional(),
+});
+export type InviteCreateInput = z.infer<typeof inviteCreateSchema>;
+
+/** Accept an invitation and set a password (loginless). */
+export const inviteAcceptSchema = z.object({
+  token: z.string().min(10),
+  name: z.string().min(1).max(160).optional(),
+  password: passwordSchema,
+});
+export type InviteAcceptInput = z.infer<typeof inviteAcceptSchema>;
+
+/** Request a password reset (loginless, uniform response). */
+export const passwordForgotSchema = z.object({ email: emailSchema });
+export type PasswordForgotInput = z.infer<typeof passwordForgotSchema>;
+
+/** Complete a password reset with a token (loginless). */
+export const passwordResetSchema = z.object({
+  token: z.string().min(10),
+  password: passwordSchema,
+});
+export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
 
 /** Common list query params for cursor pagination. */
 export const listQuerySchema = z.object({

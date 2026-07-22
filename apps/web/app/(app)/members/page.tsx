@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { MemberRow } from './_member-row';
+import { InvitePanel, type PendingInvite } from './_invite-panel';
 
 interface Member {
   id: string;
@@ -19,9 +20,13 @@ export default async function MembersPage() {
   const canManage = can(me, 'members:manage');
 
   let members: Member[] = [];
+  let invites: PendingInvite[] = [];
   let error: string | null = null;
   try {
     members = await api.request<Member[]>('/api/v1/members');
+    if (canManage) {
+      invites = await api.request<PendingInvite[]>('/api/v1/invitations');
+    }
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -46,6 +51,12 @@ export default async function MembersPage() {
         </div>
       )}
 
+      {canManage && (
+        <div style={{ marginBottom: 20 }}>
+          <InvitePanel invites={invites} />
+        </div>
+      )}
+
       <div className="case-list">
         {members.map((m) => (
           <MemberRow key={m.id} member={m} canManage={canManage} />
@@ -53,8 +64,9 @@ export default async function MembersPage() {
       </div>
 
       <p className="subtle" style={{ marginTop: 16 }}>
-        Einladungen per E-Mail folgen in einem späteren Block. Rollen bestimmen, was ein Mitglied
-        sehen und tun darf – siehe <code>docs/api-design.md</code>.
+        Eingeladene setzen über einen sicheren, ablaufenden Link ihr Passwort und erhalten die
+        zugewiesene Rolle. Rollen bestimmen, was ein Mitglied sehen und tun darf – siehe{' '}
+        <code>docs/api-design.md</code>.
       </p>
     </>
   );
