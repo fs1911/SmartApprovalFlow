@@ -26,6 +26,7 @@ import {
   expiryFromHours,
   isTokenValid,
 } from '../../lib/verification.js';
+import { assertWithinSeatLimit } from '../../lib/usage.js';
 
 const publicRateLimit = {
   rateLimit: { max: config.RATE_LIMIT_PUBLIC_MAX, timeWindow: config.RATE_LIMIT_WINDOW },
@@ -54,6 +55,9 @@ export async function invitationRoutes(app: FastifyInstance) {
         select: { id: true },
       });
       if (existing) throw errors.conflict('Diese Person ist bereits Mitglied des Workspaces.');
+
+      // Plan enforcement: an outstanding invite consumes a seat.
+      await assertWithinSeatLimit(auth.tenantId);
 
       // Supersede any earlier pending invite for the same e-mail.
       await prisma.verificationToken.updateMany({

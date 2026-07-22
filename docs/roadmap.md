@@ -15,7 +15,8 @@ riesig".
 | **Block 8** | **Portal-Ausbau & Delivery** — produktive Foto-Uploads (Storage-Abstraktion), Positionen mit optionaler Einzelfreigabe, automatische Reminder-Policy, realer E-Mail-Versand (SMS vorbereitet) | ✅ abgeschlossen |
 | **Block 9** | **Qualitäts- & Betriebsreife** — Integrationstests + CI, Observability (Logging/Redaction/Monitoring-Seam/Readiness), Retention-/Cleanup-Jobs, A11y/UX-Polish | ✅ abgeschlossen |
 | **Block 10** | **Onboarding & Self-Service-Aktivierung** — geführtes Onboarding, Einladungen + Passwort-Reset, Empty-States/Guidance, Aktivierungsmetrik | ✅ abgeschlossen |
-| **Block 11** | **Billing- & Plan-Enforcement** — Pläne/Limits, Nutzungszählung, Limit-Hinweise/Upgrade-Pfade, Zahlungsanbieter-Adapter (Stripe) mit Dev-Fallback | geplant |
+| **Block 11** | **Billing- & Plan-Enforcement** — Pläne/Limits, Nutzungszählung, Limit-Hinweise/Upgrade-Pfade, Zahlungsanbieter-Adapter (Stripe) mit Dev-Fallback | ✅ abgeschlossen |
+| **Block 12** | **Integrations- & API-Ökosystem** — öffentliche API-Doku/DX, Self-Service-Webhooks, eingehende Integration (API-Key), Beispiel-Rezepte | geplant |
 | **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
 
 ## Leitplanken über alle Blöcke

@@ -30,6 +30,8 @@ export const errors = {
   tokenExpired: (message = 'Link abgelaufen') => new ApiException(410, 'TOKEN_EXPIRED', message),
   caseNotActionable: (message = 'Fall kann nicht mehr bearbeitet werden') =>
     new ApiException(409, 'CASE_NOT_ACTIONABLE', message),
+  planLimitReached: (message = 'Plan-Limit erreicht') =>
+    new ApiException(402, 'PLAN_LIMIT_REACHED', message),
   serviceUnavailable: (message = 'Service nicht bereit') =>
     new ApiException(503, 'SERVICE_UNAVAILABLE', message),
   internal: (message = 'Interner Fehler') => new ApiException(500, 'INTERNAL_ERROR', message),

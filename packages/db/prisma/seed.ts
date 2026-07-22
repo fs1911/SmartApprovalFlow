@@ -250,6 +250,15 @@ async function main() {
     });
   }
 
+  // Subscription (Block 11): the demo workspace runs on PRO (unlimited) so the
+  // demo/tests are never blocked by plan limits. Change it in Settings to try
+  // the FREE/STARTER limits.
+  await prisma.subscription.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: { tenantId: tenant.id, planKey: 'PRO', status: 'ACTIVE' },
+  });
+
   console.log('✅ Seed complete for tenant:', tenant.slug);
   console.log(`   Dev-Login: owner@muster-garage.ch / ${DEV_PASSWORD} (alle Seed-User)`);
 }

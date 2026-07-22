@@ -10,6 +10,7 @@ import { templateRoutes } from './templates.js';
 import { memberRoutes } from './members.js';
 import { invitationRoutes } from './invitations.js';
 import { onboardingRoutes } from './onboarding.js';
+import { billingRoutes } from './billing.js';
 import { workspaceRoutes } from './workspace.js';
 import { reportingRoutes } from './reporting.js';
 import { apiKeyRoutes } from './api-keys.js';
@@ -28,6 +29,7 @@ export async function registerV1Routes(app: FastifyInstance) {
   await app.register(memberRoutes);
   await app.register(invitationRoutes);
   await app.register(onboardingRoutes);
+  await app.register(billingRoutes);
   await app.register(workspaceRoutes);
   await app.register(reportingRoutes);
   await app.register(apiKeyRoutes);

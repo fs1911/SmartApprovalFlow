@@ -2,6 +2,7 @@ import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { TemplateEditor } from './_template-editor';
 import { BrandingForm } from './_branding-form';
+import { PlanPanel, type BillingData } from './_plan-panel';
 
 interface Template {
   id: string;
@@ -26,19 +27,24 @@ export default async function SettingsPage() {
   const canBrand = can(me, 'workspace:manage');
   const canEditTemplates = can(me, 'templates:write');
 
+  const canWorkspaceRead = can(me, 'workspace:read');
+
   let templates: Template[] = [];
   let variables: string[] = [];
   let workspace: Workspace | null = null;
+  let billing: BillingData | null = null;
   let error: string | null = null;
 
   try {
-    const [tpl, ws] = await Promise.all([
+    const [tpl, ws, bill] = await Promise.all([
       api.request<{ templates: Template[]; variables: string[] }>('/api/v1/templates'),
       canBrand ? api.request<Workspace>('/api/v1/workspace') : Promise.resolve(null),
+      canWorkspaceRead ? api.request<BillingData>('/api/v1/billing') : Promise.resolve(null),
     ]);
     templates = tpl.templates;
     variables = tpl.variables;
     workspace = ws;
+    billing = bill;
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -59,6 +65,8 @@ export default async function SettingsPage() {
       )}
 
       <div className="stack" style={{ maxWidth: 720 }}>
+        {billing && <PlanPanel data={billing} canManage={canBrand} />}
+
         {canBrand && workspace && (
           <div className="card">
             <div className="card__body">

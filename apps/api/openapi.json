@@ -734,6 +734,56 @@
         }
       }
     },
+    "/api/v1/billing": {
+      "get": {
+        "summary": "Current plan, usage against limits, and available plans",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/billing/change-plan": {
+      "post": {
+        "summary": "Change the workspace plan (mock: immediate; Stripe: checkout)",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/billing/webhook": {
+      "post": {
+        "summary": "Billing provider webhook (verifies signature; applies plan changes)",
+        "tags": [
+          "workspace"
+        ],
+        "description": "Accepts a signed `subscription.updated` event { id, tenantId, planKey }. Locally testable by signing with BILLING_WEBHOOK_SECRET (HMAC-SHA256, header X-SAF-Billing-Signature).",
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/workspace": {
       "get": {
         "summary": "Read the current workspace settings and branding",

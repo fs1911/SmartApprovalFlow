@@ -153,6 +153,9 @@ ist `null` am Ende.
 | `POST` | `/api/v1/invitations/accept` | — | Einladung annehmen + Passwort setzen | 10 |
 | `GET` | `/api/v1/onboarding` | `workspace:read` | Onboarding-Checkliste + Aktivierung | 10 |
 | `POST` | `/api/v1/onboarding/sample-case` | `cases:create` | Beispiel-Fall anlegen | 10 |
+| `GET` | `/api/v1/billing` | `workspace:read` | Plan + Nutzung + verfügbare Pläne | 11 |
+| `POST` | `/api/v1/billing/change-plan` | `workspace:manage` | Plan wechseln (mock: sofort) | 11 |
+| `POST` | `/api/v1/billing/webhook` | — (signiert) | Billing-Provider-Event (idempotent) | 11 |
 | `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
 | `GET` | `/api/v1/reporting/summary` | `reporting:read` | Operative Kennzahlen | 4 |

@@ -57,6 +57,15 @@ const envSchema = z.object({
   ERROR_MONITORING: z.enum(['none', 'sentry', 'http']).default('none'),
   ERROR_MONITORING_DSN: z.string().optional(),
 
+  // --- Billing (Block 11) -------------------------------------------------
+  // `mock` (default) applies plan changes immediately with no external account.
+  // `stripe` is the real adapter, activated once its keys are present; without
+  // them the resolver falls back to `mock`. TODO PROVIDER SETUP.
+  BILLING_PROVIDER: z.enum(['mock', 'stripe']).default('mock'),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  // Shared secret used to verify inbound billing webhooks (HMAC in dev/mock).
+  BILLING_WEBHOOK_SECRET: z.string().default('whsec_dev_billing'),
+
   // --- Retention / cleanup (Block 9) --------------------------------------
   // Per-tenant cleanup thresholds, triggered via POST /maintenance/cleanup.
   // Idempotency uses each record's own expiresAt; these bound the rest.

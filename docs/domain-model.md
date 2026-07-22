@@ -23,6 +23,7 @@ Kanonische Quelle im Code: `packages/db/prisma/schema.prisma` (Struktur) und
 | **WebhookEndpoint** | Registrierter Webhook-Empfänger (URL, Secret, Event-Allowlist, aktiv/inaktiv); Zustellung Block 5. |
 | **WebhookDelivery** | Einzelne (geplante) Webhook-Zustellung mit Payload/Status; realer HTTP-Call in Block 5. |
 | **VerificationToken** | Einmaliger, gehashter, ablaufender Token für Einladung (`INVITE`) und Passwort-Reset (`PASSWORD_RESET`) — Block 10. |
+| **Subscription** | Ein Abo pro Tenant (`planKey`/`status`, Perioden-Anker, nullable Provider-Referenzen) — Block 11. Limits in `packages/types/plans.ts`. |
 | **ApiKey** | M2M-Schlüssel mit Scopes für Integrationen; aktiv ab Block 5. |
 
 ### ApprovalCase — Zeitstempel & Zähler (Block 3)

@@ -24,6 +24,7 @@ import { publishEvent } from '../../lib/events.js';
 import { isPending } from '../../lib/status.js';
 import { getStorageDriver, buildAttachmentKey } from '../../lib/storage.js';
 import { loadCaseForMessaging, issueLink, renderCaseTemplate, sendReminder } from '../../lib/case-messaging.js';
+import { assertWithinCaseLimit } from '../../lib/usage.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -281,6 +282,10 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       });
       if (!found) throw errors.notFound('Approval-Fall nicht gefunden');
 
+      // Plan enforcement: a first-time send (DRAFT → SENT) counts against the
+      // monthly case limit. Re-issuing a link for an already-sent case does not.
+      if (found.status === 'DRAFT') await assertWithinCaseLimit(auth.tenantId);
+
       const { token, tokenHash } = issueAccessToken();
       const expiresAt = defaultLinkExpiry();
 
@@ -338,6 +343,8 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       if (c.status === 'APPROVED' || c.status === 'DECLINED' || c.status === 'EXPIRED') {
         throw errors.caseNotActionable('Dieser Fall ist bereits abgeschlossen und kann nicht gesendet werden.');
       }
+      // First-time send counts against the monthly plan limit.
+      if (!c.sentAt) await assertWithinCaseLimit(auth.tenantId);
       const toAddress = c.customer?.email;
       if (!toAddress) {
         throw errors.validation('Für den E-Mail-Versand fehlt die Kundenadresse.', [

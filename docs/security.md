@@ -26,6 +26,10 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
   Audit-Trail bleibt unangetastet.
 - **Error-Monitoring (Block 9):** unerwartete 5xx werden über einen Seam
   gemeldet (Default No-Op, real via `ERROR_MONITORING`+DSN) — `docs/observability.md`.
+- **Billing-Webhooks (Block 11):** signaturgeprüft (HMAC-SHA256, Konstantzeit-
+  Vergleich) und idempotent verarbeitet; Plan-Limits werden server-seitig
+  durchgesetzt (`PLAN_LIMIT_REACHED`) — `docs/billing-and-plans.md`. Provider-
+  Secrets (Stripe) sind `TODO PROVIDER SETUP` und werden nie committet.
 
 ## Bedrohungen & Massnahmen (Auszug)
 

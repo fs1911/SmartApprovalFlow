@@ -92,6 +92,7 @@ enum AuditEventType {
   MEMBER_INVITE_REVOKED
   PASSWORD_RESET_REQUESTED
   PASSWORD_RESET_COMPLETED
+  PLAN_CHANGED
   MESSAGE_QUEUED
   MESSAGE_SENT
   MESSAGE_FAILED
@@ -109,6 +110,19 @@ enum ActorType {
 enum VerificationTokenType {
   INVITE
   PASSWORD_RESET
+}
+
+/// Subscription plan tier (Block 11). Limits live in packages/types/plans.ts.
+enum PlanKey {
+  FREE
+  STARTER
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
 }
 
 // --- Tenancy & identity ------------------------------------------------------
@@ -144,8 +158,31 @@ model Tenant {
   messageTemplates MessageTemplate[]
   webhookEndpoints WebhookEndpoint[]
   verificationTokens VerificationToken[]
+  subscription   Subscription?
 
   @@map("tenants")
+}
+
+/// One subscription per tenant (Block 11). The plan's concrete limits live in
+/// packages/types/plans.ts (server + web share them). Provider references are
+/// nullable: the mock/dev provider needs none; Stripe fills them in later.
+model Subscription {
+  id                     String             @id @default(uuid())
+  tenantId               String             @unique
+  planKey                PlanKey            @default(PRO)
+  status                 SubscriptionStatus @default(ACTIVE)
+  /// Anchor of the current usage/billing period (monthly).
+  currentPeriodStart     DateTime           @default(now())
+  currentPeriodEnd       DateTime?
+  /// External provider ids (Stripe). Null in dev/mock. TODO PROVIDER SETUP.
+  providerCustomerId     String?
+  providerSubscriptionId String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 /// A User belongs to exactly one Tenant in the MVP (see adr-003 for rationale).

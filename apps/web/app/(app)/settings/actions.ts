@@ -33,6 +33,25 @@ export async function saveWorkspace(
   }
 }
 
+export interface ChangePlanResult {
+  ok: boolean;
+  error?: string;
+  checkoutUrl?: string;
+}
+
+export async function changePlan(planKey: string): Promise<ChangePlanResult> {
+  try {
+    const res = await api.request<{ applied: boolean; checkoutUrl?: string }>(
+      '/api/v1/billing/change-plan',
+      { method: 'POST', body: { planKey } },
+    );
+    revalidatePath('/settings');
+    return { ok: true, checkoutUrl: res.checkoutUrl };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiClientError ? e.message : 'Planwechsel fehlgeschlagen.' };
+  }
+}
+
 export async function saveTemplate(
   _prev: TemplateSaveState,
   formData: FormData,
