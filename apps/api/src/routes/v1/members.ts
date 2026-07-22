@@ -65,6 +65,9 @@ export async function memberRoutes(app: FastifyInstance) {
       const { id } = req.params as { id: string };
       const { role } = updateMemberSchema.parse(req.body);
 
+      // Role assignment is a human/owner action — require a user session.
+      if (!auth.role) throw errors.forbidden('Mitgliederverwaltung erfordert eine Nutzer-Sitzung.');
+
       const membership = await prisma.membership.findFirst({
         where: { id, tenantId: auth.tenantId },
       });

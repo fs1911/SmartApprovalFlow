@@ -11,7 +11,8 @@ Login**. Alles revisionssicher protokolliert.
 **Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow) ✅ ·
 Block 3 (Operational Hardening) ✅ · Block 4 (Multi-Tenant-B2B-Reife) ✅ ·
 Block 5 (Öffentlicher kommerzieller Layer) ✅ · Block 6 (Infrastruktur &
-Provider-Readiness) ✅ — siehe [`docs/roadmap.md`](docs/roadmap.md).
+Provider-Readiness) ✅ · Block 7 (Auth- & Integrations-Härtung) ✅ — siehe
+[`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
@@ -100,9 +101,12 @@ Dann im Browser:
   Ablehnen/Rückruf testen. Die gesendete E-Mail erscheint im API-Log.
 - **Vorlagen:** unter „Einstellungen" die Anfrage-/Reminder-Texte bearbeiten.
 
-> **Auth im aktuellen Stand:** Ein Dev-Stub setzt Tenant/Rolle über Header
-> (`x-saf-tenant`, `x-saf-role`). Echte Authentifizierung folgt in Block 5 —
-> es wird nur `apps/api/src/plugins/auth-context.ts` ausgetauscht.
+> **Auth (Block 7):** Echte Anmeldung unter `/login`. Dev-Login:
+> `owner@muster-garage.ch` / `password123` (alle Seed-User, via
+> `npm run seed`). Im **Development** funktioniert zusätzlich der Dev-Header-Stub
+> (`x-saf-tenant`/`x-saf-role`) inkl. Rollenumschalter; in Produktion ist er
+> deaktiviert und die Anmeldung ist erforderlich. Integrationen nutzen
+> **API-Keys** (`/api/v1/api-keys`) mit Scopes. Details: `docs/api-design.md`.
 
 ## Nützliche Skripte
 
@@ -134,15 +138,16 @@ npm run format                      # Prettier
 | Marketing / GTM | [`website-ia.md`](docs/website-ia.md) · [`messaging-architecture.md`](docs/messaging-architecture.md) · [`conversion-strategy.md`](docs/conversion-strategy.md) · [`go-to-market-launch-plan.md`](docs/go-to-market-launch-plan.md) |
 | Billing (Vorbereitung) | [`billing-strategy.md`](docs/billing-strategy.md) · [`pricing-rationale.md`](docs/pricing-rationale.md) · [`payment-provider-evaluation.md`](docs/payment-provider-evaluation.md) |
 | Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) |
+| Auth / Sicherheit | [`api-design.md`](docs/api-design.md) · [`security.md`](docs/security.md) · [`webhooks.md`](docs/webhooks.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) |
 
 ## Rollen ausprobieren
 
-Im laufenden Dev-Setup oben rechts die **Demo-Rolle** umschalten
-(Owner/Admin/Advisor/Technician/Viewer). Beobachten: „Neue Freigabe" und die
-Versand-Aktionen verschwinden für Viewer/Technician, „Auswertung"/„Team" nur mit
-den passenden Rechten. Die Berechtigungsmatrix steht in
-[`docs/api-design.md`](docs/api-design.md).
+Nach `/login` (Dev: `owner@muster-garage.ch` / `password123`) im **Development**
+oben rechts die **Demo-Rolle** umschalten (Owner/Admin/Advisor/Technician/
+Viewer). Beobachten: „Neue Freigabe" und die Versand-Aktionen verschwinden für
+Viewer/Technician, „Auswertung"/„Team" nur mit den passenden Rechten. Die
+Berechtigungsmatrix steht in [`docs/api-design.md`](docs/api-design.md).
 
 ## Provider aktivieren (optional)
 
@@ -153,7 +158,7 @@ zurück. Siehe [`docs/env-and-secrets.md`](docs/env-and-secrets.md).
 
 ## Nächster Block
 
-**Block 7 — Auth- & Integrations-Härtung:** echte Authentifizierung
-(JWT + API-Keys/Scopes), Rate-Limiting, persistente Idempotency und echte
-Webhook-Zustellung (HMAC/Retry) — aufbauend auf der Infrastruktur aus Block 6.
-Details in [`docs/block-6-summary.md`](docs/block-6-summary.md).
+**Block 8 — Portal-Ausbau & Delivery:** produktive Foto-Uploads (über die
+Storage-Abstraktion aus Block 6), mehrere Positionen mit optionaler
+Einzelfreigabe, automatische Reminder-Policy und realer E-Mail/SMS-Versand.
+Details in [`docs/block-7-summary.md`](docs/block-7-summary.md).

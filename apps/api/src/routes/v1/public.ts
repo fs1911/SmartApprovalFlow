@@ -19,6 +19,12 @@ import { hashToken } from '../../lib/access-link.js';
 import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
 import { publishEvent } from '../../lib/events.js';
 import { isTerminal } from '../../lib/status.js';
+import { config } from '../../config.js';
+
+/** Tighter rate limit for the loginless public endpoints. */
+const publicRateLimit = {
+  rateLimit: { max: config.RATE_LIMIT_PUBLIC_MAX, timeWindow: config.RATE_LIMIT_WINDOW },
+};
 
 /** Map a customer decision to the resulting case status. */
 const DECISION_TO_STATUS: Record<CustomerDecision, ApprovalCaseStatus> = {
@@ -134,6 +140,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.get(
     '/public/approvals/:token',
     {
+      config: publicRateLimit,
       schema: {
         tags: ['public'],
         summary: 'Read an approval request via its secure token (no login)',
@@ -188,6 +195,7 @@ export async function publicRoutes(app: FastifyInstance) {
   app.post(
     '/public/approvals/:token/respond',
     {
+      config: publicRateLimit,
       schema: {
         tags: ['public'],
         summary: 'Submit a customer decision (approve / decline / callback)',
@@ -210,7 +218,7 @@ export async function publicRoutes(app: FastifyInstance) {
       const idemKey = req.headers['idempotency-key'] as string | undefined;
       const fp = createHash('sha256').update(JSON.stringify({ id: c.id, body })).digest('hex');
       if (idemKey) {
-        const prior = getIdempotent(`resp:${c.id}:${idemKey}`);
+        const prior = await getIdempotent(link.tenantId, `resp:${c.id}:${idemKey}`);
         if (prior) {
           if (prior.fingerprint !== fp) throw errors.idempotencyReuse();
           return reply.status(prior.statusCode).send(prior.body);
@@ -298,7 +306,7 @@ export async function publicRoutes(app: FastifyInstance) {
         decision: result.decision,
         respondedAt: result.createdAt.toISOString(),
       });
-      if (idemKey) saveIdempotent(`resp:${c.id}:${idemKey}`, 200, responseBody, fp);
+      if (idemKey) await saveIdempotent(link.tenantId, `resp:${c.id}:${idemKey}`, 200, responseBody, fp);
       return reply.status(200).send(responseBody);
     },
   );

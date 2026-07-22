@@ -19,19 +19,29 @@ Pfad-basiert: **`/api/v1/...`**. Breaking Changes → neue Major-Version
 (`/api/v2`). Additive Änderungen bleiben in `v1`. Begründung:
 `decisions/adr-002-rest-api-strategy.md`.
 
-## Auth-Ansatz
+## Auth-Ansatz (Block 7: echt)
 
-Zwei Wege, ein Kontext `{ tenantId, userId?, role, scopes }`:
+Ein einheitlicher Kontext `{ tenantId, userId?, role?, permissions[] }`,
+aufgelöst in dieser Reihenfolge:
 
-- **Web-App-Nutzer** → kurzlebiges **JWT** (Bearer). *(Block 5)*
-- **Integrationen** → **API-Keys** `Authorization: Bearer saf_live_...` mit
-  Scopes. *(Block 5)*
-- **Kundenseite** → **loginlos**, autorisiert durch Token-Besitz; Endpoints
-  unter `/api/v1/public/**` verlangen keine Auth.
+1. **Session-JWT** — `Authorization: Bearer <jwt>` (HS256, kurzlebig). Login über
+   `POST /auth/login` (E-Mail+Passwort, scrypt-gehasht). Die Rolle wird pro
+   Request aus der Membership neu aufgelöst.
+2. **API-Key** — `Authorization: Bearer saf_live_...`; nur Hash+Prefix
+   gespeichert, Klartext einmalig bei Erstellung. Scopes ⊆ Permission-Matrix.
+3. **Dev-Header** — `x-saf-tenant` / `x-saf-role`, **nur** wenn
+   `NODE_ENV !== 'production'` (lokaler Komfort inkl. Rollenumschalter).
 
-> **Block-2-Stand:** Auth ist als Dev-Stub implementiert (Header `x-saf-tenant`,
-> `x-saf-role`), damit der Flow end-to-end läuft. Nur `plugins/auth-context.ts`
-> wird in Block 5 ausgetauscht; die Endpoints bleiben unverändert.
+**Kundenseite** bleibt loginlos (`/api/v1/public/**`, Token-Besitz).
+Durchsetzung über `requirePermission(...)` — identisch für Nutzer und API-Keys.
+Details: `decisions/adr-006-auth-and-api-keys.md`, `security.md`.
+
+## Rate-Limiting (Block 7)
+
+`@fastify/rate-limit`: globales Default pro IP (`RATE_LIMIT_MAX` /
+`RATE_LIMIT_WINDOW`), strenger für `/public/**` (`RATE_LIMIT_PUBLIC_MAX`) und
+`/auth/login` (`RATE_LIMIT_LOGIN_MAX`). Überschreitung → `429` mit Code
+`RATE_LIMITED` im Standard-Envelope.
 
 ## Rollen & Berechtigungen (tenant-scoped RBAC, Block 4)
 
@@ -96,8 +106,8 @@ Antwort wird gespeichert und bei Retry mit gleichem Payload **wiedergegeben**;
 gleicher Key mit anderem Payload → `409 IDEMPOTENCY_KEY_REUSED`. Wichtig für
 „Fall erstellen" und den **Kundenentscheid** (Doppel-Tap auf dem Handy).
 
-> Block-2-Stand: In-Memory-Store (`lib/idempotency.ts`). Block 5: persistent in
-> Postgres/Redis, keyed nach `(tenantId, key)`.
+> **Block-7-Stand:** persistent in Postgres (`IdempotencyRecord`, keyed nach
+> `(tenantId, key)`), neustart-/scale-fest.
 
 ## Pagination-Konzept
 
@@ -110,6 +120,9 @@ ist `null` am Ende.
 | Methode | Pfad | Auth | Zweck | Block |
 | --- | --- | --- | --- | --- |
 | `GET` | `/api/v1/health` | — | Liveness/Readiness | 1 |
+| `POST` | `/api/v1/auth/login` | — | Login → Session-JWT (rate-limited) | 7 |
+| `POST` | `/api/v1/auth/logout` | — | Logout (stateless) | 7 |
+| `GET` | `/api/v1/auth/session` | ja | Aktuelle Sitzung | 7 |
 | `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant | 2 |
 | `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) | 2 |
 | `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination) | 2 |
@@ -127,6 +140,10 @@ ist `null` am Ende.
 | `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
 | `GET` | `/api/v1/reporting/summary` | `reporting:read` | Operative Kennzahlen | 4 |
+| `GET` | `/api/v1/api-keys` | `members:manage` | API-Keys listen | 7 |
+| `POST` | `/api/v1/api-keys` | `members:manage` | API-Key erstellen (Klartext einmalig) | 7 |
+| `DELETE` | `/api/v1/api-keys/:id` | `members:manage` | API-Key widerrufen | 7 |
+| `POST` | `/api/v1/webhooks/deliver` | `members:manage` | Ausstehende Webhooks zustellen | 7 |
 | `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid (idempotent) | 2 |
 

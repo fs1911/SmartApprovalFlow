@@ -5,8 +5,21 @@
  * Run with: npm run seed --workspace packages/db
  */
 import { PrismaClient } from '@prisma/client';
+import { randomBytes, scryptSync } from 'node:crypto';
 
 const prisma = new PrismaClient();
+
+/**
+ * Password hash format `scrypt$<saltHex>$<hashHex>` — mirrors
+ * apps/api/src/lib/password.ts so seeded dev users can log in.
+ * All seeded users share the dev password below.
+ */
+const DEV_PASSWORD = 'password123';
+function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
+}
 
 async function main() {
   const tenant = await prisma.tenant.upsert({
@@ -32,11 +45,12 @@ async function main() {
 
   const owner = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'owner@muster-garage.ch' } },
-    update: {},
+    update: { passwordHash: hashPassword(DEV_PASSWORD) },
     create: {
       tenantId: tenant.id,
       email: 'owner@muster-garage.ch',
       name: 'Sandra Muster',
+      passwordHash: hashPassword(DEV_PASSWORD),
     },
   });
 
@@ -48,11 +62,12 @@ async function main() {
 
   const advisor = await prisma.user.upsert({
     where: { tenantId_email: { tenantId: tenant.id, email: 'berater@muster-garage.ch' } },
-    update: {},
+    update: { passwordHash: hashPassword(DEV_PASSWORD) },
     create: {
       tenantId: tenant.id,
       email: 'berater@muster-garage.ch',
       name: 'Marco Kunz',
+      passwordHash: hashPassword(DEV_PASSWORD),
     },
   });
 
@@ -69,8 +84,8 @@ async function main() {
   ] as const) {
     const u = await prisma.user.upsert({
       where: { tenantId_email: { tenantId: tenant.id, email } },
-      update: {},
-      create: { tenantId: tenant.id, email, name },
+      update: { passwordHash: hashPassword(DEV_PASSWORD) },
+      create: { tenantId: tenant.id, email, name, passwordHash: hashPassword(DEV_PASSWORD) },
     });
     await prisma.membership.upsert({
       where: { tenantId_userId: { tenantId: tenant.id, userId: u.id } },
@@ -236,6 +251,7 @@ async function main() {
   }
 
   console.log('✅ Seed complete for tenant:', tenant.slug);
+  console.log(`   Dev-Login: owner@muster-garage.ch / ${DEV_PASSWORD} (alle Seed-User)`);
 }
 
 main()

@@ -120,7 +120,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       const idemKey = req.headers['idempotency-key'] as string | undefined;
       const fp = fingerprint({ tenantId: auth.tenantId, input });
       if (idemKey) {
-        const prior = getIdempotent(`${auth.tenantId}:${idemKey}`);
+        const prior = await getIdempotent(auth.tenantId, idemKey);
         if (prior) {
           if (prior.fingerprint !== fp) throw errors.idempotencyReuse();
           return reply.status(prior.statusCode).send(prior.body);
@@ -209,7 +209,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       });
 
       const body = ok(created);
-      if (idemKey) saveIdempotent(`${auth.tenantId}:${idemKey}`, 201, body, fp);
+      if (idemKey) await saveIdempotent(auth.tenantId, idemKey, 201, body, fp);
       return reply.status(201).send(body);
     },
   );

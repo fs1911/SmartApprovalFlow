@@ -11,7 +11,21 @@ const envSchema = z.object({
   API_BASE_URL: z.string().url().default('http://localhost:4000'),
   WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
   AUTH_JWT_SECRET: z.string().min(1).default('dev-insecure-secret-change-me'),
+  // Access-token lifetime (jose duration string, e.g. "2h", "30m").
+  AUTH_SESSION_TTL: z.string().default('12h'),
   DATABASE_URL: z.string().optional(),
+
+  // --- Rate limiting -------------------------------------------------------
+  // Global default per IP per minute; stricter overrides apply to /public and
+  // /auth/login at the route level.
+  RATE_LIMIT_MAX: z.coerce.number().int().default(300),
+  RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+  RATE_LIMIT_PUBLIC_MAX: z.coerce.number().int().default(30),
+  RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().default(10),
+
+  // --- Webhooks ------------------------------------------------------------
+  // Max delivery attempts before a webhook delivery is marked FAILED.
+  WEBHOOK_MAX_ATTEMPTS: z.coerce.number().int().default(5),
 
   // --- Notifications -------------------------------------------------------
   // `console` (default) logs messages and needs no credentials. `resend` sends

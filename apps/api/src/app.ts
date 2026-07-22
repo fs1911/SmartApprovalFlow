@@ -5,6 +5,7 @@
  */
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { randomUUID } from 'node:crypto';
@@ -55,6 +56,18 @@ export async function buildApp(): Promise<FastifyInstance> {
     credentials: true,
   });
 
+  // Rate limiting: a global per-IP default; routes tighten it via their own
+  // `config.rateLimit` (public customer endpoints + login). Returns the standard
+  // error envelope with code RATE_LIMITED on 429.
+  // The plugin raises a 429 error which our global error handler formats into
+  // the standard envelope (code RATE_LIMITED). Routes tighten `max` via their
+  // own config.rateLimit (public customer endpoints + login).
+  await app.register(rateLimit, {
+    global: true,
+    max: config.RATE_LIMIT_MAX,
+    timeWindow: config.RATE_LIMIT_WINDOW,
+  });
+
   // --- OpenAPI (source of truth generated from the running app) ------------
   await app.register(swagger, {
     openapi: {
@@ -67,7 +80,10 @@ export async function buildApp(): Promise<FastifyInstance> {
       servers: [{ url: config.API_BASE_URL, description: 'Local development' }],
       tags: [
         { name: 'system', description: 'Health & meta' },
+        { name: 'auth', description: 'Login, logout, session' },
         { name: 'identity', description: 'Current user & tenants' },
+        { name: 'api-keys', description: 'Integration API keys & scopes' },
+        { name: 'webhooks', description: 'Outbound webhook delivery' },
         { name: 'approval-cases', description: 'Approval workflow (the wedge)' },
         { name: 'templates', description: 'Outbound message templates' },
         { name: 'members', description: 'Workspace members & roles (RBAC)' },

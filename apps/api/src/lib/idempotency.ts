@@ -1,41 +1,50 @@
 /**
  * Idempotency for unsafe writes (see docs/api-design.md).
  *
- * Clients send `Idempotency-Key: <uuid>` on POSTs that must not double-apply
- * (e.g. creating an approval case, or a customer submitting a decision twice
- * from a flaky mobile connection). We remember the first response for a key and
- * replay it on retry.
- *
- * Block 1 uses an in-memory TTL map — correct for a single instance and enough
- * to exercise the contract. Block 5 swaps this for a Postgres/Redis-backed
- * store keyed by (tenantId, key) so it survives restarts and scales out.
+ * Block 7: persistent, Postgres-backed and keyed by (tenantId, key), so a retry
+ * replays the original response even across restarts / multiple instances. A key
+ * reused with a *different* payload is a conflict (caller must fix the key).
  */
-interface StoredResponse {
-  statusCode: number;
-  body: unknown;
-  /** Hash of the request payload, to detect key reuse with a different body. */
-  fingerprint: string;
-  expiresAt: number;
-}
+import { prisma, Prisma } from '@saf/db';
 
-const store = new Map<string, StoredResponse>();
 const TTL_MS = 24 * 60 * 60 * 1000;
 
-export function getIdempotent(key: string): StoredResponse | null {
-  const hit = store.get(key);
-  if (!hit) return null;
-  if (hit.expiresAt < Date.now()) {
-    store.delete(key);
-    return null;
-  }
-  return hit;
+export interface StoredResponse {
+  statusCode: number;
+  body: unknown;
+  fingerprint: string;
 }
 
-export function saveIdempotent(
+export async function getIdempotent(tenantId: string, key: string): Promise<StoredResponse | null> {
+  const row = await prisma.idempotencyRecord.findUnique({
+    where: { tenantId_key: { tenantId, key } },
+  });
+  if (!row) return null;
+  if (row.expiresAt.getTime() < Date.now()) {
+    await prisma.idempotencyRecord.delete({ where: { id: row.id } }).catch(() => {});
+    return null;
+  }
+  return { statusCode: row.statusCode, body: row.body, fingerprint: row.fingerprint };
+}
+
+export async function saveIdempotent(
+  tenantId: string,
   key: string,
   statusCode: number,
   body: unknown,
   fingerprint: string,
-): void {
-  store.set(key, { statusCode, body, fingerprint, expiresAt: Date.now() + TTL_MS });
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + TTL_MS);
+  await prisma.idempotencyRecord.upsert({
+    where: { tenantId_key: { tenantId, key } },
+    update: {}, // first write wins; concurrent retries keep the original
+    create: {
+      tenantId,
+      key,
+      fingerprint,
+      statusCode,
+      body: body as Prisma.InputJsonValue,
+      expiresAt,
+    },
+  });
 }

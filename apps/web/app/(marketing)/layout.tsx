@@ -18,7 +18,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             ))}
           </nav>
           <div className="mk-header__actions">
-            <Link href="/dashboard" className="mk-nav__link mk-nav__link--muted">
+            <Link href="/login" className="mk-nav__link mk-nav__link--muted">
               Anmelden
             </Link>
             <Link href="/demo" className="btn btn--primary" style={{ width: 'auto' }}>

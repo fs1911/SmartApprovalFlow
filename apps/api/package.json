@@ -15,12 +15,14 @@
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
+    "@fastify/rate-limit": "^9.1.0",
     "@fastify/swagger": "^8.15.0",
     "@fastify/swagger-ui": "^4.1.0",
     "@saf/db": "*",
     "@saf/types": "*",
     "fastify": "^4.28.1",
     "fastify-plugin": "^4.5.1",
+    "jose": "^6.2.4",
     "pino-pretty": "^11.2.2",
     "zod": "^3.23.8"
   },

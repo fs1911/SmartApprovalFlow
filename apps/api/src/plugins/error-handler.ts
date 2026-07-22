@@ -38,12 +38,18 @@ export const errorHandlerPlugin = fp(async (app: FastifyInstance) => {
     // VALIDATION_ERROR envelope instead of a misleading 500.
     const status = (err as { statusCode?: number }).statusCode;
     if (typeof status === 'number' && status >= 400 && status < 500) {
+      const code =
+        status === 401
+          ? 'UNAUTHENTICATED'
+          : status === 403
+            ? 'FORBIDDEN'
+            : status === 404
+              ? 'NOT_FOUND'
+              : status === 429
+                ? 'RATE_LIMITED'
+                : 'VALIDATION_ERROR';
       const body: ApiErrorResponse = {
-        error: {
-          code: status === 401 ? 'UNAUTHENTICATED' : status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR',
-          message: err.message,
-          requestId,
-        },
+        error: { code, message: err.message, requestId },
       };
       return reply.status(status).send(body);
     }

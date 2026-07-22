@@ -434,25 +434,47 @@ model WebhookEndpoint {
   @@map("webhook_endpoints")
 }
 
-/// A single (attempted) webhook delivery. In Block 3 the dispatcher records the
-/// intent in dev mode; real HTTP delivery + retries land in Block 5.
+/// A single (attempted) webhook delivery. Block 7 adds real HTTP delivery with
+/// HMAC signing and retry/backoff scheduled via `nextAttemptAt`.
 model WebhookDelivery {
-  id           String        @id @default(uuid())
-  tenantId     String
-  endpointId   String
-  eventType    String
-  payload      Json
-  status       MessageStatus @default(QUEUED)
-  attempts     Int           @default(0)
-  lastError    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  tenantId      String
+  endpointId    String
+  eventType     String
+  payload       Json
+  status        MessageStatus @default(QUEUED)
+  attempts      Int           @default(0)
+  lastError     String?
+  /// When the delivery worker should next try this row (backoff schedule).
+  nextAttemptAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, status])
+  @@index([status, nextAttemptAt])
   @@index([endpointId])
   @@map("webhook_deliveries")
+}
+
+/// Persistent idempotency store (Block 7): replaces the in-memory map so retries
+/// stay safe across restarts / multiple instances. Keyed per tenant.
+model IdempotencyRecord {
+  id          String   @id @default(uuid())
+  tenantId    String
+  key         String
+  /// SHA-256 of the request payload; a reused key with a different body → 409.
+  fingerprint String
+  statusCode  Int
+  /// The stored success response, replayed verbatim on retry.
+  body        Json
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, key])
+  @@index([expiresAt])
+  @@map("idempotency_records")
 }
 
 /// API keys for machine-to-machine integration with existing garage software.

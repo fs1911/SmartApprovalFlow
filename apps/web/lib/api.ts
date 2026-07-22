@@ -1,9 +1,10 @@
 /**
  * Thin API client for the web app.
  *
- * Block 2 note: authentication is still the dev header stub from the API
- * (x-saf-tenant / x-saf-role). When real auth lands (Block 5) only this file
- * changes — screens keep calling the same functions.
+ * Auth (Block 7): a real session JWT is stored in the `saf_session` httpOnly
+ * cookie and sent as `Authorization: Bearer <jwt>`. In development only, if
+ * there is no session, we fall back to the dev header stub (x-saf-tenant /
+ * x-saf-role) so the local demo + role switcher keep working.
  */
 import { cookies } from 'next/headers';
 import type { ApiResponse, ApiSuccessResponse } from '@saf/types';
@@ -12,20 +13,28 @@ import { webEnv } from './env';
 const BASE = webEnv.apiBaseUrl;
 const DEV_TENANT = webEnv.devTenant;
 const DEFAULT_ROLE = webEnv.devRole;
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
-/** Cookie name used by the dev role switcher to impersonate a role. */
+/** httpOnly cookie holding the session JWT. */
+export const SESSION_COOKIE = 'saf_session';
+/** Cookie used by the dev role switcher (development only). */
 export const ROLE_COOKIE = 'saf_role';
 
-/**
- * Dev auth: the active role comes from a cookie the role switcher sets, so RBAC
- * is demonstrable in the running app. Replaced by real sessions in Block 5.
- */
-function currentRole(): string {
+function authHeaders(): Record<string, string> {
   try {
-    return cookies().get(ROLE_COOKIE)?.value ?? DEFAULT_ROLE;
+    const jar = cookies();
+    const session = jar.get(SESSION_COOKIE)?.value;
+    if (session) return { authorization: `Bearer ${session}` };
+    if (IS_DEV) {
+      return {
+        'x-saf-tenant': DEV_TENANT,
+        'x-saf-role': jar.get(ROLE_COOKIE)?.value ?? DEFAULT_ROLE,
+      };
+    }
   } catch {
-    return DEFAULT_ROLE;
+    /* outside request scope */
   }
+  return {};
 }
 
 export class ApiClientError extends Error {
@@ -51,10 +60,7 @@ interface RequestOptions {
 
 async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (!opts.publicRoute) {
-    headers['x-saf-tenant'] = DEV_TENANT;
-    headers['x-saf-role'] = currentRole();
-  }
+  if (!opts.publicRoute) Object.assign(headers, authHeaders());
   if (opts.idempotencyKey) headers['idempotency-key'] = opts.idempotencyKey;
 
   const res = await fetch(`${BASE}${path}`, {
