@@ -28,7 +28,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U saf"
+          --health-cmd "pg_isready -U saf -d smart_approval_flow"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -47,7 +47,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 22: the built-in test runner needs >= 21 for glob patterns
+          # (src/**/*.test.ts). Node 20 fails with "Could not find ... *.test.ts".
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
