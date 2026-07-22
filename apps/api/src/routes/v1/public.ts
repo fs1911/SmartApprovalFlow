@@ -10,7 +10,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { customerRespondSchema } from '@saf/types';
+import { customerRespondSchema, customerRespondItemsSchema } from '@saf/types';
 import type { ApprovalCaseStatus, CustomerDecision } from '@saf/types';
 import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
@@ -18,7 +18,8 @@ import { errors } from '../../lib/errors.js';
 import { hashToken } from '../../lib/access-link.js';
 import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
 import { publishEvent } from '../../lib/events.js';
-import { isTerminal } from '../../lib/status.js';
+import { isTerminal, aggregateItemDecisions } from '../../lib/status.js';
+import { getStorageDriver } from '../../lib/storage.js';
 import { config } from '../../config.js';
 
 /** Tighter rate limit for the loginless public endpoints. */
@@ -47,7 +48,15 @@ async function resolveByToken(rawToken: string) {
     include: {
       approvalCase: {
         include: {
-          items: { orderBy: { sortOrder: 'asc' } },
+          items: {
+            orderBy: { sortOrder: 'asc' },
+            include: {
+              attachments: {
+                where: { uploadedAt: { not: null } },
+                orderBy: { createdAt: 'asc' },
+              },
+            },
+          },
           customer: { select: { name: true } },
           vehicle: { select: { plate: true, make: true, model: true, year: true } },
           tenant: {
@@ -99,8 +108,32 @@ async function resolveByToken(rawToken: string) {
 }
 
 /** Shape returned to the customer — deliberately minimal and non-technical. */
-function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
+async function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
   const c = link.approvalCase;
+  const driver = getStorageDriver();
+
+  // Resolve signed photo URLs per position. Only uploaded attachments are
+  // included (the include already filters on uploadedAt).
+  const items = await Promise.all(
+    c.items.map(async (it) => ({
+      id: it.id,
+      title: it.title,
+      description: it.description,
+      category: it.category,
+      priceMinMinor: it.priceMinMinor,
+      priceMaxMinor: it.priceMaxMinor,
+      currency: it.currency,
+      decision: it.decision,
+      photos: await Promise.all(
+        it.attachments.map(async (a) => ({
+          fileName: a.fileName,
+          contentType: a.contentType,
+          url: await driver.getSignedDownloadUrl(a.storageKey),
+        })),
+      ),
+    })),
+  );
+
   return {
     reference: c.reference,
     subject: c.subject,
@@ -120,14 +153,7 @@ function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
         c.vehicle.plate
       : null,
     vehiclePlate: c.vehicle?.plate ?? null,
-    items: c.items.map((it) => ({
-      title: it.title,
-      description: it.description,
-      category: it.category,
-      priceMinMinor: it.priceMinMinor,
-      priceMaxMinor: it.priceMaxMinor,
-      currency: it.currency,
-    })),
+    items,
     priceMinMinor: c.items.reduce((s, it) => s + (it.priceMinMinor ?? 0), 0) || null,
     priceMaxMinor: c.items.reduce((s, it) => s + (it.priceMaxMinor ?? 0), 0) || null,
     expiresAt: link.expiresAt?.toISOString() ?? null,
@@ -187,7 +213,7 @@ export async function publicRoutes(app: FastifyInstance) {
         if (link.approvalCase.status === 'SENT') link.approvalCase.status = 'VIEWED';
       }
 
-      return ok(toPublicView(link));
+      return ok(await toPublicView(link));
     },
   );
 
@@ -307,6 +333,140 @@ export async function publicRoutes(app: FastifyInstance) {
         respondedAt: result.createdAt.toISOString(),
       });
       if (idemKey) await saveIdempotent(link.tenantId, `resp:${c.id}:${idemKey}`, 200, responseBody, fp);
+      return reply.status(200).send(responseBody);
+    },
+  );
+
+  // --- Submit per-item decisions (optional individual approval) ------------
+  app.post(
+    '/public/approvals/:token/respond-items',
+    {
+      config: publicRateLimit,
+      schema: {
+        tags: ['public'],
+        summary: 'Submit per-position customer decisions (individual approval)',
+        description:
+          'Loginless. The customer decides each position; the case status is aggregated server-side (APPROVED / PARTIALLY_APPROVED / DECLINED / CALLBACK). Idempotent via the optional Idempotency-Key header.',
+        params: { type: 'object', properties: { token: { type: 'string' } }, required: ['token'] },
+      },
+    },
+    async (req, reply) => {
+      const { token } = req.params as { token: string };
+      const body = customerRespondItemsSchema.parse(req.body);
+      const link = await resolveByToken(token);
+      const c = link.approvalCase;
+
+      if (c.status === 'APPROVED' || c.status === 'DECLINED' || c.status === 'PARTIALLY_APPROVED') {
+        throw errors.caseNotActionable('Für diese Anfrage wurde bereits entschieden.');
+      }
+
+      // Every referenced item must belong to this case.
+      const validIds = new Set(c.items.map((it) => it.id));
+      for (const d of body.items) {
+        if (!validIds.has(d.itemId)) {
+          throw errors.validation('Unbekannte Position in der Antwort.', [
+            { path: 'items', message: `Position ${d.itemId} gehört nicht zu diesem Fall` },
+          ]);
+        }
+      }
+
+      const idemKey = req.headers['idempotency-key'] as string | undefined;
+      const fp = createHash('sha256').update(JSON.stringify({ id: c.id, body })).digest('hex');
+      if (idemKey) {
+        const prior = await getIdempotent(link.tenantId, `respitems:${c.id}:${idemKey}`);
+        if (prior) {
+          if (prior.fingerprint !== fp) throw errors.idempotencyReuse();
+          return reply.status(prior.statusCode).send(prior.body);
+        }
+      }
+
+      const newStatus = aggregateItemDecisions(body.items.map((d) => d.decision));
+      const isFinal = newStatus === 'APPROVED' || newStatus === 'DECLINED' || newStatus === 'PARTIALLY_APPROVED';
+      const now = new Date();
+
+      await prisma.$transaction(async (tx) => {
+        for (const d of body.items) {
+          await tx.approvalDecision.create({
+            data: {
+              tenantId: link.tenantId,
+              approvalCaseId: c.id,
+              approvalItemId: d.itemId,
+              decision: d.decision,
+              note: body.note,
+              callbackPhone: body.callbackPhone,
+              ipAddress: (req.headers['x-forwarded-for'] as string) ?? req.ip,
+              userAgent: req.headers['user-agent'] as string | undefined,
+            },
+          });
+          await tx.approvalItem.update({
+            where: { id: d.itemId },
+            data: { decision: d.decision, decidedAt: now },
+          });
+          await tx.auditEvent.create({
+            data: {
+              tenantId: link.tenantId,
+              approvalCaseId: c.id,
+              type: 'CASE_ITEM_DECIDED',
+              actorType: 'CUSTOMER',
+              actorLabel: c.customer?.name ?? 'Kunde',
+              metadata: { itemId: d.itemId, decision: d.decision },
+            },
+          });
+        }
+
+        await tx.approvalCase.update({
+          where: { id: c.id },
+          data: { status: newStatus, ...(isFinal ? { respondedAt: now } : {}) },
+        });
+
+        await tx.auditEvent.create({
+          data: {
+            tenantId: link.tenantId,
+            approvalCaseId: c.id,
+            type:
+              newStatus === 'APPROVED'
+                ? 'CASE_APPROVED'
+                : newStatus === 'PARTIALLY_APPROVED'
+                  ? 'CASE_PARTIALLY_APPROVED'
+                  : newStatus === 'DECLINED'
+                    ? 'CASE_DECLINED'
+                    : 'CASE_CALLBACK_REQUESTED',
+            actorType: 'SYSTEM',
+            actorLabel: 'system',
+            metadata: { action: 'status_changed', from: c.status, to: newStatus, mode: 'per-item' },
+          },
+        });
+      });
+
+      const specificEvent =
+        newStatus === 'APPROVED'
+          ? 'approval_case.approved'
+          : newStatus === 'PARTIALLY_APPROVED'
+            ? 'approval_case.partially_approved'
+            : newStatus === 'DECLINED'
+              ? 'approval_case.declined'
+              : 'approval_case.callback_requested';
+      await publishEvent({
+        type: 'approval_case.responded',
+        tenantId: link.tenantId,
+        approvalCaseId: c.id,
+        data: { reference: c.reference, status: newStatus, mode: 'per-item' },
+      });
+      await publishEvent({
+        type: specificEvent,
+        tenantId: link.tenantId,
+        approvalCaseId: c.id,
+        data: { reference: c.reference },
+      });
+
+      const responseBody = ok({
+        status: newStatus,
+        respondedAt: isFinal ? now.toISOString() : null,
+        items: body.items,
+      });
+      if (idemKey) {
+        await saveIdempotent(link.tenantId, `respitems:${c.id}:${idemKey}`, 200, responseBody, fp);
+      }
       return reply.status(200).send(responseBody);
     },
   );

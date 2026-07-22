@@ -6,6 +6,13 @@ import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
+import { AttachmentsPanel, type AttachmentView } from './_attachments-panel';
+
+const DECISION_LABELS: Record<string, string> = {
+  APPROVE: '✓ Freigegeben',
+  DECLINE: '✕ Abgelehnt',
+  CALLBACK: '📞 Rückruf',
+};
 
 interface CaseDetail {
   id: string;
@@ -35,6 +42,7 @@ interface CaseDetail {
     priceMinMinor?: number | null;
     priceMaxMinor?: number | null;
     currency: string;
+    decision?: string | null;
   }[];
   decisions: { id: string; decision: string; note?: string | null; createdAt: string }[];
   auditEvents: {
@@ -65,12 +73,23 @@ export default async function ApprovalDetailPage({
 }) {
   const me = await getMe();
   const canSend = can(me, 'cases:send');
+  const canAnnotate = can(me, 'cases:annotate');
   let c: CaseDetail;
   try {
     c = await api.request<CaseDetail>(`/api/v1/approval-cases/${params.id}`);
   } catch (e) {
     if (e instanceof ApiClientError && e.status === 404) notFound();
     throw e;
+  }
+
+  // Attachments carry signed download URLs from the dedicated endpoint.
+  let attachments: AttachmentView[] = [];
+  try {
+    attachments = await api.request<AttachmentView[]>(
+      `/api/v1/approval-cases/${params.id}/attachments`,
+    );
+  } catch {
+    /* non-fatal: show the case without photos */
   }
 
   const totalMin = c.items.reduce((s, it) => s + (it.priceMinMinor ?? 0), 0);
@@ -105,26 +124,56 @@ export default async function ApprovalDetailPage({
               <h2>Empfohlene Arbeiten</h2>
               {c.description && <p className="subtle">{c.description}</p>}
               <div className="stack" style={{ marginTop: 8 }}>
-                {c.items.map((it) => (
-                  <div
-                    key={it.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: 16,
-                      paddingBottom: 8,
-                      borderBottom: '1px solid var(--color-border)',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{it.title}</div>
-                      {it.description && <div className="subtle">{it.description}</div>}
+                {c.items.map((it) => {
+                  const photos = attachments.filter(
+                    (a) => a.approvalItemId === it.id && a.uploadedAt && a.url,
+                  );
+                  return (
+                    <div
+                      key={it.id}
+                      style={{
+                        paddingBottom: 8,
+                        borderBottom: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>
+                            {it.title}
+                            {it.decision && (
+                              <span className="subtle" style={{ marginLeft: 8, fontWeight: 500 }}>
+                                {DECISION_LABELS[it.decision] ?? it.decision}
+                              </span>
+                            )}
+                          </div>
+                          {it.description && <div className="subtle">{it.description}</div>}
+                        </div>
+                        <div style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {formatPriceBand(it.priceMinMinor, it.priceMaxMinor, it.currency)}
+                        </div>
+                      </div>
+                      {photos.length > 0 && (
+                        <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                          {photos.map((a) => (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              key={a.id}
+                              src={a.url!}
+                              alt={a.fileName}
+                              style={{
+                                width: 64,
+                                height: 64,
+                                objectFit: 'cover',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid var(--color-border)',
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      {formatPriceBand(it.priceMinMinor, it.priceMaxMinor, it.currency)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {(totalMin > 0 || totalMax > 0) && (
                 <div
@@ -182,6 +231,18 @@ export default async function ApprovalDetailPage({
               </div>
             </div>
           )}
+
+          <div className="card">
+            <div className="card__body">
+              <h2>Fotos</h2>
+              <AttachmentsPanel
+                caseId={c.id}
+                attachments={attachments}
+                items={c.items.map((it) => ({ id: it.id, title: it.title }))}
+                canManage={canAnnotate}
+              />
+            </div>
+          </div>
 
           <div className="card">
             <div className="card__body">

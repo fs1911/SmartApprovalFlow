@@ -51,6 +51,15 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
   );
 
+  // Raw binary bodies for the local attachment upload endpoint (Block 8). The
+  // client PUTs image bytes; we buffer them so the storage driver can persist
+  // them. Cloud drivers upload straight to the provider and never hit this path.
+  app.addContentTypeParser(
+    ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'application/octet-stream'],
+    { parseAs: 'buffer' },
+    (_req, body, done) => done(null, body),
+  );
+
   await app.register(cors, {
     origin: [config.WEB_BASE_URL],
     credentials: true,

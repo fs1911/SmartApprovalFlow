@@ -33,3 +33,28 @@ export async function respond(
     };
   }
 }
+
+/** Submit per-position decisions; the case status is aggregated server-side. */
+export async function respondItems(
+  token: string,
+  items: { itemId: string; decision: 'APPROVE' | 'DECLINE' | 'CALLBACK' }[],
+  note?: string,
+): Promise<RespondResult> {
+  try {
+    const res = await api.request<{ status: string }>(
+      `/api/v1/public/approvals/${token}/respond-items`,
+      {
+        method: 'POST',
+        publicRoute: true,
+        idempotencyKey: randomUUID(),
+        body: { items, note: note || undefined },
+      },
+    );
+    return { ok: true, status: res.status };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Ihre Antwort konnte nicht gespeichert werden.',
+    };
+  }
+}

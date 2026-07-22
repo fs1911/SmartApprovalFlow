@@ -1,19 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import { respond, type RespondResult } from './actions';
+import { respond, respondItems, type RespondResult } from './actions';
 
-type Mode = 'idle' | 'decline' | 'callback';
+type Mode = 'idle' | 'decline' | 'callback' | 'items';
+type ItemChoice = 'APPROVE' | 'DECLINE';
+
+interface ItemOption {
+  id: string;
+  title: string;
+  priceLabel: string;
+}
 
 /** Customer-facing decision controls with a clear post-submission state. */
 export function ActionsPanel({
   token,
   initialStatus,
+  items = [],
 }: {
   token: string;
   initialStatus: string;
+  items?: ItemOption[];
 }) {
-  const decided = ['APPROVED', 'DECLINED', 'CALLBACK'].includes(initialStatus);
+  const decided = ['APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'CALLBACK'].includes(initialStatus);
   const [result, setResult] = useState<RespondResult | null>(
     decided ? { ok: true, status: initialStatus } : null,
   );
@@ -21,6 +30,10 @@ export function ActionsPanel({
   const [note, setNote] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState<null | string>(null);
+  // Per-item choices, default every position to APPROVE.
+  const [choices, setChoices] = useState<Record<string, ItemChoice>>(
+    Object.fromEntries(items.map((it) => [it.id, 'APPROVE' as ItemChoice])),
+  );
 
   async function submit(decision: 'APPROVE' | 'DECLINE' | 'CALLBACK') {
     setBusy(decision);
@@ -29,9 +42,22 @@ export function ActionsPanel({
     setResult(res);
   }
 
+  async function submitItems() {
+    setBusy('items');
+    const res = await respondItems(
+      token,
+      items.map((it) => ({ itemId: it.id, decision: choices[it.id] ?? 'APPROVE' })),
+      note,
+    );
+    setBusy(null);
+    setResult(res);
+  }
+
   if (result?.ok && result.status) {
     return <SuccessState status={result.status} />;
   }
+
+  const canDecideIndividually = items.length > 1;
 
   return (
     <div className="stack">
@@ -44,13 +70,70 @@ export function ActionsPanel({
             disabled={busy !== null}
             onClick={() => submit('APPROVE')}
           >
-            {busy === 'APPROVE' ? 'Wird gesendet…' : '✓ Arbeiten freigeben'}
+            {busy === 'APPROVE' ? 'Wird gesendet…' : '✓ Alle Arbeiten freigeben'}
           </button>
+          {canDecideIndividually && (
+            <button className="btn btn--secondary btn--lg" onClick={() => setMode('items')}>
+              Einzeln entscheiden
+            </button>
+          )}
           <button className="btn btn--secondary btn--lg" onClick={() => setMode('callback')}>
             📞 Rückruf wünschen
           </button>
           <button className="btn btn--ghost" onClick={() => setMode('decline')}>
-            Ablehnen
+            Alles ablehnen
+          </button>
+        </div>
+      )}
+
+      {mode === 'items' && (
+        <div className="stack">
+          <p className="subtle" style={{ margin: 0 }}>
+            Entscheiden Sie für jede Position einzeln:
+          </p>
+          {items.map((it) => (
+            <div
+              key={it.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 12,
+                borderBottom: '1px solid var(--color-border)',
+                paddingBottom: 8,
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600 }}>{it.title}</div>
+                <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
+                  {it.priceLabel}
+                </div>
+              </div>
+              <div className="row" style={{ gap: 6 }}>
+                <button
+                  className={`btn ${choices[it.id] === 'APPROVE' ? 'btn--success' : 'btn--ghost'}`}
+                  onClick={() => setChoices((c) => ({ ...c, [it.id]: 'APPROVE' }))}
+                >
+                  ✓
+                </button>
+                <button
+                  className={`btn ${choices[it.id] === 'DECLINE' ? 'btn--danger' : 'btn--ghost'}`}
+                  onClick={() => setChoices((c) => ({ ...c, [it.id]: 'DECLINE' }))}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            className="btn btn--primary btn--lg"
+            disabled={busy !== null}
+            onClick={() => void submitItems()}
+          >
+            {busy === 'items' ? 'Wird gesendet…' : 'Auswahl bestätigen'}
+          </button>
+          <button className="btn btn--ghost" onClick={() => setMode('idle')}>
+            Zurück
           </button>
         </div>
       )}
@@ -107,6 +190,12 @@ function SuccessState({ status }: { status: string }) {
       icon: '✓',
       title: 'Vielen Dank — freigegeben!',
       body: 'Wir haben Ihre Freigabe erhalten und starten mit den Arbeiten. Sie hören von uns.',
+      cls: 'alert--success',
+    },
+    PARTIALLY_APPROVED: {
+      icon: '✓',
+      title: 'Vielen Dank — Auswahl erhalten!',
+      body: 'Wir haben Ihre Auswahl erhalten und führen die freigegebenen Arbeiten aus. Sie hören von uns.',
       cls: 'alert--success',
     },
     DECLINED: {

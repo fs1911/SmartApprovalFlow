@@ -11,7 +11,34 @@
  */
 import { mkdir, writeFile, readFile, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { config } from '../config.js';
+
+/** Allowed image MIME types for attachments (mirrors the Zod schema). */
+export const ALLOWED_ATTACHMENT_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+] as const;
+
+export function isAllowedAttachmentType(contentType: string): boolean {
+  return (ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(contentType);
+}
+
+/**
+ * Build a tenant/case-scoped storage key. Filename is slugified so the key is
+ * URL-safe and free of traversal characters; a UUID keeps keys unique.
+ */
+export function buildAttachmentKey(tenantId: string, caseId: string, fileName: string): string {
+  const safeName = fileName
+    .toLowerCase()
+    .replace(/[^a-z0-9.]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'foto';
+  return `tenants/${tenantId}/cases/${caseId}/${randomUUID()}-${safeName}`;
+}
 
 export interface SignedUpload {
   /** Where the client PUTs the bytes. */
@@ -31,6 +58,8 @@ export interface StorageDriver {
   getSignedUploadUrl(key: string, contentType: string): Promise<SignedUpload>;
   /** Pre-signed (or dev) URL to read the object back. */
   getSignedDownloadUrl(key: string): Promise<string>;
+  /** Read the raw bytes back (local driver serves downloads via the API). */
+  read(key: string): Promise<Buffer>;
   delete(key: string): Promise<void>;
 }
 
@@ -53,10 +82,12 @@ class LocalStorageDriver implements StorageDriver {
   }
 
   async getSignedUploadUrl(key: string): Promise<SignedUpload> {
-    // In dev there is no external upload host. Block 8 (attachments UI) adds an
-    // API upload endpoint that the local driver serves; the shape is stable.
+    // In dev there is no external upload host. The local driver serves uploads
+    // through the API (routes/v1/uploads.ts). The key already contains only
+    // URL-safe segments (see buildAttachmentKey), so it maps straight into the
+    // wildcard path — traversal is still guarded in pathFor().
     return {
-      url: `${config.API_BASE_URL}/api/v1/uploads/local/${encodeURIComponent(key)}`,
+      url: `${config.API_BASE_URL}/api/v1/uploads/local/${key}`,
       method: 'PUT',
       key,
       expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
@@ -64,7 +95,7 @@ class LocalStorageDriver implements StorageDriver {
   }
 
   async getSignedDownloadUrl(key: string): Promise<string> {
-    return `${config.API_BASE_URL}/api/v1/uploads/local/${encodeURIComponent(key)}`;
+    return `${config.API_BASE_URL}/api/v1/uploads/local/${key}`;
   }
 
   /** Local-only helper used by a future upload endpoint. */
@@ -97,6 +128,9 @@ class UnconfiguredCloudDriver implements StorageDriver {
     this.fail();
   }
   async getSignedDownloadUrl(): Promise<string> {
+    this.fail();
+  }
+  async read(): Promise<Buffer> {
     this.fail();
   }
   async delete(): Promise<void> {
@@ -132,4 +166,9 @@ export function getStorageDriver(): StorageDriver {
   const name = resolveStorageDriverName();
   cached = name === 'local' ? new LocalStorageDriver() : new UnconfiguredCloudDriver(name);
   return cached;
+}
+
+/** True when the effective driver serves uploads/downloads through the API. */
+export function isLocalDriver(): boolean {
+  return getStorageDriver().name === 'local';
 }

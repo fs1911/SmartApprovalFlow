@@ -11,7 +11,7 @@
  */
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { createApprovalCaseSchema, listQuerySchema } from '@saf/types';
+import { createApprovalCaseSchema, createAttachmentSchema, listQuerySchema } from '@saf/types';
 import { prisma } from '@saf/db';
 import { config } from '../../config.js';
 import { ok, paginated } from '../../lib/envelope.js';
@@ -20,10 +20,10 @@ import { encodeCursor, decodeCursor } from '../../lib/pagination.js';
 import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
 import { issueAccessToken, defaultLinkExpiry } from '../../lib/access-link.js';
 import { dispatchMessage } from '../../lib/notifications.js';
-import { renderTemplate } from '../../lib/templates.js';
-import { buildCaseContext } from '../../lib/case-context.js';
 import { publishEvent } from '../../lib/events.js';
 import { isPending } from '../../lib/status.js';
+import { getStorageDriver, buildAttachmentKey } from '../../lib/storage.js';
+import { loadCaseForMessaging, issueLink, renderCaseTemplate, sendReminder } from '../../lib/case-messaging.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -412,52 +412,17 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
           'Eine Erinnerung ist nur möglich, solange der Fall auf eine Kundenreaktion wartet.',
         );
       }
-      const toAddress = c.customer?.email;
-      if (!toAddress) {
-        throw errors.validation('Für den E-Mail-Versand fehlt die Kundenadresse.', [
-          { path: 'customer.email', message: 'E-Mail-Adresse erforderlich' },
-        ]);
-      }
 
-      const link = await issueLink(auth.tenantId, id);
-      const rendered = await renderCaseTemplate(auth.tenantId, 'approval_reminder_email', c, link.url);
-
-      const message = await dispatchMessage({
-        tenantId: auth.tenantId,
-        approvalCaseId: id,
-        channel: 'EMAIL',
-        toAddress,
-        templateKey: 'approval_reminder_email',
-        subject: rendered.subject,
-        body: rendered.body,
-      });
-
-      await prisma.$transaction([
-        prisma.approvalCase.update({
-          where: { id },
-          data: { lastReminderAt: new Date(), reminderCount: { increment: 1 } },
-        }),
-        prisma.auditEvent.create({
-          data: {
-            tenantId: auth.tenantId,
-            approvalCaseId: id,
-            type: 'CASE_REMINDER_SENT',
-            actorType: auth.userId ? 'USER' : 'SYSTEM',
-            actorUserId: auth.userId ?? null,
-            metadata: { channel: 'EMAIL', to: toAddress, messageStatus: message.status },
-          },
-        }),
-      ]);
-
-      await publishEvent({
-        type: 'approval_case.reminder_sent',
-        tenantId: auth.tenantId,
-        approvalCaseId: id,
-        data: { reference: c.reference, reminderCount: c.reminderCount + 1 },
+      // Single source of truth for reminder delivery, shared with the automatic
+      // reminder-policy runner (lib/reminders.ts). Throws a validation error if
+      // the customer has no e-mail address.
+      const res = await sendReminder(auth.tenantId, id, {
+        userId: auth.userId ?? null,
+        actorType: auth.userId ? 'USER' : 'SYSTEM',
       });
 
       return reply.status(200).send(
-        ok({ status: c.status, channel: 'EMAIL', messageStatus: message.status, link: link.url }),
+        ok({ status: res.status, channel: 'EMAIL', messageStatus: res.messageStatus, link: res.link }),
       );
     },
   );
@@ -517,65 +482,145 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       return ok(timeline);
     },
   );
-}
 
-// --- Module-level helpers for the messaging flows --------------------------
-
-/** Load a case with everything needed to render + address a message. */
-async function loadCaseForMessaging(tenantId: string, id: string) {
-  const c = await prisma.approvalCase.findFirst({
-    where: { id, tenantId },
-    include: {
-      items: true,
-      customer: true,
-      vehicle: true,
-      tenant: { select: { name: true, brandName: true, currency: true } },
+  // --- Attachments: register (step 1 of the two-step upload) ---------------
+  app.post(
+    '/approval-cases/:id/attachments',
+    {
+      preHandler: app.requirePermission('cases:annotate'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Register a photo attachment and get a signed upload URL',
+        description:
+          'Two-step upload: this creates the attachment row and returns a signed upload target. The client then PUTs the bytes to `upload.url`. The attachment becomes visible to the customer only after the bytes arrive.',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
     },
-  });
-  if (!c) throw errors.notFound('Approval-Fall nicht gefunden');
-  return c;
-}
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const input = createAttachmentSchema.parse(req.body);
 
-/** Issue a fresh access link for a case and return its public URL. */
-async function issueLink(tenantId: string, caseId: string) {
-  const { token, tokenHash } = issueAccessToken();
-  const expiresAt = defaultLinkExpiry();
-  await prisma.approvalAccessLink.upsert({
-    where: { approvalCaseId: caseId },
-    update: { tokenHash, expiresAt, revokedAt: null, firstViewedAt: null },
-    create: { tenantId, approvalCaseId: caseId, tokenHash, expiresAt },
-  });
-  return { token, expiresAt, url: `${config.WEB_BASE_URL}/a/${token}` };
-}
+      const found = await prisma.approvalCase.findFirst({
+        where: { id, tenantId: auth.tenantId },
+        select: { id: true },
+      });
+      if (!found) throw errors.notFound('Approval-Fall nicht gefunden');
 
-/** Fallback templates used when a tenant hasn't customised one. */
-const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
-  approval_request_email: {
-    subject: 'Freigabe angefragt: {{subject}}',
-    body: 'Guten Tag {{customerName}}\n\n{{subject}} ({{priceBand}}).\nBitte hier freigeben: {{link}}\n\n{{workspaceName}}',
-  },
-  approval_reminder_email: {
-    subject: 'Erinnerung: {{subject}}',
-    body: 'Guten Tag {{customerName}}\n\nErinnerung zu {{subject}} ({{priceBand}}).\n{{link}}\n\n{{workspaceName}}',
-  },
-};
+      // If an item is targeted, verify it belongs to this case (tenant-scoped).
+      if (input.approvalItemId) {
+        const item = await prisma.approvalItem.findFirst({
+          where: { id: input.approvalItemId, approvalCaseId: id, tenantId: auth.tenantId },
+          select: { id: true },
+        });
+        if (!item) throw errors.validation('Position gehört nicht zu diesem Fall.', [
+          { path: 'approvalItemId', message: 'Unbekannte Position' },
+        ]);
+      }
 
-/** Look up a tenant template (or fall back) and render it for a case. */
-async function renderCaseTemplate(
-  tenantId: string,
-  key: string,
-  c: Awaited<ReturnType<typeof loadCaseForMessaging>>,
-  linkUrl: string,
-) {
-  const tpl =
-    (await prisma.messageTemplate.findUnique({
-      where: { tenantId_key: { tenantId, key } },
-      select: { subject: true, body: true },
-    })) ?? DEFAULT_TEMPLATES[key] ?? DEFAULT_TEMPLATES.approval_request_email!;
+      const driver = getStorageDriver();
+      const key = buildAttachmentKey(auth.tenantId, id, input.fileName);
 
-  const ctx = buildCaseContext(c, linkUrl);
-  return {
-    subject: renderTemplate(tpl.subject ?? '', ctx),
-    body: renderTemplate(tpl.body, ctx),
-  };
+      const attachment = await prisma.attachment.create({
+        data: {
+          tenantId: auth.tenantId,
+          approvalCaseId: id,
+          approvalItemId: input.approvalItemId ?? null,
+          storageKey: key,
+          fileName: input.fileName,
+          contentType: input.contentType,
+          sizeBytes: input.sizeBytes,
+        },
+      });
+
+      const upload = await driver.getSignedUploadUrl(key, input.contentType);
+
+      return reply.status(201).send(
+        ok({
+          attachment: {
+            id: attachment.id,
+            fileName: attachment.fileName,
+            contentType: attachment.contentType,
+            sizeBytes: attachment.sizeBytes,
+            approvalItemId: attachment.approvalItemId,
+            uploadedAt: attachment.uploadedAt,
+          },
+          upload,
+        }),
+      );
+    },
+  );
+
+  // --- Attachments: list (internal, with download URLs) --------------------
+  app.get(
+    '/approval-cases/:id/attachments',
+    {
+      preHandler: app.requirePermission('cases:read'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'List a case\'s attachments with signed download URLs',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+
+      const rows = await prisma.attachment.findMany({
+        where: { approvalCaseId: id, tenantId: auth.tenantId },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const driver = getStorageDriver();
+      const withUrls = await Promise.all(
+        rows.map(async (a) => ({
+          id: a.id,
+          fileName: a.fileName,
+          contentType: a.contentType,
+          sizeBytes: a.sizeBytes,
+          approvalItemId: a.approvalItemId,
+          uploadedAt: a.uploadedAt?.toISOString() ?? null,
+          url: a.uploadedAt ? await driver.getSignedDownloadUrl(a.storageKey) : null,
+        })),
+      );
+      return ok(withUrls);
+    },
+  );
+
+  // --- Attachments: delete -------------------------------------------------
+  app.delete(
+    '/approval-cases/:id/attachments/:attachmentId',
+    {
+      preHandler: app.requirePermission('cases:annotate'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Remove an attachment (bytes + row)',
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            attachmentId: { type: 'string', format: 'uuid' },
+          },
+          required: ['id', 'attachmentId'],
+        },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id, attachmentId } = req.params as { id: string; attachmentId: string };
+
+      const att = await prisma.attachment.findFirst({
+        where: { id: attachmentId, approvalCaseId: id, tenantId: auth.tenantId },
+      });
+      if (!att) throw errors.notFound('Anhang nicht gefunden');
+
+      await getStorageDriver().delete(att.storageKey).catch(() => undefined);
+      await prisma.attachment.delete({ where: { id: att.id } });
+
+      return reply.status(200).send(ok({ deleted: true }));
+    },
+  );
 }

@@ -34,6 +34,7 @@ enum ApprovalCaseStatus {
   SENT
   VIEWED
   APPROVED
+  PARTIALLY_APPROVED
   DECLINED
   CALLBACK
   EXPIRED
@@ -79,10 +80,13 @@ enum AuditEventType {
   CASE_REMINDER_SENT
   CASE_LINK_VIEWED
   CASE_APPROVED
+  CASE_PARTIALLY_APPROVED
   CASE_DECLINED
   CASE_CALLBACK_REQUESTED
   CASE_EXPIRED
   CASE_CANCELLED
+  CASE_ITEM_DECIDED
+  CASE_ATTACHMENT_ADDED
   MESSAGE_QUEUED
   MESSAGE_SENT
   MESSAGE_FAILED
@@ -273,10 +277,16 @@ model ApprovalItem {
   priceMaxMinor  Int?
   currency       String       @default("CHF")
   sortOrder      Int          @default(0)
+  /// Optional per-item customer decision (Block 8). Null = not individually
+  /// decided; the case-level decision still applies. Set when the customer
+  /// approves/declines this specific position.
+  decision       CustomerDecision?
+  decidedAt      DateTime?
   createdAt      DateTime     @default(now())
 
-  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase       @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
   attachments  Attachment[]
+  decisions    ApprovalDecision[]
 
   @@index([approvalCaseId])
   @@map("approval_items")
@@ -307,6 +317,9 @@ model ApprovalDecision {
   id             String           @id @default(uuid())
   tenantId       String
   approvalCaseId String
+  /// Optional: when set, this decision applies to a single position, not the
+  /// whole case (Block 8 per-item approval). Null = whole-case decision.
+  approvalItemId String?
   decision       CustomerDecision
   note           String?
   callbackPhone  String?
@@ -315,9 +328,11 @@ model ApprovalDecision {
   userAgent      String?
   createdAt      DateTime         @default(now())
 
-  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase  @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  approvalItem ApprovalItem? @relation(fields: [approvalItemId], references: [id], onDelete: SetNull)
 
   @@index([approvalCaseId])
+  @@index([approvalItemId])
   @@map("approval_decisions")
 }
 
@@ -329,10 +344,14 @@ model Attachment {
   approvalCaseId String?
   approvalItemId String?
   /// Storage key (S3/local). The actual bytes live outside the DB.
-  storageKey     String
+  storageKey     String   @unique
   fileName       String
   contentType    String
   sizeBytes      Int
+  /// Two-step upload (Block 8): the row is created first, then the client PUTs
+  /// the bytes. `uploadedAt` is stamped once the bytes have arrived; until then
+  /// the attachment is "pending" and hidden from the customer view.
+  uploadedAt     DateTime?
   createdAt      DateTime @default(now())
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)

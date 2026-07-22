@@ -5,18 +5,19 @@
  * `assertTransition` before changing status so we never end up in an unclear
  * intermediate state. See docs/domain-model.md for the diagram.
  */
-import type { ApprovalCaseStatus } from '@saf/types';
+import type { ApprovalCaseStatus, CustomerDecision } from '@saf/types';
 import { TERMINAL_CASE_STATUS } from '@saf/types';
 import { errors } from './errors.js';
 
 /** Allowed target statuses for each source status. */
 const TRANSITIONS: Record<ApprovalCaseStatus, ApprovalCaseStatus[]> = {
   DRAFT: ['SENT', 'CANCELLED'],
-  SENT: ['VIEWED', 'APPROVED', 'DECLINED', 'CALLBACK', 'EXPIRED', 'CANCELLED'],
-  VIEWED: ['APPROVED', 'DECLINED', 'CALLBACK', 'EXPIRED', 'CANCELLED'],
+  SENT: ['VIEWED', 'APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'CALLBACK', 'EXPIRED', 'CANCELLED'],
+  VIEWED: ['APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'CALLBACK', 'EXPIRED', 'CANCELLED'],
   // CALLBACK is intentionally non-terminal: the customer can still decide.
-  CALLBACK: ['APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'],
+  CALLBACK: ['APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'],
   APPROVED: [],
+  PARTIALLY_APPROVED: [],
   DECLINED: [],
   EXPIRED: [],
   CANCELLED: [],
@@ -42,6 +43,26 @@ export function isTerminal(status: ApprovalCaseStatus): boolean {
 /** A case is "pending" (a customer response is still expected). */
 export function isPending(status: ApprovalCaseStatus): boolean {
   return status === 'SENT' || status === 'VIEWED' || status === 'CALLBACK';
+}
+
+/**
+ * Aggregate a set of per-item customer decisions into a single case status.
+ * Pure and total → unit-tested. Rules (see docs/domain-model.md):
+ *
+ *   - any CALLBACK present            → CALLBACK   (non-terminal: still talking)
+ *   - all APPROVE                     → APPROVED
+ *   - all DECLINE                     → DECLINED
+ *   - a mix of APPROVE and DECLINE    → PARTIALLY_APPROVED
+ *
+ * `decisions` must be non-empty (the caller validates min. one item).
+ */
+export function aggregateItemDecisions(decisions: CustomerDecision[]): ApprovalCaseStatus {
+  if (decisions.some((d) => d === 'CALLBACK')) return 'CALLBACK';
+  const approved = decisions.filter((d) => d === 'APPROVE').length;
+  const declined = decisions.filter((d) => d === 'DECLINE').length;
+  if (approved > 0 && declined === 0) return 'APPROVED';
+  if (declined > 0 && approved === 0) return 'DECLINED';
+  return 'PARTIALLY_APPROVED';
 }
 
 /** True when an expiry timestamp has passed and the case is still open. */

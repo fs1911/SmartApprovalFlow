@@ -132,6 +132,12 @@ ist `null` am Ende.
 | `POST` | `/api/v1/approval-cases/:id/send` | ja | Anfrage versenden (Link + E-Mail) | 3 |
 | `POST` | `/api/v1/approval-cases/:id/remind` | ja | Erinnerung senden (nur offen) | 3 |
 | `GET` | `/api/v1/approval-cases/:id/timeline` | ja | Verlauf (Audit + Messages) | 3 |
+| `POST` | `/api/v1/approval-cases/:id/attachments` | `cases:annotate` | Foto registrieren → signierte Upload-URL | 8 |
+| `GET` | `/api/v1/approval-cases/:id/attachments` | `cases:read` | Fotos listen (mit Download-URLs) | 8 |
+| `DELETE` | `/api/v1/approval-cases/:id/attachments/:attachmentId` | `cases:annotate` | Foto entfernen | 8 |
+| `PUT` | `/api/v1/uploads/local/*` | — (Capability-Key) | Lokaler Byte-Empfang (nur `local`-Treiber) | 8 |
+| `GET` | `/api/v1/uploads/local/*` | — (Capability-Key) | Lokale Datei ausliefern | 8 |
+| `POST` | `/api/v1/reminders/run` | `members:manage` | Reminder-Policy auswerten & senden | 8 |
 | `GET` | `/api/v1/templates` | ja | Nachrichtenvorlagen listen | 3 |
 | `GET` | `/api/v1/templates/:id` | ja | Vorlage lesen | 3 |
 | `PATCH` | `/api/v1/templates/:id` | ja | Vorlage bearbeiten (subject/body) | 3 |
@@ -145,7 +151,8 @@ ist `null` am Ende.
 | `DELETE` | `/api/v1/api-keys/:id` | `members:manage` | API-Key widerrufen | 7 |
 | `POST` | `/api/v1/webhooks/deliver` | `members:manage` | Ausstehende Webhooks zustellen | 7 |
 | `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
-| `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid (idempotent) | 2 |
+| `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid, ganzer Fall (idempotent) | 2 |
+| `POST` | `/api/v1/public/approvals/:token/respond-items` | — | Kundenentscheid pro Position (aggregiert) | 8 |
 
 ## Notifications (Block 3)
 
@@ -184,8 +191,8 @@ abgelaufener Link setzt den Fall beim nächsten Zugriff einmalig auf `EXPIRED`.
 
 Nach jedem erfolgreichen Statuswechsel emittieren die Routen stabile
 **Domain-Events**: `approval_case.created`, `.sent`, `.reminder_sent`,
-`.viewed`, `.responded`, `.approved`, `.declined`, `.callback_requested`,
-`.expired`. Der Publisher (`lib/events.ts`) fächert sie an aktive
+`.viewed`, `.responded`, `.approved`, `.partially_approved`, `.declined`,
+`.callback_requested`, `.expired`. Der Publisher (`lib/events.ts`) fächert sie an aktive
 `WebhookEndpoint`s des Tenants aus und legt je Ziel eine `WebhookDelivery`
 (QUEUED) an; Fehler sind für den Haupt-Request **non-fatal**.
 

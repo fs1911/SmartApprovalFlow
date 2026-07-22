@@ -12,8 +12,9 @@ riesig".
 | **Block 5** | **Öffentlicher kommerzieller Layer** — Marketing-Website, Positionierung/Messaging, Pricing, Billing-Vorbereitung (Doku), Legal-Entwürfe, Trust, Conversion, SEO | ✅ abgeschlossen |
 | **Block 6** | **Infrastruktur & Provider-Readiness** — Hosting/Deployment-Zielbild, Supabase/Cloudflare/Resend-Rollen (Adapter + Dev-Fallback), Storage-Abstraktion, Token-/Domain-Strategie, ENV/Secrets, Dev/Staging/Prod | ✅ abgeschlossen |
 | **Block 7** | **Auth- & Integrations-Härtung** — echte Auth (JWT + API-Keys/Scopes), Rate-Limiting, echte Webhook-Zustellung (HMAC/Retry), persistente Idempotency | ✅ abgeschlossen |
-| **Block 8** | **Portal-Ausbau & Delivery** — produktive Foto-Uploads (Storage-Abstraktion), Positionen mit Einzelfreigabe, automatische Reminder-Policy, realer E-Mail/SMS-Versand | geplant |
-| **Block 6** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
+| **Block 8** | **Portal-Ausbau & Delivery** — produktive Foto-Uploads (Storage-Abstraktion), Positionen mit optionaler Einzelfreigabe, automatische Reminder-Policy, realer E-Mail-Versand (SMS vorbereitet) | ✅ abgeschlossen |
+| **Block 9** | **Qualitäts- & Betriebsreife** — Tests/CI, Observability/Monitoring-Vorbereitung, Performance/Pagination-Feinschliff, Retention-/Cleanup-Jobs, Barrierefreiheit & UX-Polish | geplant |
+| **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
 
 ## Leitplanken über alle Blöcke
 

@@ -16,6 +16,10 @@ out/
 .env.*.local
 !.env.example
 
+# Local attachment storage (STORAGE_LOCAL_DIR default)
+.uploads/
+**/.uploads/
+
 # Prisma / DB
 packages/db/prisma/*.db
 packages/db/prisma/migrations/dev.db*

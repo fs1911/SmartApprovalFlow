@@ -27,6 +27,25 @@ const envSchema = z.object({
   // Max delivery attempts before a webhook delivery is marked FAILED.
   WEBHOOK_MAX_ATTEMPTS: z.coerce.number().int().default(5),
 
+  // --- Reminder policy (Block 8) ------------------------------------------
+  // Automatic reminders for cases still awaiting a customer response. The
+  // policy is a pure function of these knobs; triggered via POST /reminders/run
+  // (no cron dependency — see docs/reminders.md).
+  REMINDER_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  // Hours after "sent" before the first reminder goes out.
+  REMINDER_FIRST_AFTER_HOURS: z.coerce.number().default(24),
+  // Hours between subsequent reminders.
+  REMINDER_REPEAT_EVERY_HOURS: z.coerce.number().default(48),
+  // Hard cap on the number of reminders per case.
+  REMINDER_MAX: z.coerce.number().int().default(3),
+
+  // --- Attachments (Block 8) ----------------------------------------------
+  // Server-side guard rails re-checked when the bytes actually arrive.
+  ATTACHMENT_MAX_BYTES: z.coerce.number().int().default(15 * 1024 * 1024),
+
   // --- Notifications -------------------------------------------------------
   // `console` (default) logs messages and needs no credentials. `resend` sends
   // real e-mail, but only when RESEND_API_KEY is present — otherwise the code

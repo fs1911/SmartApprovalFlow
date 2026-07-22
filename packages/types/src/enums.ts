@@ -39,6 +39,8 @@ export const APPROVAL_CASE_STATUS = [
   'SENT',
   'VIEWED',
   'APPROVED',
+  // Per-item approval (Block 8): some positions approved, others declined.
+  'PARTIALLY_APPROVED',
   'DECLINED',
   'CALLBACK',
   'EXPIRED',
@@ -49,6 +51,7 @@ export type ApprovalCaseStatus = (typeof APPROVAL_CASE_STATUS)[number];
 /** Terminal states — no further customer action is expected. */
 export const TERMINAL_CASE_STATUS: ApprovalCaseStatus[] = [
   'APPROVED',
+  'PARTIALLY_APPROVED',
   'DECLINED',
   'EXPIRED',
   'CANCELLED',
@@ -85,10 +88,13 @@ export const AUDIT_EVENT_TYPE = [
   'CASE_REMINDER_SENT',
   'CASE_LINK_VIEWED',
   'CASE_APPROVED',
+  'CASE_PARTIALLY_APPROVED',
   'CASE_DECLINED',
   'CASE_CALLBACK_REQUESTED',
   'CASE_EXPIRED',
   'CASE_CANCELLED',
+  'CASE_ITEM_DECIDED',
+  'CASE_ATTACHMENT_ADDED',
   'MESSAGE_QUEUED',
   'MESSAGE_SENT',
   'MESSAGE_FAILED',
@@ -107,6 +113,7 @@ export const DOMAIN_EVENT_TYPE = [
   'approval_case.viewed',
   'approval_case.responded',
   'approval_case.approved',
+  'approval_case.partially_approved',
   'approval_case.declined',
   'approval_case.callback_requested',
   'approval_case.expired',

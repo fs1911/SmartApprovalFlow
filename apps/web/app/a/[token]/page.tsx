@@ -19,11 +19,14 @@ interface PublicView {
   vehicle?: string | null;
   vehiclePlate?: string | null;
   items: {
+    id: string;
     title: string;
     description?: string | null;
     priceMinMinor?: number | null;
     priceMaxMinor?: number | null;
     currency: string;
+    decision?: string | null;
+    photos?: { fileName: string; contentType: string; url: string }[];
   }[];
   priceMinMinor?: number | null;
   priceMaxMinor?: number | null;
@@ -127,7 +130,7 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
 
             <div>
               {view.items.map((it, i) => (
-                <div key={i} className="public-item">
+                <div key={it.id ?? i} className="public-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <strong>{it.title}</strong>
                     <span style={{ whiteSpace: 'nowrap' }}>
@@ -138,6 +141,25 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
                     <p className="subtle" style={{ margin: '4px 0 0' }}>
                       {it.description}
                     </p>
+                  )}
+                  {it.photos && it.photos.length > 0 && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      {it.photos.map((p, pi) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={pi}
+                          src={p.url}
+                          alt={p.fileName}
+                          style={{
+                            width: 96,
+                            height: 96,
+                            objectFit: 'cover',
+                            borderRadius: 'var(--radius-sm)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               ))}
@@ -165,7 +187,15 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
               </div>
             )}
 
-            <ActionsPanel token={params.token} initialStatus={view.status} />
+            <ActionsPanel
+              token={params.token}
+              initialStatus={view.status}
+              items={view.items.map((it) => ({
+                id: it.id,
+                title: it.title,
+                priceLabel: formatPriceBand(it.priceMinMinor, it.priceMaxMinor, it.currency),
+              }))}
+            />
 
             <p
               className="subtle"

@@ -11,7 +11,8 @@ Login**. Alles revisionssicher protokolliert.
 **Status:** Block 1 (Foundation) ✅ · Block 2 (Approval Workflow) ✅ ·
 Block 3 (Operational Hardening) ✅ · Block 4 (Multi-Tenant-B2B-Reife) ✅ ·
 Block 5 (Öffentlicher kommerzieller Layer) ✅ · Block 6 (Infrastruktur &
-Provider-Readiness) ✅ · Block 7 (Auth- & Integrations-Härtung) ✅ — siehe
+Provider-Readiness) ✅ · Block 7 (Auth- & Integrations-Härtung) ✅ ·
+Block 8 (Portal-Ausbau & Delivery) ✅ — siehe
 [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
@@ -40,6 +41,14 @@ Und (Block 5): der **öffentliche kommerzielle Layer** — eine Marketing-Websit
 `/legal/*`) mit Positionierung, Pricing (Draft), Legal-Entwürfen, Trust-Seite,
 Conversion-Flächen und SEO (robots/sitemap/OG). Billing ist als Strategie
 dokumentiert, aber noch **ohne** Zahlungsanbieter.
+
+Und (Block 8): **produktive Foto-Uploads** (zweistufig über die Storage-
+Abstraktion, lokal ohne Credentials), **mehrere Positionen mit optionaler
+Einzelfreigabe** (Kunde entscheidet pro Position → Fallstatus wird zu
+`APPROVED`/`PARTIALLY_APPROVED`/`DECLINED`/`CALLBACK` aggregiert) und eine
+**automatische Reminder-Policy** (konfigurierbar, mit Obergrenze, per Endpoint
+ausgelöst — kein Cron-Zwang). Fotos erscheinen intern und auf der Kundenseite pro
+Position.
 
 ### Bereiche der Web-App
 
@@ -139,7 +148,8 @@ npm run format                      # Prettier
 | Billing (Vorbereitung) | [`billing-strategy.md`](docs/billing-strategy.md) · [`pricing-rationale.md`](docs/pricing-rationale.md) · [`payment-provider-evaluation.md`](docs/payment-provider-evaluation.md) |
 | Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
 | Auth / Sicherheit | [`api-design.md`](docs/api-design.md) · [`security.md`](docs/security.md) · [`webhooks.md`](docs/webhooks.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) |
+| Portal / Delivery (Block 8) | [`storage-strategy.md`](docs/storage-strategy.md) · [`reminders.md`](docs/reminders.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) |
 
 ## Rollen ausprobieren
 
@@ -158,7 +168,8 @@ zurück. Siehe [`docs/env-and-secrets.md`](docs/env-and-secrets.md).
 
 ## Nächster Block
 
-**Block 8 — Portal-Ausbau & Delivery:** produktive Foto-Uploads (über die
-Storage-Abstraktion aus Block 6), mehrere Positionen mit optionaler
-Einzelfreigabe, automatische Reminder-Policy und realer E-Mail/SMS-Versand.
-Details in [`docs/block-7-summary.md`](docs/block-7-summary.md).
+**Block 9 — Qualitäts- & Betriebsreife:** automatisierte Tests/CI,
+Observability/Logging/Fehler-Monitoring-Vorbereitung, Performance/Pagination-
+Feinschliff, Retention-/Cleanup-Jobs (Idempotency/Webhooks/Attachments) sowie
+Barrierefreiheit und finaler UX-Polish. Details in
+[`docs/block-8-summary.md`](docs/block-8-summary.md).

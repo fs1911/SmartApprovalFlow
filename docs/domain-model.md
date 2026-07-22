@@ -47,15 +47,35 @@ DRAFT ──(Link erzeugt)──▶ SENT ──(Kunde öffnet)──▶ VIEWED
    │                        │                         │
    │                        └───────────┬─────────────┘
    │                                     ▼
-   │                        APPROVED · DECLINED · CALLBACK
+   │            APPROVED · PARTIALLY_APPROVED · DECLINED · CALLBACK
    │
    └──(Werkstatt zieht zurück)─▶ CANCELLED
    (Ablauf des Fensters) ─────▶ EXPIRED
 ```
 
-**Terminal** (kein weiterer Kundenentscheid erwartet): `APPROVED`, `DECLINED`,
-`EXPIRED`, `CANCELLED`. `CALLBACK` ist bewusst **nicht** terminal — nach dem
-Rückruf kann noch `APPROVED`/`DECLINED` folgen.
+**Terminal** (kein weiterer Kundenentscheid erwartet): `APPROVED`,
+`PARTIALLY_APPROVED`, `DECLINED`, `EXPIRED`, `CANCELLED`. `CALLBACK` ist bewusst
+**nicht** terminal — nach dem Rückruf kann noch `APPROVED`/`DECLINED` folgen.
+
+### Einzelfreigabe pro Position (Block 8)
+
+Neben dem „ganzer Fall"-Entscheid kann der Kunde optional **jede Position einzeln**
+freigeben oder ablehnen (`POST /public/approvals/:token/respond-items`). Der
+Fallstatus wird dann server-seitig aggregiert (reine, getestete Funktion
+`aggregateItemDecisions`):
+
+| Positions-Entscheide | Fallstatus |
+| --- | --- |
+| alle `APPROVE` | `APPROVED` |
+| alle `DECLINE` | `DECLINED` |
+| gemischt `APPROVE`/`DECLINE` | `PARTIALLY_APPROVED` |
+| mindestens ein `CALLBACK` | `CALLBACK` (nicht terminal) |
+
+Jede Position hält ihren Entscheid in `ApprovalItem.decision`/`decidedAt`; jeder
+Einzelentscheid erzeugt einen `ApprovalDecision` (mit `approvalItemId`) und ein
+`CASE_ITEM_DECIDED`-Audit-Event. `Attachment` verweist optional auf eine Position
+(`approvalItemId`); Fotos werden zweistufig hochgeladen und erst nach Byte-Empfang
+(`uploadedAt`) angezeigt — siehe `docs/storage-strategy.md`.
 
 ### Mapping zu den in Block 2 gewünschten Statusnamen
 
@@ -73,9 +93,10 @@ Zusätzlich `CANCELLED` für den von der Garage zurückgezogenen Fall.
 ## Audit-Event-Typen (Auszug)
 
 `CASE_CREATED`, `CASE_SENT`, `CASE_REMINDER_SENT`, `CASE_LINK_VIEWED`,
-`CASE_APPROVED`, `CASE_DECLINED`, `CASE_CALLBACK_REQUESTED`, `CASE_EXPIRED`,
-`CASE_CANCELLED`, sowie `MESSAGE_*`. Jeder Statuswechsel schreibt zusätzlich ein
-`SYSTEM`-Event mit `metadata.action = "status_changed"` (from → to).
+`CASE_APPROVED`, `CASE_PARTIALLY_APPROVED`, `CASE_DECLINED`,
+`CASE_CALLBACK_REQUESTED`, `CASE_EXPIRED`, `CASE_CANCELLED`, `CASE_ITEM_DECIDED`,
+`CASE_ATTACHMENT_ADDED`, sowie `MESSAGE_*`. Jeder Statuswechsel schreibt zusätzlich
+ein `SYSTEM`-Event mit `metadata.action = "status_changed"` (from → to).
 
 **Audit vs. Domain-Events:** Der `AuditEvent` ist der *interne, revisionssichere*
 Nachweis. Davon getrennt gibt es *externe* Domain-Events (`DomainEventType`,

@@ -369,6 +369,101 @@
         }
       }
     },
+    "/api/v1/approval-cases/{id}/attachments": {
+      "post": {
+        "summary": "Register a photo attachment and get a signed upload URL",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Two-step upload: this creates the attachment row and returns a signed upload target. The client then PUTs the bytes to `upload.url`. The attachment becomes visible to the customer only after the bytes arrive.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "List a case's attachments with signed download URLs",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}/attachments/{attachmentId}": {
+      "delete": {
+        "summary": "Remove an attachment (bytes + row)",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "attachmentId",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/templates": {
       "get": {
         "summary": "List message templates for the current tenant",
@@ -632,6 +727,70 @@
         }
       }
     },
+    "/api/v1/reminders/run": {
+      "post": {
+        "summary": "Run the automatic reminder policy for this tenant",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Evaluates every pending case against the configured reminder policy and sends the ones that are due. Safe to call repeatedly. Returns a summary of evaluated / sent / skipped.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/uploads/local/{*}": {
+      "put": {
+        "summary": "Local storage: receive attachment bytes (dev signed-URL equivalent)",
+        "tags": [
+          "approval-cases"
+        ],
+        "description": "Accepts raw image bytes for a previously-registered attachment key.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "*",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Local storage: serve attachment bytes (dev download URL)",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "*",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/public/approvals/{token}": {
       "get": {
         "summary": "Read an approval request via its secure token (no login)",
@@ -662,6 +821,30 @@
           "public"
         ],
         "description": "Loginless. Idempotent via the optional Idempotency-Key header so a double-tap on mobile does not create two decisions.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/public/approvals/{token}/respond-items": {
+      "post": {
+        "summary": "Submit per-position customer decisions (individual approval)",
+        "tags": [
+          "public"
+        ],
+        "description": "Loginless. The customer decides each position; the case status is aggregated server-side (APPROVED / PARTIALLY_APPROVED / DECLINED / CALLBACK). Idempotent via the optional Idempotency-Key header.",
         "parameters": [
           {
             "schema": {

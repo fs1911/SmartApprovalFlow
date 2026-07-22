@@ -59,3 +59,59 @@ export async function remindCase(id: string): Promise<ActionResult> {
     };
   }
 }
+
+export interface RegisterAttachmentResult {
+  ok: boolean;
+  /** Browser-reachable URL to PUT the raw bytes to (local dev signed URL). */
+  uploadUrl?: string;
+  method?: string;
+  attachmentId?: string;
+  error?: string;
+}
+
+/**
+ * Step 1 of the two-step upload: register the attachment server-side (authed)
+ * and hand the browser a signed upload target. The client then PUTs the bytes
+ * directly to `uploadUrl` and calls `finishAttachment` to refresh the view.
+ */
+export async function registerAttachment(
+  id: string,
+  input: { fileName: string; contentType: string; sizeBytes: number; approvalItemId?: string },
+): Promise<RegisterAttachmentResult> {
+  try {
+    const res = await api.request<{
+      attachment: { id: string };
+      upload: { url: string; method: string };
+    }>(`/api/v1/approval-cases/${id}/attachments`, { method: 'POST', body: input });
+    return {
+      ok: true,
+      uploadUrl: res.upload.url,
+      method: res.upload.method,
+      attachmentId: res.attachment.id,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Foto konnte nicht vorbereitet werden.',
+    };
+  }
+}
+
+export async function finishAttachment(id: string): Promise<void> {
+  revalidatePath(`/approvals/${id}`);
+}
+
+export async function deleteAttachment(id: string, attachmentId: string): Promise<ActionResult> {
+  try {
+    await api.request(`/api/v1/approval-cases/${id}/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    });
+    revalidatePath(`/approvals/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Foto konnte nicht gelöscht werden.',
+    };
+  }
+}

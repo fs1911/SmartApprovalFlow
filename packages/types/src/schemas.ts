@@ -74,7 +74,7 @@ export const createApprovalCaseSchema = z.object({
 });
 export type CreateApprovalCaseInput = z.infer<typeof createApprovalCaseSchema>;
 
-/** Payload for the loginless customer response. */
+/** Payload for the loginless customer response (whole-case decision). */
 export const customerRespondSchema = z.object({
   decision: z.enum(CUSTOMER_DECISION),
   /** Optional free-text note from the customer. */
@@ -83,6 +83,45 @@ export const customerRespondSchema = z.object({
   callbackPhone: phoneSchema.optional(),
 });
 export type CustomerRespondInput = z.infer<typeof customerRespondSchema>;
+
+/**
+ * Payload for the per-item customer response (Block 8). The customer decides
+ * each listed position individually; the case status is aggregated server-side.
+ */
+export const customerRespondItemsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        itemId: z.string().uuid(),
+        decision: z.enum(CUSTOMER_DECISION),
+      }),
+    )
+    .min(1)
+    .max(30),
+  note: z.string().max(1000).optional(),
+  callbackPhone: phoneSchema.optional(),
+});
+export type CustomerRespondItemsInput = z.infer<typeof customerRespondItemsSchema>;
+
+/**
+ * Register an attachment (Block 8). The row is created first; the client then
+ * PUTs the bytes to the returned signed upload URL. Content-type and size are
+ * validated again server-side when the bytes arrive.
+ */
+export const createAttachmentSchema = z.object({
+  fileName: z.string().min(1).max(200),
+  contentType: z
+    .string()
+    .regex(/^image\/(jpeg|png|webp|heic|heif)$/, 'Nur Bildformate (JPEG, PNG, WebP, HEIC) erlaubt'),
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(15 * 1024 * 1024, 'Datei ist zu gross (max. 15 MB)'),
+  /** Optional: attach to a single position instead of the whole case. */
+  approvalItemId: z.string().uuid().optional(),
+});
+export type CreateAttachmentInput = z.infer<typeof createAttachmentSchema>;
 
 /** Common list query params for cursor pagination. */
 export const listQuerySchema = z.object({
