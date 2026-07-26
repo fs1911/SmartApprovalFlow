@@ -158,6 +158,20 @@ export const passwordResetSchema = z.object({
 });
 export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
 
+// --- Collaboration (Block 14) ----------------------------------------------
+
+/** Assign (or unassign, with null) a case to a team member. */
+export const assignCaseSchema = z.object({
+  assigneeUserId: z.string().uuid().nullable(),
+});
+export type AssignCaseInput = z.infer<typeof assignCaseSchema>;
+
+/** Add an internal note to a case. */
+export const createNoteSchema = z.object({
+  body: z.string().min(1).max(4000),
+});
+export type CreateNoteInput = z.infer<typeof createNoteSchema>;
+
 /** Common list query params for cursor pagination. */
 export const listQuerySchema = z.object({
   cursor: z.string().optional(),

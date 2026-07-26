@@ -16,7 +16,8 @@ Block 8 (Portal-Ausbau & Delivery) ✅ · Block 9 (Qualitäts- & Betriebsreife) 
 Block 10 (Onboarding & Self-Service-Aktivierung) ✅ ·
 Block 11 (Billing- & Plan-Enforcement) ✅ ·
 Block 12 (Integrations- & API-Ökosystem) ✅ ·
-Block 13 (Reporting- & Insights-Ausbau) ✅
+Block 13 (Reporting- & Insights-Ausbau) ✅ ·
+Block 14 (Benachrichtigungen & Kollaboration) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
@@ -73,6 +74,15 @@ Und (Block 12): das **Integrations-Ökosystem** — **Self-Service-Webhooks**
 **eingehende Integration per API-Key** (Fall-Erstellung mit Scopes, Idempotency,
 `whoami`) und ein **Integrations-Guide** mit curl-Rezepten und Signatur-
 Verifikation. Alles lokal gegen den Dev-Sink testbar.
+
+Und (Block 13): der **Reporting-Ausbau** — Kennzahlen und Trends (Freigabequote,
+Reaktionszeiten inkl. Median, Umsatz als Spanne aus freigegebenen Positionen),
+**Zeitraum-Filter**, ein schlankes Dashboard mit Inline-Trend und **CSV-Export**.
+
+Und (Block 14): **Benachrichtigungen & Kollaboration** — In-App-Benachrichtigungen
+(Kundenreaktion, Rückruf, Ablauf, Zuweisung, Notiz) mit Topbar-Glocke und
+Notification-Center, **Fall-Zuweisung** an Teammitglieder (inkl. „Meine Fälle")
+und **interne Notizen** (nie kundenseitig sichtbar).
 
 ### Bereiche der Web-App
 
@@ -178,7 +188,8 @@ npm run format                      # Prettier
 | Billing (Block 11) | [`billing-and-plans.md`](docs/billing-and-plans.md) |
 | Integrationen (Block 12) | [`integrations-guide.md`](docs/integrations-guide.md) · [`webhooks.md`](docs/webhooks.md) |
 | Reporting (Block 13) | [`reporting-and-insights.md`](docs/reporting-and-insights.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) |
+| Kollaboration (Block 14) | [`notifications-and-collaboration.md`](docs/notifications-and-collaboration.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) · [14](docs/block-14-summary.md) |
 
 ## Rollen ausprobieren
 
@@ -206,8 +217,7 @@ Integrationstests. Details: [`docs/testing-and-ci.md`](docs/testing-and-ci.md).
 
 ## Nächster Block
 
-**Block 14 — Benachrichtigungen & Kollaboration:** interner Aktivitäts-Feed und
-Benachrichtigungen (neue Kundenreaktion, Rückruf, Ablauf), Zuweisung von Fällen
-an Teammitglieder, interne Notizen/Kommentare und ein schlankes
-Notification-Center. Details in
-[`docs/block-13-summary.md`](docs/block-13-summary.md).
+**Block 15 — Mandantenfähige Skalierung & Datenlebenszyklus:** Workspace-
+Verwaltung/Mehrfach-Mitgliedschaften, DSGVO-nahe Datenexporte/-löschung pro
+Kunde/Fall, Aufbewahrungsrichtlinien und ein Admin-Überblick. Details in
+[`docs/block-14-summary.md`](docs/block-14-summary.md).

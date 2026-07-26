@@ -125,6 +125,18 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+/// Internal (in-app) notification type (Block 14). Mirrors
+/// packages/types/enums.ts NOTIFICATION_TYPE.
+enum NotificationType {
+  CASE_APPROVED
+  CASE_PARTIALLY_APPROVED
+  CASE_DECLINED
+  CASE_CALLBACK
+  CASE_EXPIRED
+  CASE_ASSIGNED
+  CASE_NOTE_ADDED
+}
+
 // --- Tenancy & identity ------------------------------------------------------
 
 /// A Tenant is a workspace = one garage / workshop group. Root of isolation.
@@ -159,6 +171,8 @@ model Tenant {
   webhookEndpoints WebhookEndpoint[]
   verificationTokens VerificationToken[]
   subscription   Subscription?
+  notifications  Notification[]
+  caseNotes      CaseNote[]
 
   @@map("tenants")
 }
@@ -200,6 +214,9 @@ model User {
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   memberships Membership[]
   createdCases ApprovalCase[] @relation("CaseCreatedBy")
+  assignedCases ApprovalCase[] @relation("CaseAssignee")
+  notifications Notification[]
+  caseNotes    CaseNote[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -279,6 +296,8 @@ model ApprovalCase {
   customerId  String?
   vehicleId   String?
   createdById String?
+  /// Optional team member responsible for this case (Block 14).
+  assigneeUserId String?
 
   /// When the case was first sent to the customer.
   sentAt      DateTime?
@@ -299,17 +318,21 @@ model ApprovalCase {
   customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   vehicle   Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   createdBy User?     @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignee  User?     @relation("CaseAssignee", fields: [assigneeUserId], references: [id], onDelete: SetNull)
 
   items        ApprovalItem[]
   attachments  Attachment[]
   decisions    ApprovalDecision[]
   auditEvents  AuditEvent[]
   outboundMsgs OutboundMessage[]
+  notes        CaseNote[]
+  notifications Notification[]
   accessLink   ApprovalAccessLink?
 
   @@unique([tenantId, reference])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+  @@index([tenantId, assigneeUserId])
   @@map("approval_cases")
 }
 
@@ -577,6 +600,48 @@ model VerificationToken {
   @@index([email])
   @@index([expiresAt])
   @@map("verification_tokens")
+}
+
+/// In-app notification for a team member (Block 14). Generated when a case
+/// changes in a way the recipient cares about (customer decision, callback,
+/// expiry, assignment, internal note). Read state is per-notification.
+model Notification {
+  id             String           @id @default(uuid())
+  tenantId       String
+  /// Recipient user.
+  userId         String
+  type           NotificationType
+  approvalCaseId String?
+  /// Small denormalised payload for rendering (reference, subject, …).
+  data           Json?
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase? @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+/// Internal note/comment on a case (Block 14). NEVER shown on the loginless
+/// customer page — internal team collaboration only.
+model CaseNote {
+  id             String   @id @default(uuid())
+  tenantId       String
+  approvalCaseId String
+  authorUserId   String?
+  body           String
+  createdAt      DateTime @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  approvalCase ApprovalCase @relation(fields: [approvalCaseId], references: [id], onDelete: Cascade)
+  author       User?        @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([approvalCaseId, createdAt])
+  @@map("case_notes")
 }
 
 /// API keys for machine-to-machine integration with existing garage software.

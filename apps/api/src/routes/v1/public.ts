@@ -20,6 +20,8 @@ import { getIdempotent, saveIdempotent } from '../../lib/idempotency.js';
 import { publishEvent } from '../../lib/events.js';
 import { isTerminal, aggregateItemDecisions } from '../../lib/status.js';
 import { getStorageDriver } from '../../lib/storage.js';
+import { notifyForCase } from '../../lib/inapp.js';
+import type { NotificationType } from '@saf/types';
 import { config } from '../../config.js';
 
 /** Tighter rate limit for the loginless public endpoints. */
@@ -39,6 +41,14 @@ const DECISION_TO_AUDIT = {
   DECLINE: 'CASE_DECLINED',
   CALLBACK: 'CASE_CALLBACK_REQUESTED',
 } as const;
+
+/** Map a resulting case status to the in-app notification type (Block 14). */
+const STATUS_TO_NOTIFICATION: Record<string, NotificationType> = {
+  APPROVED: 'CASE_APPROVED',
+  PARTIALLY_APPROVED: 'CASE_PARTIALLY_APPROVED',
+  DECLINED: 'CASE_DECLINED',
+  CALLBACK: 'CASE_CALLBACK',
+};
 
 /** Resolve a case from a raw token, enforcing validity. */
 async function resolveByToken(rawToken: string) {
@@ -101,6 +111,7 @@ async function resolveByToken(rawToken: string) {
         approvalCaseId: link.approvalCaseId,
         data: { reference: link.approvalCase.reference },
       });
+      await notifyForCase(link.tenantId, link.approvalCaseId, 'CASE_EXPIRED');
     }
     throw errors.tokenExpired();
   }
@@ -327,6 +338,9 @@ export async function publicRoutes(app: FastifyInstance) {
         data: { reference: c.reference },
       });
 
+      // Notify the case's team (creator + assignee) of the customer decision.
+      await notifyForCase(link.tenantId, c.id, STATUS_TO_NOTIFICATION[newStatus] ?? 'CASE_APPROVED');
+
       const responseBody = ok({
         status: newStatus,
         decision: result.decision,
@@ -458,6 +472,8 @@ export async function publicRoutes(app: FastifyInstance) {
         approvalCaseId: c.id,
         data: { reference: c.reference },
       });
+
+      await notifyForCase(link.tenantId, c.id, STATUS_TO_NOTIFICATION[newStatus] ?? 'CASE_APPROVED');
 
       const responseBody = ok({
         status: newStatus,

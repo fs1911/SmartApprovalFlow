@@ -129,3 +129,26 @@ export type DomainEventType = (typeof DOMAIN_EVENT_TYPE)[number];
 /** Who or what triggered an audit event. */
 export const ACTOR_TYPE = ['USER', 'CUSTOMER', 'SYSTEM', 'API_KEY'] as const;
 export type ActorType = (typeof ACTOR_TYPE)[number];
+
+/** In-app notification types (Block 14). Mirrors the Prisma NotificationType. */
+export const NOTIFICATION_TYPE = [
+  'CASE_APPROVED',
+  'CASE_PARTIALLY_APPROVED',
+  'CASE_DECLINED',
+  'CASE_CALLBACK',
+  'CASE_EXPIRED',
+  'CASE_ASSIGNED',
+  'CASE_NOTE_ADDED',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPE)[number];
+
+/** Human-facing German labels for notifications. */
+export const NOTIFICATION_LABELS: Record<NotificationType, string> = {
+  CASE_APPROVED: 'Kunde hat freigegeben',
+  CASE_PARTIALLY_APPROVED: 'Kunde hat teilweise freigegeben',
+  CASE_DECLINED: 'Kunde hat abgelehnt',
+  CASE_CALLBACK: 'Kunde wünscht einen Rückruf',
+  CASE_EXPIRED: 'Fall ist abgelaufen',
+  CASE_ASSIGNED: 'Fall wurde Ihnen zugewiesen',
+  CASE_NOTE_ADDED: 'Neue interne Notiz',
+};

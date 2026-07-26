@@ -12,18 +12,20 @@ interface CaseRow {
   createdAt: string;
   customer?: { name: string } | null;
   vehicle?: { plate?: string | null; make?: string | null; model?: string | null } | null;
+  assignee?: { id: string; name: string } | null;
   _count?: { items: number };
 }
 
 export const dynamic = 'force-dynamic';
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsPage({ searchParams }: { searchParams: { assignee?: string } }) {
   const me = await getMe();
   const canCreate = can(me, 'cases:create');
+  const mine = searchParams.assignee === 'me';
   let cases: CaseRow[] = [];
   let error: string | null = null;
   try {
-    cases = await api.request<CaseRow[]>('/api/v1/approval-cases?limit=100');
+    cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?limit=100${mine ? '&assignee=me' : ''}`);
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -40,6 +42,15 @@ export default async function ApprovalsPage() {
             + Neue Freigabe
           </Link>
         )}
+      </div>
+
+      <div className="row" style={{ gap: 6, marginBottom: 12 }} role="group" aria-label="Filter">
+        <Link href="/approvals" className={`btn ${!mine ? 'btn--primary' : 'btn--ghost'}`} aria-current={!mine ? 'true' : undefined}>
+          Alle Fälle
+        </Link>
+        <Link href="/approvals?assignee=me" className={`btn ${mine ? 'btn--primary' : 'btn--ghost'}`} aria-current={mine ? 'true' : undefined}>
+          Meine Fälle
+        </Link>
       </div>
 
       {error && (
@@ -72,6 +83,7 @@ export default async function ApprovalsPage() {
                   {c.reference} · {c.customer?.name ?? 'Kunde'}
                   {c.vehicle?.plate ? ` · ${c.vehicle.plate}` : ''}
                   {c._count ? ` · ${c._count.items} Position(en)` : ''}
+                  {c.assignee ? ` · 👤 ${c.assignee.name}` : ''}
                 </div>
               </div>
               <div className="case-row__right">

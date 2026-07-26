@@ -7,6 +7,7 @@ import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
 import { AttachmentsPanel, type AttachmentView } from './_attachments-panel';
+import { CollabPanel, type Member, type Note } from './_collab-panel';
 
 const DECISION_LABELS: Record<string, string> = {
   APPROVE: '✓ Freigegeben',
@@ -52,6 +53,9 @@ interface CaseDetail {
     actorLabel?: string | null;
     createdAt: string;
   }[];
+  assigneeUserId?: string | null;
+  assignee?: { id: string; name: string } | null;
+  notes?: Note[];
   accessLink?: { id: string; expiresAt?: string | null } | null;
 }
 
@@ -90,6 +94,19 @@ export default async function ApprovalDetailPage({
     );
   } catch {
     /* non-fatal: show the case without photos */
+  }
+
+  // Members for the assignee picker (only when the caller may assign).
+  let members: Member[] = [];
+  if (canSend) {
+    try {
+      const raw = await api.request<{ user: { id: string; name: string } | null }[]>('/api/v1/members');
+      members = raw
+        .map((m) => m.user)
+        .filter((u): u is { id: string; name: string } => !!u);
+    } catch {
+      /* non-fatal */
+    }
   }
 
   const totalMin = c.items.reduce((s, it) => s + (it.priceMinMinor ?? 0), 0);
@@ -243,6 +260,21 @@ export default async function ApprovalDetailPage({
               />
             </div>
           </div>
+
+          {canAnnotate && (
+            <div className="card">
+              <div className="card__body">
+                <h2>Team &amp; Notizen</h2>
+                <CollabPanel
+                  caseId={c.id}
+                  assigneeId={c.assigneeUserId ?? null}
+                  members={members}
+                  notes={c.notes ?? []}
+                  canManage={canSend}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="card">
             <div className="card__body">

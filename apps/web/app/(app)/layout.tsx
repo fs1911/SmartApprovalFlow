@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { NavLink } from './_nav';
 import { RoleSwitcher } from './_role-switcher';
 import { getMe, can } from '@/lib/session';
+import { api } from '@/lib/api';
 import { logout } from '../(auth)/actions';
 
 /** Authenticated app shell: sidebar + topbar. Public pages don't use this. */
@@ -14,6 +15,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const isDev = process.env.NODE_ENV !== 'production';
 
+  // Unread notification count for the bell (best-effort; never breaks the shell).
+  let unread = 0;
+  try {
+    unread = (await api.request<{ unread: number }>('/api/v1/notifications/unread-count')).unread;
+  } catch {
+    /* ignore */
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -24,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav className="sidebar__nav">
           <NavLink href="/dashboard">Übersicht</NavLink>
           <NavLink href="/approvals">Freigaben</NavLink>
+          <NavLink href="/notifications">Benachrichtigungen</NavLink>
           {can(me, 'reporting:read') && <NavLink href="/reporting">Auswertung</NavLink>}
           {can(me, 'members:read') && <NavLink href="/members">Team</NavLink>}
           <NavLink href="/settings">Einstellungen</NavLink>
@@ -38,6 +48,35 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <header className="topbar">
           <span className="topbar__workspace">{me.user?.name ?? me.tenant.slug}</span>
           <div className="row" style={{ alignItems: 'center', gap: 12 }}>
+            <Link
+              href="/notifications"
+              aria-label={`Benachrichtigungen${unread > 0 ? ` (${unread} ungelesen)` : ''}`}
+              style={{ position: 'relative', fontSize: '1.25rem', textDecoration: 'none', lineHeight: 1 }}
+            >
+              🔔
+              {unread > 0 && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -8,
+                    minWidth: 16,
+                    height: 16,
+                    padding: '0 4px',
+                    borderRadius: 999,
+                    background: 'var(--color-danger-500)',
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              )}
+            </Link>
             {me && <span className="topbar__role">{me.roleLabel}</span>}
             {isDev && <RoleSwitcher current={me.role ?? 'OWNER'} />}
             {can(me, 'cases:create') && (

@@ -101,6 +101,30 @@ export async function finishAttachment(id: string): Promise<void> {
   revalidatePath(`/approvals/${id}`);
 }
 
+export async function assignCase(id: string, assigneeUserId: string | null): Promise<ActionResult> {
+  try {
+    await api.request(`/api/v1/approval-cases/${id}/assign`, {
+      method: 'POST',
+      body: { assigneeUserId },
+    });
+    revalidatePath(`/approvals/${id}`);
+    return { ok: true, message: assigneeUserId ? 'Fall zugewiesen.' : 'Zuweisung entfernt.' };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiClientError ? e.message : 'Zuweisung fehlgeschlagen.' };
+  }
+}
+
+export async function addNote(id: string, body: string): Promise<ActionResult> {
+  if (!body.trim()) return { ok: false, error: 'Die Notiz darf nicht leer sein.' };
+  try {
+    await api.request(`/api/v1/approval-cases/${id}/notes`, { method: 'POST', body: { body } });
+    revalidatePath(`/approvals/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiClientError ? e.message : 'Notiz konnte nicht gespeichert werden.' };
+  }
+}
+
 export async function deleteAttachment(id: string, attachmentId: string): Promise<ActionResult> {
   try {
     await api.request(`/api/v1/approval-cases/${id}/attachments/${attachmentId}`, {

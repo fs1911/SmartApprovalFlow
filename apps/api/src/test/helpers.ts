@@ -64,6 +64,44 @@ export async function call(
   return { status: res.statusCode, body };
 }
 
+/** Log in a seed user and return the session JWT (for user-scoped tests). */
+export async function loginToken(
+  email = 'owner@muster-garage.ch',
+  password = 'password123',
+): Promise<string> {
+  const app = await getApp();
+  const res = await app.inject({
+    method: 'POST',
+    url: '/api/v1/auth/login',
+    headers: { 'content-type': 'application/json' },
+    payload: { email, password },
+  });
+  return res.json().data.token as string;
+}
+
+/** Inject with a Bearer token (real user session), returning { status, body }. */
+export async function callAsToken(
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  url: string,
+  token: string,
+  payload?: unknown,
+): Promise<{ status: number; body: any }> {
+  const app = await getApp();
+  const res = await app.inject({
+    method,
+    url,
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    payload: payload as object | undefined,
+  });
+  let body: unknown = null;
+  try {
+    body = res.json();
+  } catch {
+    body = res.body;
+  }
+  return { status: res.statusCode, body };
+}
+
 /** A minimal valid create-case payload. */
 export function sampleCase(overrides: Record<string, unknown> = {}) {
   return {

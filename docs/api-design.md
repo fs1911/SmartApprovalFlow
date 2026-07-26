@@ -129,13 +129,19 @@ ist `null` am Ende.
 | `POST` | `/api/v1/auth/reset-password` | — | Passwort per Token setzen | 10 |
 | `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant | 2 |
 | `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) | 2 |
-| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination) | 2 |
+| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination; `?assignee=me`) | 2/14 |
 | `POST` | `/api/v1/approval-cases` | ja | Fall erstellen (validiert, idempotent) | 2 |
 | `GET` | `/api/v1/approval-cases/:id` | ja | Fall-Detail inkl. Items/Audit | 2 |
 | `POST` | `/api/v1/approval-cases/:id/generate-public-link` | ja | Kundenlink erzeugen/rotieren | 2 |
 | `POST` | `/api/v1/approval-cases/:id/send` | ja | Anfrage versenden (Link + E-Mail) | 3 |
 | `POST` | `/api/v1/approval-cases/:id/remind` | ja | Erinnerung senden (nur offen) | 3 |
 | `GET` | `/api/v1/approval-cases/:id/timeline` | ja | Verlauf (Audit + Messages) | 3 |
+| `POST` | `/api/v1/approval-cases/:id/assign` | `cases:send` | Fall an Mitglied zuweisen (oder lösen) | 14 |
+| `POST` | `/api/v1/approval-cases/:id/notes` | `cases:annotate` | Interne Notiz hinzufügen (nie kundenseitig) | 14 |
+| `GET` | `/api/v1/notifications` | ja | Meine Benachrichtigungen (Cursor, ?unread) | 14 |
+| `GET` | `/api/v1/notifications/unread-count` | ja | Ungelesen-Zähler | 14 |
+| `POST` | `/api/v1/notifications/:id/read` | ja | Als gelesen markieren | 14 |
+| `POST` | `/api/v1/notifications/read-all` | ja | Alle als gelesen markieren | 14 |
 | `POST` | `/api/v1/approval-cases/:id/attachments` | `cases:annotate` | Foto registrieren → signierte Upload-URL | 8 |
 | `GET` | `/api/v1/approval-cases/:id/attachments` | `cases:read` | Fotos listen (mit Download-URLs) | 8 |
 | `DELETE` | `/api/v1/approval-cases/:id/attachments/:attachmentId` | `cases:annotate` | Foto entfernen | 8 |

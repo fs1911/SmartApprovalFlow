@@ -24,6 +24,8 @@ Kanonische Quelle im Code: `packages/db/prisma/schema.prisma` (Struktur) und
 | **WebhookDelivery** | Einzelne (geplante) Webhook-Zustellung mit Payload/Status; realer HTTP-Call in Block 5. |
 | **VerificationToken** | Einmaliger, gehashter, ablaufender Token für Einladung (`INVITE`) und Passwort-Reset (`PASSWORD_RESET`) — Block 10. |
 | **Subscription** | Ein Abo pro Tenant (`planKey`/`status`, Perioden-Anker, nullable Provider-Referenzen) — Block 11. Limits in `packages/types/plans.ts`. |
+| **Notification** | Nutzerbezogene In-App-Benachrichtigung (Typ, optional Fall, `readAt`) — Block 14. |
+| **CaseNote** | Interne Notiz an einem Fall (Autor, Body) — nur intern, nie kundenseitig — Block 14. `ApprovalCase.assigneeUserId` verweist auf den zuständigen Nutzer. |
 | **ApiKey** | M2M-Schlüssel mit Scopes für Integrationen; aktiv ab Block 5. |
 
 ### ApprovalCase — Zeitstempel & Zähler (Block 3)

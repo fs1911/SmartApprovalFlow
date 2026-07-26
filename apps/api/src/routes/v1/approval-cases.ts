@@ -11,7 +11,13 @@
  */
 import { createHash } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { createApprovalCaseSchema, createAttachmentSchema, listQuerySchema } from '@saf/types';
+import {
+  createApprovalCaseSchema,
+  createAttachmentSchema,
+  listQuerySchema,
+  assignCaseSchema,
+  createNoteSchema,
+} from '@saf/types';
 import { prisma } from '@saf/db';
 import { config } from '../../config.js';
 import { ok, paginated } from '../../lib/envelope.js';
@@ -26,6 +32,7 @@ import { getStorageDriver, buildAttachmentKey } from '../../lib/storage.js';
 import { loadCaseForMessaging, issueLink, renderCaseTemplate, sendReminder } from '../../lib/case-messaging.js';
 import { assertWithinCaseLimit } from '../../lib/usage.js';
 import { withUniqueReference } from '../../lib/reference.js';
+import { notifyForCase, notifyAssignment } from '../../lib/inapp.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -47,6 +54,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
             cursor: { type: 'string' },
             limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
             status: { type: 'string' },
+            assignee: { type: 'string', description: '"me" limits to cases assigned to the caller' },
           },
         },
       },
@@ -54,12 +62,14 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
     async (req) => {
       const auth = req.auth!;
       const q = listQuerySchema.parse(req.query);
+      const assignee = (req.query as { assignee?: string }).assignee;
       const cursor = decodeCursor(q.cursor);
 
       const rows = await prisma.approvalCase.findMany({
         where: {
           tenantId: auth.tenantId,
           ...(q.status ? { status: q.status as never } : {}),
+          ...(assignee === 'me' && auth.userId ? { assigneeUserId: auth.userId } : {}),
           ...(cursor
             ? {
                 OR: [
@@ -74,6 +84,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
         include: {
           customer: { select: { id: true, name: true } },
           vehicle: { select: { id: true, plate: true, make: true, model: true } },
+          assignee: { select: { id: true, name: true } },
           _count: { select: { items: true } },
         },
       });
@@ -237,9 +248,14 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
           items: { orderBy: { sortOrder: 'asc' }, include: { attachments: true } },
           customer: true,
           vehicle: true,
+          assignee: { select: { id: true, name: true, email: true } },
           decisions: { orderBy: { createdAt: 'desc' } },
           auditEvents: { orderBy: { createdAt: 'asc' } },
           attachments: true,
+          notes: {
+            orderBy: { createdAt: 'desc' },
+            include: { author: { select: { id: true, name: true } } },
+          },
           accessLink: { select: { id: true, expiresAt: true, firstViewedAt: true } },
         },
       });
@@ -623,6 +639,111 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       await prisma.attachment.delete({ where: { id: att.id } });
 
       return reply.status(200).send(ok({ deleted: true }));
+    },
+  );
+
+  // --- Assign a case to a team member --------------------------------------
+  app.post(
+    '/approval-cases/:id/assign',
+    {
+      preHandler: app.requirePermission('cases:send'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Assign (or unassign) a case to a workspace member',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const { assigneeUserId } = assignCaseSchema.parse(req.body);
+
+      const found = await prisma.approvalCase.findFirst({
+        where: { id, tenantId: auth.tenantId },
+        select: { id: true, reference: true, subject: true },
+      });
+      if (!found) throw errors.notFound('Approval-Fall nicht gefunden');
+
+      // The assignee must be a member of this workspace.
+      if (assigneeUserId) {
+        const member = await prisma.membership.findFirst({
+          where: { tenantId: auth.tenantId, userId: assigneeUserId },
+          select: { id: true },
+        });
+        if (!member) throw errors.validation('Nutzer ist kein Mitglied dieses Workspace.', [
+          { path: 'assigneeUserId', message: 'Unbekanntes Mitglied' },
+        ]);
+      }
+
+      await prisma.approvalCase.update({ where: { id }, data: { assigneeUserId } });
+      await prisma.auditEvent.create({
+        data: {
+          tenantId: auth.tenantId,
+          approvalCaseId: id,
+          type: 'CASE_UPDATED',
+          actorType: auth.userId ? 'USER' : 'SYSTEM',
+          actorUserId: auth.userId ?? null,
+          metadata: { action: 'assigned', assigneeUserId },
+        },
+      });
+
+      // Notify the new assignee (unless they assigned it to themselves).
+      if (assigneeUserId) {
+        await notifyAssignment(auth.tenantId, id, assigneeUserId, {
+          excludeUserId: auth.userId,
+          reference: found.reference,
+          subject: found.subject,
+        });
+      }
+
+      const updated = await prisma.approvalCase.findFirst({
+        where: { id, tenantId: auth.tenantId },
+        select: { id: true, assigneeUserId: true, assignee: { select: { id: true, name: true } } },
+      });
+      return reply.status(200).send(ok(updated));
+    },
+  );
+
+  // --- Internal notes ------------------------------------------------------
+  app.post(
+    '/approval-cases/:id/notes',
+    {
+      preHandler: app.requirePermission('cases:annotate'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Add an internal note (never shown to the customer)',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const { body } = createNoteSchema.parse(req.body);
+
+      const found = await prisma.approvalCase.findFirst({
+        where: { id, tenantId: auth.tenantId },
+        select: { id: true },
+      });
+      if (!found) throw errors.notFound('Approval-Fall nicht gefunden');
+
+      const note = await prisma.caseNote.create({
+        data: { tenantId: auth.tenantId, approvalCaseId: id, authorUserId: auth.userId ?? null, body },
+        include: { author: { select: { id: true, name: true } } },
+      });
+
+      // Notify the case's creator + assignee (except the note's author).
+      await notifyForCase(auth.tenantId, id, 'CASE_NOTE_ADDED', { excludeUserId: auth.userId });
+
+      return reply.status(201).send(
+        ok({
+          id: note.id,
+          body: note.body,
+          author: note.author,
+          createdAt: note.createdAt.toISOString(),
+        }),
+      );
     },
   );
 }
