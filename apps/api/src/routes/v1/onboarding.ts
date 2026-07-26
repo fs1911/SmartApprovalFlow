@@ -11,6 +11,7 @@ import type { FastifyInstance } from 'fastify';
 import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
 import { computeOnboarding, type OnboardingSignals } from '../../lib/onboarding.js';
+import { withUniqueReference } from '../../lib/reference.js';
 
 async function gatherSignals(tenantId: string): Promise<OnboardingSignals> {
   const [tenant, memberCount, caseCount, sentCount, responseCount] = await Promise.all([
@@ -67,11 +68,9 @@ export async function onboardingRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       const auth = req.auth!;
-      const year = new Date().getFullYear();
-      const count = await prisma.approvalCase.count({ where: { tenantId: auth.tenantId } });
-      const reference = `AC-${year}-${String(count + 1).padStart(4, '0')}`;
 
-      const created = await prisma.$transaction(async (tx) => {
+      const created = await withUniqueReference(auth.tenantId, (reference) =>
+        prisma.$transaction(async (tx) => {
         const customer = await tx.customer.create({
           data: { tenantId: auth.tenantId, name: 'Beispiel Kundin', email: 'beispiel@kunde.example' },
         });
@@ -113,7 +112,8 @@ export async function onboardingRoutes(app: FastifyInstance) {
           },
           include: { items: true, customer: true },
         });
-      });
+      }),
+      );
 
       return reply.status(201).send(ok(created));
     },

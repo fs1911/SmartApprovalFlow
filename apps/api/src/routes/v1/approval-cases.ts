@@ -25,18 +25,10 @@ import { isPending } from '../../lib/status.js';
 import { getStorageDriver, buildAttachmentKey } from '../../lib/storage.js';
 import { loadCaseForMessaging, issueLink, renderCaseTemplate, sendReminder } from '../../lib/case-messaging.js';
 import { assertWithinCaseLimit } from '../../lib/usage.js';
+import { withUniqueReference } from '../../lib/reference.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
-}
-
-/** Per-tenant human reference like AC-2026-0007. Simplified for Block 1. */
-async function nextReference(tenantId: string): Promise<string> {
-  const year = new Date().getFullYear();
-  const count = await prisma.approvalCase
-    .count({ where: { tenantId } })
-    .catch(() => Math.floor(Math.random() * 1000));
-  return `AC-${year}-${String(count + 1).padStart(4, '0')}`;
 }
 
 export async function approvalCaseRoutes(app: FastifyInstance) {
@@ -128,13 +120,15 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
         }
       }
 
-      const reference = await nextReference(auth.tenantId);
       const actorType: 'USER' | 'SYSTEM' = auth.userId ? 'USER' : 'SYSTEM';
 
       // Create customer (and optional vehicle) first, then the case with scalar
       // foreign keys. This keeps us on Prisma's "unchecked" create variant so we
       // can pass tenantId directly while still nesting the child items/audit rows.
-      const created = await prisma.$transaction(async (tx) => {
+      // `withUniqueReference` retries on the rare per-tenant reference collision
+      // that can happen under concurrent creates.
+      const created = await withUniqueReference(auth.tenantId, (reference) =>
+        prisma.$transaction(async (tx) => {
         const customer = await tx.customer.create({
           data: {
             tenantId: auth.tenantId,
@@ -207,7 +201,8 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
           },
           include: { items: true, customer: true, vehicle: true },
         });
-      });
+      }),
+      );
 
       const body = ok(created);
       if (idemKey) await saveIdempotent(auth.tenantId, idemKey, 201, body, fp);

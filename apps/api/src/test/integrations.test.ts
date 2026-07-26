@@ -77,6 +77,20 @@ test('webhook endpoint CRUD + rotate + test delivery', async (t) => {
   assert.equal(del.status, 200);
 });
 
+test('concurrent case creation never collides on the per-tenant reference', async (t) => {
+  if (!dbUp) return t.skip('no database');
+  // Fire many creates at once — the count-based reference would otherwise race
+  // into a duplicate-key error (regression guard for the CI failure).
+  const results = await Promise.all(
+    Array.from({ length: 15 }, (_, i) =>
+      call('POST', '/api/v1/approval-cases', { role: 'OWNER', payload: sampleCase({ subject: `Concurrent ${i}` }) }),
+    ),
+  );
+  for (const r of results) assert.equal(r.status, 201);
+  const refs = results.map((r) => r.body.data.reference);
+  assert.equal(new Set(refs).size, refs.length, 'all references are unique');
+});
+
 test('incoming integration: API key can create a case; missing scope is forbidden', async (t) => {
   if (!dbUp) return t.skip('no database');
 
