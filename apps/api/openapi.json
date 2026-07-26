@@ -820,9 +820,91 @@
     },
     "/api/v1/reporting/summary": {
       "get": {
-        "summary": "Key operational metrics for the current workspace",
+        "summary": "Key metrics, revenue and trends for a period",
         "tags": [
           "reporting"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "365d"
+              ]
+            },
+            "in": "query",
+            "name": "period",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/reporting/export.csv": {
+      "get": {
+        "summary": "Export the period’s cases as CSV",
+        "tags": [
+          "reporting"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d",
+                "90d",
+                "365d"
+              ]
+            },
+            "in": "query",
+            "name": "period",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "from",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "required": false
+          }
         ],
         "security": [
           {

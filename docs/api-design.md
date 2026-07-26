@@ -158,7 +158,8 @@ ist `null` am Ende.
 | `POST` | `/api/v1/billing/webhook` | — (signiert) | Billing-Provider-Event (idempotent) | 11 |
 | `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
-| `GET` | `/api/v1/reporting/summary` | `reporting:read` | Operative Kennzahlen | 4 |
+| `GET` | `/api/v1/reporting/summary` | `reporting:read` | Kennzahlen + Umsatz + Trend (Zeitraum-Filter) | 4/13 |
+| `GET` | `/api/v1/reporting/export.csv` | `reporting:read` | Fälle des Zeitraums als CSV | 13 |
 | `GET` | `/api/v1/api-keys` | `members:manage` | API-Keys listen | 7 |
 | `POST` | `/api/v1/api-keys` | `members:manage` | API-Key erstellen (Klartext einmalig) | 7 |
 | `DELETE` | `/api/v1/api-keys/:id` | `members:manage` | API-Key widerrufen | 7 |
