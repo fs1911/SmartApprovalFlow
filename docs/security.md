@@ -35,6 +35,10 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
   Erstellung/Rotation angezeigt. Deferred: Verschlüsselung der Webhook-Secrets
   at-rest (heute Klartext gespeichert, da zum Signieren nötig) —
   `docs/integrations-guide.md`.
+- **Datenlebenszyklus (Block 15):** DSGVO-Export/Löschung nur mit `data:manage`
+  (OWNER/ADMIN); Löschung erfordert `?confirm=true`, kaskadiert und wird als
+  `DATA_ERASED` auditiert; optionale Fall-Aufbewahrung (`RETENTION_CASE_MONTHS`)
+  löscht nur terminale Fälle — `docs/data-lifecycle.md`.
 
 ## Bedrohungen & Massnahmen (Auszug)
 

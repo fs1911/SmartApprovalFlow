@@ -408,6 +408,33 @@
             "description": "Default Response"
           }
         }
+      },
+      "delete": {
+        "summary": "Erase a single case (irreversible; ?confirm=true)",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
       }
     },
     "/api/v1/approval-cases/{id}/generate-public-link": {
@@ -983,6 +1010,129 @@
         "summary": "Update workspace settings and branding",
         "tags": [
           "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}/export": {
+      "get": {
+        "summary": "Export all of a customer’s data (GDPR access)",
+        "tags": [
+          "workspace"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}": {
+      "delete": {
+        "summary": "Erase a customer and all their cases (irreversible; ?confirm=true)",
+        "tags": [
+          "workspace"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/approval-cases/{id}/export": {
+      "get": {
+        "summary": "Export a single case as JSON (GDPR access)",
+        "tags": [
+          "approval-cases"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/overview": {
+      "get": {
+        "summary": "Admin overview: members, cases, storage, plan, retention",
+        "tags": [
+          "workspace"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/workspaces": {
+      "get": {
+        "summary": "Workspaces the current user is a member of",
+        "tags": [
+          "identity"
         ],
         "security": [
           {

@@ -13,6 +13,8 @@ import { invitationRoutes } from './invitations.js';
 import { onboardingRoutes } from './onboarding.js';
 import { billingRoutes } from './billing.js';
 import { workspaceRoutes } from './workspace.js';
+import { dataRoutes } from './data.js';
+import { adminRoutes } from './admin.js';
 import { reportingRoutes } from './reporting.js';
 import { apiKeyRoutes } from './api-keys.js';
 import { integrationRoutes } from './integration.js';
@@ -35,6 +37,8 @@ export async function registerV1Routes(app: FastifyInstance) {
   await app.register(onboardingRoutes);
   await app.register(billingRoutes);
   await app.register(workspaceRoutes);
+  await app.register(dataRoutes);
+  await app.register(adminRoutes);
   await app.register(reportingRoutes);
   await app.register(apiKeyRoutes);
   await app.register(integrationRoutes);

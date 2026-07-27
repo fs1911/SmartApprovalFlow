@@ -21,6 +21,22 @@ interface Workspace {
   contactPhone: string | null;
 }
 
+interface AdminOverview {
+  members: number;
+  pendingInvites: number;
+  customers: number;
+  cases: { total: number; byStatus: Record<string, number> };
+  storage: { attachments: number; bytes: number };
+  plan: { key: string; label: string; status: string };
+  retention: { caseMonths: number; webhookDays: number; note: string };
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
@@ -36,10 +52,11 @@ export default async function SettingsPage() {
   let workspace: Workspace | null = null;
   let billing: BillingData | null = null;
   let developer: DeveloperData | null = null;
+  let admin: AdminOverview | null = null;
   let error: string | null = null;
 
   try {
-    const [tpl, ws, bill, keys, hooks] = await Promise.all([
+    const [tpl, ws, bill, keys, hooks, ov] = await Promise.all([
       api.request<{ templates: Template[]; variables: string[] }>('/api/v1/templates'),
       canBrand ? api.request<Workspace>('/api/v1/workspace') : Promise.resolve(null),
       canWorkspaceRead ? api.request<BillingData>('/api/v1/billing') : Promise.resolve(null),
@@ -49,11 +66,13 @@ export default async function SettingsPage() {
       canManageMembers
         ? api.request<{ endpoints: DeveloperData['webhooks']; availableEvents: string[] }>('/api/v1/webhook-endpoints')
         : Promise.resolve(null),
+      canManageMembers ? api.request<AdminOverview>('/api/v1/admin/overview') : Promise.resolve(null),
     ]);
     templates = tpl.templates;
     variables = tpl.variables;
     workspace = ws;
     billing = bill;
+    admin = ov;
     if (keys && hooks) {
       developer = {
         apiKeys: keys.keys,
@@ -82,6 +101,31 @@ export default async function SettingsPage() {
       )}
 
       <div className="stack" style={{ maxWidth: 720 }}>
+        {admin && (
+          <div className="card">
+            <div className="card__body">
+              <h2>Admin-Überblick</h2>
+              <dl className="dl">
+                <dt>Mitglieder</dt>
+                <dd>{admin.members}{admin.pendingInvites > 0 ? ` (+${admin.pendingInvites} eingeladen)` : ''}</dd>
+                <dt>Kund:innen</dt>
+                <dd>{admin.customers}</dd>
+                <dt>Fälle gesamt</dt>
+                <dd>{admin.cases.total}</dd>
+                <dt>Fotos / Speicher</dt>
+                <dd>{admin.storage.attachments} · {fmtBytes(admin.storage.bytes)}</dd>
+                <dt>Plan</dt>
+                <dd>{admin.plan.label} ({admin.plan.status})</dd>
+                <dt>Aufbewahrung</dt>
+                <dd>{admin.retention.note}</dd>
+              </dl>
+              <p className="subtle" style={{ fontSize: 'var(--text-xs)', margin: 0 }}>
+                Daten-Export und Löschung einzelner Fälle finden Sie auf der jeweiligen Fall-Detailseite.
+              </p>
+            </div>
+          </div>
+        )}
+
         {billing && <PlanPanel data={billing} canManage={canBrand} />}
 
         {canBrand && workspace && (

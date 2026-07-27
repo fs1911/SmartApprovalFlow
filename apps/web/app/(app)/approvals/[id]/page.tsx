@@ -7,6 +7,7 @@ import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
 import { AttachmentsPanel, type AttachmentView } from './_attachments-panel';
+import { DataPanel } from './_data-panel';
 import { CollabPanel, type Member, type Note } from './_collab-panel';
 
 const DECISION_LABELS: Record<string, string> = {
@@ -78,6 +79,7 @@ export default async function ApprovalDetailPage({
   const me = await getMe();
   const canSend = can(me, 'cases:send');
   const canAnnotate = can(me, 'cases:annotate');
+  const canManageData = can(me, 'data:manage');
   let c: CaseDetail;
   try {
     c = await api.request<CaseDetail>(`/api/v1/approval-cases/${params.id}`);
@@ -260,6 +262,15 @@ export default async function ApprovalDetailPage({
               />
             </div>
           </div>
+
+          {canManageData && (
+            <div className="card">
+              <div className="card__body">
+                <h2>Daten</h2>
+                <DataPanel caseId={c.id} />
+              </div>
+            </div>
+          )}
 
           {canAnnotate && (
             <div className="card">

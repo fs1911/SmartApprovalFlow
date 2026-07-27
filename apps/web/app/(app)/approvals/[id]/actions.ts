@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { api, ApiClientError } from '@/lib/api';
 
 export interface LinkState {
@@ -123,6 +124,17 @@ export async function addNote(id: string, body: string): Promise<ActionResult> {
   } catch (e) {
     return { ok: false, error: e instanceof ApiClientError ? e.message : 'Notiz konnte nicht gespeichert werden.' };
   }
+}
+
+export async function eraseCase(id: string): Promise<ActionResult> {
+  try {
+    await api.request(`/api/v1/approval-cases/${id}?confirm=true`, { method: 'DELETE' });
+  } catch (e) {
+    return { ok: false, error: e instanceof ApiClientError ? e.message : 'Löschen fehlgeschlagen.' };
+  }
+  // Case is gone — leave the detail page.
+  revalidatePath('/approvals');
+  redirect('/approvals');
 }
 
 export async function deleteAttachment(id: string, attachmentId: string): Promise<ActionResult> {

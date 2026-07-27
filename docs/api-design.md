@@ -166,6 +166,12 @@ ist `null` am Ende.
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
 | `GET` | `/api/v1/reporting/summary` | `reporting:read` | Kennzahlen + Umsatz + Trend (Zeitraum-Filter) | 4/13 |
 | `GET` | `/api/v1/reporting/export.csv` | `reporting:read` | Fälle des Zeitraums als CSV | 13 |
+| `GET` | `/api/v1/admin/overview` | `members:manage` | Admin-Kennzahlen (Mitglieder/Fälle/Speicher/Plan/Retention) | 15 |
+| `GET` | `/api/v1/workspaces` | ja | Workspaces des Nutzers (Mitgliedschaften) | 15 |
+| `GET` | `/api/v1/approval-cases/:id/export` | `data:manage` | Fall als JSON exportieren (DSGVO) | 15 |
+| `DELETE` | `/api/v1/approval-cases/:id?confirm=true` | `data:manage` | Fall unwiderruflich löschen | 15 |
+| `GET` | `/api/v1/customers/:id/export` | `data:manage` | Kunde + Fälle exportieren (DSGVO) | 15 |
+| `DELETE` | `/api/v1/customers/:id?confirm=true` | `data:manage` | Kunde + Fälle löschen (Cascade) | 15 |
 | `GET` | `/api/v1/api-keys` | `members:manage` | API-Keys listen | 7 |
 | `POST` | `/api/v1/api-keys` | `members:manage` | API-Key erstellen (Klartext einmalig) | 7 |
 | `DELETE` | `/api/v1/api-keys/:id` | `members:manage` | API-Key widerrufen | 7 |

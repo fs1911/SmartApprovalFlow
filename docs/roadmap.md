@@ -19,7 +19,8 @@ riesig".
 | **Block 12** | **Integrations- & API-Ökosystem** — API-Doku/DX, Self-Service-Webhooks, eingehende Integration (API-Key), Beispiel-Rezepte | ✅ abgeschlossen |
 | **Block 13** | **Reporting- & Insights-Ausbau** — Kennzahlen/Trends, Zeitraum-Filter, CSV-Export, verständliches Dashboard | ✅ abgeschlossen |
 | **Block 14** | **Benachrichtigungen & Kollaboration** — In-App-Benachrichtigungen, Fall-Zuweisung, interne Notizen, Notification-Center | ✅ abgeschlossen |
-| **Block 15** | **Mandantenfähige Skalierung & Datenlebenszyklus** — Workspace-Verwaltung, DSGVO-Exporte/-Löschung, Aufbewahrung, Admin-Überblick | geplant |
+| **Block 15** | **Mandantenfähige Skalierung & Datenlebenszyklus** — Workspace-Verwaltung, DSGVO-Exporte/-Löschung, Aufbewahrung, Admin-Überblick | ✅ abgeschlossen |
+| **Block 16** | **Barrierefreiheit, Lokalisierung & finaler Produktschliff** — WCAG-Feinschliff, Mehrsprachigkeit (Kundenseite), Leerzustände/Fehlerseiten, E2E-Politur | geplant |
 | **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
 
 ## Leitplanken über alle Blöcke

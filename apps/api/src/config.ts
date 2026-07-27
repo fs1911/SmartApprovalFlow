@@ -71,6 +71,9 @@ const envSchema = z.object({
   // Idempotency uses each record's own expiresAt; these bound the rest.
   RETENTION_WEBHOOK_DAYS: z.coerce.number().int().default(30),
   RETENTION_ORPHAN_ATTACHMENT_HOURS: z.coerce.number().int().default(24),
+  // Erase terminal (closed) cases older than N months. 0 = disabled (default),
+  // so nothing is auto-deleted unless a workspace opts in. See docs/data-lifecycle.md.
+  RETENTION_CASE_MONTHS: z.coerce.number().int().default(0),
 
   // --- Notifications -------------------------------------------------------
   // `console` (default) logs messages and needs no credentials. `resend` sends

@@ -16,12 +16,15 @@ import { config } from '../config.js';
 export interface RetentionPolicy {
   webhookDays: number;
   orphanAttachmentHours: number;
+  /** Erase terminal cases older than N months (0 = disabled). */
+  caseMonths: number;
 }
 
 export function policyFromConfig(): RetentionPolicy {
   return {
     webhookDays: config.RETENTION_WEBHOOK_DAYS,
     orphanAttachmentHours: config.RETENTION_ORPHAN_ATTACHMENT_HOURS,
+    caseMonths: config.RETENTION_CASE_MONTHS,
   };
 }
 
@@ -45,19 +48,26 @@ export function retentionCutoffs(policy: RetentionPolicy, now: Date = new Date()
   };
 }
 
+/** Terminal statuses eligible for retention-based erasure. */
+const TERMINAL_STATUSES = ['APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'EXPIRED', 'CANCELLED'];
+const MONTH_MS = 30 * DAY_MS;
+
 export interface CleanupResult {
   idempotencyRemoved: number;
   webhookDeliveriesRemoved: number;
   orphanAttachmentsRemoved: number;
+  casesErased: number;
 }
 
 /**
  * Delete stale rows for one tenant. All deletes are tenant-scoped and only touch
  * rows that are provably safe to drop; nothing that could still be needed for the
- * audit trail or an in-flight flow is removed.
+ * audit trail or an in-flight flow is removed. Case retention only runs when
+ * RETENTION_CASE_MONTHS > 0 (opt-in) and only erases terminal cases.
  */
 export async function runCleanup(tenantId: string, now: Date = new Date()): Promise<CleanupResult> {
-  const cut = retentionCutoffs(policyFromConfig(), now);
+  const policy = policyFromConfig();
+  const cut = retentionCutoffs(policy, now);
 
   const [idem, webhooks, orphans] = await prisma.$transaction([
     prisma.idempotencyRecord.deleteMany({
@@ -79,9 +89,20 @@ export async function runCleanup(tenantId: string, now: Date = new Date()): Prom
     }),
   ]);
 
+  // Opt-in case retention: erase terminal cases last updated before the cutoff.
+  let casesErased = 0;
+  if (policy.caseMonths > 0) {
+    const before = new Date(now.getTime() - policy.caseMonths * MONTH_MS);
+    const del = await prisma.approvalCase.deleteMany({
+      where: { tenantId, status: { in: TERMINAL_STATUSES as never[] }, updatedAt: { lt: before } },
+    });
+    casesErased = del.count;
+  }
+
   return {
     idempotencyRemoved: idem.count,
     webhookDeliveriesRemoved: webhooks.count,
     orphanAttachmentsRemoved: orphans.count,
+    casesErased,
   };
 }

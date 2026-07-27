@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   'workspace:read',
   'workspace:manage', // branding + workspace settings
   'reporting:read',
+  'data:manage', // GDPR export / erasure + retention (OWNER/ADMIN only)
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
