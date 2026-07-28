@@ -4,6 +4,9 @@ import { BRAND, MARKETING_NAV } from './_content';
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mk-root">
+      <a href="#main-content" className="skip-link">
+        Zum Inhalt springen
+      </a>
       <header className="mk-header">
         <div className="mk-container mk-header__inner">
           <Link href="/" className="mk-brand" aria-label={`${BRAND.name} Startseite`}>
@@ -28,7 +31,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
 
       <footer className="mk-footer">
         <div className="mk-container mk-footer__grid">

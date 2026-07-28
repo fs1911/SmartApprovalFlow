@@ -32,6 +32,39 @@ a:hover {
   border-radius: var(--radius-sm);
 }
 
+/* --- Accessibility helpers (Block 16) ------------------------------------- */
+/* Visually hidden but available to screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Skip-to-content link: off-screen until keyboard-focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-3);
+  top: -100px;
+  z-index: 1000;
+  padding: 10px 16px;
+  background: var(--color-brand-500);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: var(--space-3);
+  text-decoration: none;
+}
+
 /* --- App shell ------------------------------------------------------------ */
 .app-shell {
   display: grid;

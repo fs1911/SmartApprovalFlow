@@ -25,6 +25,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="skip-link">
+        Zum Inhalt springen
+      </a>
       <aside className="sidebar">
         <div className="sidebar__brand">
           <span className="sidebar__logo">S</span>
@@ -91,7 +94,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </form>
           </div>
         </header>
-        <main className="content">{children}</main>
+        <main className="content" id="main-content">
+          {children}
+        </main>
       </div>
     </div>
   );

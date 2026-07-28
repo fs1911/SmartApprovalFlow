@@ -154,6 +154,7 @@ async function toPublicView(link: Awaited<ReturnType<typeof resolveByToken>>) {
     workspace: {
       name: c.tenant.brandName ?? c.tenant.name,
       currency: c.tenant.currency,
+      locale: c.tenant.locale,
       brandColor: c.tenant.brandColor,
       contactEmail: c.tenant.contactEmail,
       contactPhone: c.tenant.contactPhone,

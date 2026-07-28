@@ -1,4 +1,4 @@
-import { formatPriceBand } from '@saf/ui';
+import { formatPriceBand, resolveLocale, t, type Locale } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { ActionsPanel } from './_actions-panel';
 
@@ -11,6 +11,7 @@ interface PublicView {
   workspace: {
     name: string;
     currency: string;
+    locale?: string | null;
     brandColor?: string | null;
     contactEmail?: string | null;
     contactPhone?: string | null;
@@ -44,87 +45,99 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export default async function PublicApprovalPage({ params }: { params: { token: string } }) {
+export default async function PublicApprovalPage({
+  params,
+  searchParams,
+}: {
+  params: { token: string };
+  searchParams?: { lang?: string };
+}) {
   let view: PublicView | null = null;
-  let errorMsg: string | null = null;
+  let errorCode: 'expired' | 'invalid' | null = null;
 
   try {
     view = await api.request<PublicView>(`/api/v1/public/approvals/${params.token}`, {
       publicRoute: true,
     });
   } catch (e) {
-    errorMsg =
-      e instanceof ApiClientError
-        ? e.code === 'TOKEN_EXPIRED'
-          ? 'Dieser Link ist abgelaufen. Bitte kontaktieren Sie Ihre Werkstatt.'
-          : 'Dieser Link ist ungültig oder wurde bereits zurückgezogen.'
-        : 'Der Link konnte nicht geladen werden.';
+    errorCode =
+      e instanceof ApiClientError && e.code === 'TOKEN_EXPIRED' ? 'expired' : 'invalid';
   }
+
+  // Resolve the display language: explicit ?lang wins, then the tenant locale,
+  // with a safe fallback to German. On an error we only have ?lang.
+  const locale: Locale = resolveLocale(searchParams?.lang, view?.workspace.locale);
 
   if (!view) {
     return (
-      <div className="public-page">
-        <div className="public-card">
+      <div className="public-page" lang={locale}>
+        <main className="public-card">
           <div className="card">
             <div className="card__body" style={{ textAlign: 'center' }}>
-              <div className="empty__icon">🔒</div>
-              <h2>Link nicht verfügbar</h2>
-              <p className="subtle">{errorMsg}</p>
+              <div className="empty__icon" aria-hidden="true">
+                🔒
+              </div>
+              <h2>{t(locale, 'linkUnavailableTitle')}</h2>
+              <p className="subtle">
+                {errorCode === 'expired' ? t(locale, 'expiredMsg') : t(locale, 'invalidMsg')}
+              </p>
               <p className="subtle" style={{ marginTop: 12 }}>
-                Bitte wenden Sie sich direkt an Ihre Werkstatt – gerne stellen wir Ihnen einen neuen
-                Link aus.
+                {t(locale, 'contactWorkshop')}
               </p>
             </div>
           </div>
-          <div className="public-foot">Bereitgestellt über Smart Approval Flow</div>
-        </div>
+          <div className="public-foot">{t(locale, 'providedVia')}</div>
+        </main>
       </div>
     );
   }
 
   const urgent = view.urgency === 'HIGH';
+  const localeDate = locale === 'fr' ? 'fr-CH' : locale === 'it' ? 'it-CH' : 'de-CH';
   // White-label accent: override the brand token with the workspace's colour.
   const brandStyle = view.workspace.brandColor
     ? ({ ['--color-brand-500']: view.workspace.brandColor } as React.CSSProperties)
     : undefined;
 
   return (
-    <div className="public-page" style={brandStyle}>
-      <div className="public-card">
+    <div className="public-page" style={brandStyle} lang={locale}>
+      <main className="public-card">
         {/* Branded header — builds trust */}
         <div className="public-header">
-          <div className="public-brand-logo">{initials(view.workspace.name)}</div>
+          <div className="public-brand-logo" aria-hidden="true">
+            {initials(view.workspace.name)}
+          </div>
           <div>
             <div style={{ fontWeight: 700 }}>{view.workspace.name}</div>
-            <div className="subtle">Freigabeanfrage · {view.reference}</div>
+            <div className="subtle">
+              {t(locale, 'approvalRequest')} · {view.reference}
+            </div>
           </div>
         </div>
 
         <div className="card">
           <div className="card__body stack">
             {urgent && (
-              <div className="alert alert--danger">
-                Sicherheitsrelevant — bitte zeitnah entscheiden.
+              <div className="alert alert--danger" role="alert">
+                {t(locale, 'urgent')}
               </div>
             )}
 
             <div>
               <p className="subtle" style={{ marginBottom: 4 }}>
-                Guten Tag {view.customerName ?? ''}
+                {t(locale, 'greeting', { name: view.customerName ?? '' })}
               </p>
               <h1 style={{ fontSize: 'var(--text-xl)' }}>{view.subject}</h1>
               {view.vehicle && (
                 <p className="subtle">
-                  Ihr Fahrzeug: {view.vehicle}
-                  {view.vehiclePlate ? ` · ${view.vehiclePlate}` : ''}
+                  {t(locale, 'yourVehicle', {
+                    vehicle: `${view.vehicle}${view.vehiclePlate ? ` · ${view.vehiclePlate}` : ''}`,
+                  })}
                 </p>
               )}
             </div>
 
-            <p style={{ margin: 0 }}>
-              Bei der Kontrolle Ihres Fahrzeugs haben wir eine empfohlene Arbeit festgestellt. Bitte
-              prüfen Sie kurz und geben Sie uns Bescheid – das dauert weniger als eine Minute.
-            </p>
+            <p style={{ margin: 0 }}>{t(locale, 'intro')}</p>
 
             {view.description && <p className="subtle">{view.description}</p>}
 
@@ -173,7 +186,7 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
                   textAlign: 'center',
                 }}
               >
-                <div className="subtle">Voraussichtliche Kosten</div>
+                <div className="subtle">{t(locale, 'costLabel')}</div>
                 <div className="public-price">
                   {formatPriceBand(
                     view.priceMinMinor,
@@ -182,13 +195,14 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
                   )}
                 </div>
                 <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
-                  Richtpreis inkl. Teile &amp; Arbeit. Endbetrag kann leicht abweichen.
+                  {t(locale, 'costHint')}
                 </div>
               </div>
             )}
 
             <ActionsPanel
               token={params.token}
+              locale={locale}
               initialStatus={view.status}
               items={view.items.map((it) => ({
                 id: it.id,
@@ -201,40 +215,33 @@ export default async function PublicApprovalPage({ params }: { params: { token: 
               className="subtle"
               style={{ textAlign: 'center', fontSize: 'var(--text-xs)', margin: 0 }}
             >
-              Unsicher? Wählen Sie „Rückruf wünschen“ – wir beraten Sie gerne persönlich.
+              {t(locale, 'unsureHint')}
               {view.expiresAt && (
-                <>
-                  {' '}
-                  Dieser Link ist bis zum {new Date(view.expiresAt).toLocaleDateString('de-CH')}{' '}
-                  gültig.
-                </>
+                <> {t(locale, 'validUntil', { date: new Date(view.expiresAt).toLocaleDateString(localeDate) })}</>
               )}
             </p>
           </div>
         </div>
 
         <div className="trust-row">
-          <span>🔒 Sichere Verbindung</span>
-          <span>✓ Kein Login nötig</span>
-          <span>📄 Dokumentiert</span>
+          <span>{t(locale, 'trustSecure')}</span>
+          <span>{t(locale, 'trustNoLogin')}</span>
+          <span>{t(locale, 'trustDocumented')}</span>
         </div>
         {(view.workspace.contactEmail || view.workspace.contactPhone) && (
           <div style={{ textAlign: 'center', fontSize: 'var(--text-sm)' }}>
-            Fragen? Kontaktieren Sie {view.workspace.name}
+            {t(locale, 'questions', { name: view.workspace.name })}
             {view.workspace.contactPhone ? ` · ${view.workspace.contactPhone}` : ''}
             {view.workspace.contactEmail ? ` · ${view.workspace.contactEmail}` : ''}
           </div>
         )}
         <div className="public-foot">
-          Bereitgestellt über Smart Approval Flow für {view.workspace.name}
+          {t(locale, 'providedVia')}
           {view.expiresAt && (
-            <>
-              {' '}
-              · Gültig bis {new Date(view.expiresAt).toLocaleDateString('de-CH')}
-            </>
+            <> · {t(locale, 'validUntil', { date: new Date(view.expiresAt).toLocaleDateString(localeDate) })}</>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

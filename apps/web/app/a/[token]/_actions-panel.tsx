@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { t, type Locale, type Messages } from '@saf/ui';
 import { respond, respondItems, type RespondResult } from './actions';
 
 type Mode = 'idle' | 'decline' | 'callback' | 'items';
@@ -15,10 +16,12 @@ interface ItemOption {
 /** Customer-facing decision controls with a clear post-submission state. */
 export function ActionsPanel({
   token,
+  locale,
   initialStatus,
   items = [],
 }: {
   token: string;
+  locale: Locale;
   initialStatus: string;
   items?: ItemOption[];
 }) {
@@ -54,7 +57,7 @@ export function ActionsPanel({
   }
 
   if (result?.ok && result.status) {
-    return <SuccessState status={result.status} />;
+    return <SuccessState status={result.status} locale={locale} />;
   }
 
   const canDecideIndividually = items.length > 1;
@@ -75,18 +78,18 @@ export function ActionsPanel({
             aria-busy={busy === 'APPROVE'}
             onClick={() => submit('APPROVE')}
           >
-            {busy === 'APPROVE' ? 'Wird gesendet…' : '✓ Alle Arbeiten freigeben'}
+            {busy === 'APPROVE' ? t(locale, 'sending') : t(locale, 'approveAll')}
           </button>
           {canDecideIndividually && (
             <button className="btn btn--secondary btn--lg" onClick={() => setMode('items')}>
-              Einzeln entscheiden
+              {t(locale, 'decideIndividually')}
             </button>
           )}
           <button className="btn btn--secondary btn--lg" onClick={() => setMode('callback')}>
-            📞 Rückruf wünschen
+            {t(locale, 'requestCallback')}
           </button>
           <button className="btn btn--ghost" onClick={() => setMode('decline')}>
-            Alles ablehnen
+            {t(locale, 'declineAll')}
           </button>
         </div>
       )}
@@ -94,7 +97,7 @@ export function ActionsPanel({
       {mode === 'items' && (
         <div className="stack">
           <p className="subtle" style={{ margin: 0 }}>
-            Entscheiden Sie für jede Position einzeln:
+            {t(locale, 'decideEachHint')}
           </p>
           {items.map((it) => (
             <div
@@ -114,10 +117,15 @@ export function ActionsPanel({
                   {it.priceLabel}
                 </div>
               </div>
-              <div className="row" style={{ gap: 6 }} role="group" aria-label={`Entscheid für ${it.title}`}>
+              <div
+                className="row"
+                style={{ gap: 6 }}
+                role="group"
+                aria-label={`${t(locale, 'approve')} / ${t(locale, 'decline')} — ${it.title}`}
+              >
                 <button
                   type="button"
-                  aria-label={`${it.title} freigeben`}
+                  aria-label={`${it.title}: ${t(locale, 'approve')}`}
                   aria-pressed={choices[it.id] === 'APPROVE'}
                   className={`btn ${choices[it.id] === 'APPROVE' ? 'btn--success' : 'btn--ghost'}`}
                   onClick={() => setChoices((c) => ({ ...c, [it.id]: 'APPROVE' }))}
@@ -126,7 +134,7 @@ export function ActionsPanel({
                 </button>
                 <button
                   type="button"
-                  aria-label={`${it.title} ablehnen`}
+                  aria-label={`${it.title}: ${t(locale, 'decline')}`}
                   aria-pressed={choices[it.id] === 'DECLINE'}
                   className={`btn ${choices[it.id] === 'DECLINE' ? 'btn--danger' : 'btn--ghost'}`}
                   onClick={() => setChoices((c) => ({ ...c, [it.id]: 'DECLINE' }))}
@@ -142,10 +150,10 @@ export function ActionsPanel({
             aria-busy={busy === 'items'}
             onClick={() => void submitItems()}
           >
-            {busy === 'items' ? 'Wird gesendet…' : 'Auswahl bestätigen'}
+            {busy === 'items' ? t(locale, 'sending') : t(locale, 'confirmSelection')}
           </button>
           <button className="btn btn--ghost" onClick={() => setMode('idle')}>
-            Zurück
+            {t(locale, 'back')}
           </button>
         </div>
       )}
@@ -153,7 +161,7 @@ export function ActionsPanel({
       {mode === 'callback' && (
         <div className="stack">
           <div className="field">
-            <label htmlFor="phone">Ihre Telefonnummer (optional)</label>
+            <label htmlFor="phone">{t(locale, 'phoneLabel')}</label>
             <input
               id="phone"
               value={phone}
@@ -166,10 +174,10 @@ export function ActionsPanel({
             disabled={busy !== null}
             onClick={() => submit('CALLBACK')}
           >
-            {busy ? 'Wird gesendet…' : 'Rückruf anfordern'}
+            {busy ? t(locale, 'sending') : t(locale, 'requestCallbackBtn')}
           </button>
           <button className="btn btn--ghost" onClick={() => setMode('idle')}>
-            Zurück
+            {t(locale, 'back')}
           </button>
         </div>
       )}
@@ -177,7 +185,7 @@ export function ActionsPanel({
       {mode === 'decline' && (
         <div className="stack">
           <div className="field">
-            <label htmlFor="note">Möchten Sie uns kurz mitteilen, warum? (optional)</label>
+            <label htmlFor="note">{t(locale, 'declineReasonLabel')}</label>
             <textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <button
@@ -185,10 +193,10 @@ export function ActionsPanel({
             disabled={busy !== null}
             onClick={() => submit('DECLINE')}
           >
-            {busy ? 'Wird gesendet…' : 'Arbeiten ablehnen'}
+            {busy ? t(locale, 'sending') : t(locale, 'declineBtn')}
           </button>
           <button className="btn btn--ghost" onClick={() => setMode('idle')}>
-            Zurück
+            {t(locale, 'back')}
           </button>
         </div>
       )}
@@ -196,37 +204,25 @@ export function ActionsPanel({
   );
 }
 
-function SuccessState({ status }: { status: string }) {
-  const map: Record<string, { icon: string; title: string; body: string; cls: string }> = {
-    APPROVED: {
-      icon: '✓',
-      title: 'Vielen Dank — freigegeben!',
-      body: 'Wir haben Ihre Freigabe erhalten und starten mit den Arbeiten. Sie hören von uns.',
-      cls: 'alert--success',
-    },
+function SuccessState({ status, locale }: { status: string; locale: Locale }) {
+  const map: Record<
+    string,
+    { icon: string; titleKey: keyof Messages; bodyKey: keyof Messages }
+  > = {
+    APPROVED: { icon: '✓', titleKey: 'successApprovedTitle', bodyKey: 'successApprovedBody' },
     PARTIALLY_APPROVED: {
       icon: '✓',
-      title: 'Vielen Dank — Auswahl erhalten!',
-      body: 'Wir haben Ihre Auswahl erhalten und führen die freigegebenen Arbeiten aus. Sie hören von uns.',
-      cls: 'alert--success',
+      titleKey: 'successPartialTitle',
+      bodyKey: 'successPartialBody',
     },
-    DECLINED: {
-      icon: '✕',
-      title: 'Antwort erhalten',
-      body: 'Sie haben die Arbeiten abgelehnt. Ihre Werkstatt wurde informiert.',
-      cls: 'alert--info',
-    },
-    CALLBACK: {
-      icon: '📞',
-      title: 'Rückruf angefragt',
-      body: 'Ihre Werkstatt wird sich in Kürze bei Ihnen melden.',
-      cls: 'alert--info',
-    },
+    DECLINED: { icon: '✕', titleKey: 'successDeclinedTitle', bodyKey: 'successDeclinedBody' },
+    CALLBACK: { icon: '📞', titleKey: 'successCallbackTitle', bodyKey: 'successCallbackBody' },
   };
   const s = map[status] ?? map.APPROVED!;
   return (
     <div style={{ textAlign: 'center', padding: '12px 0' }} role="status" aria-live="polite">
       <div
+        aria-hidden="true"
         style={{
           fontSize: '2.5rem',
           width: 72,
@@ -241,8 +237,8 @@ function SuccessState({ status }: { status: string }) {
       >
         {s.icon}
       </div>
-      <h2 style={{ marginBottom: 8 }}>{s.title}</h2>
-      <p className="subtle">{s.body}</p>
+      <h2 style={{ marginBottom: 8 }}>{t(locale, s.titleKey)}</h2>
+      <p className="subtle">{t(locale, s.bodyKey)}</p>
     </div>
   );
 }

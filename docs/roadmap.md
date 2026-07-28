@@ -20,7 +20,7 @@ riesig".
 | **Block 13** | **Reporting- & Insights-Ausbau** — Kennzahlen/Trends, Zeitraum-Filter, CSV-Export, verständliches Dashboard | ✅ abgeschlossen |
 | **Block 14** | **Benachrichtigungen & Kollaboration** — In-App-Benachrichtigungen, Fall-Zuweisung, interne Notizen, Notification-Center | ✅ abgeschlossen |
 | **Block 15** | **Mandantenfähige Skalierung & Datenlebenszyklus** — Workspace-Verwaltung, DSGVO-Exporte/-Löschung, Aufbewahrung, Admin-Überblick | ✅ abgeschlossen |
-| **Block 16** | **Barrierefreiheit, Lokalisierung & finaler Produktschliff** — WCAG-Feinschliff, Mehrsprachigkeit (Kundenseite), Leerzustände/Fehlerseiten, E2E-Politur | geplant |
+| **Block 16** | **Barrierefreiheit, Lokalisierung & finaler Produktschliff** — WCAG-Feinschliff, Mehrsprachigkeit (Kundenseite de/fr/it), Leerzustände/Fehlerseiten, E2E-Politur | ✅ abgeschlossen |
 | **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
 
 ## Leitplanken über alle Blöcke

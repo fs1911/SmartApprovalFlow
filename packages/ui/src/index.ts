@@ -8,6 +8,8 @@
  * speculatively. See docs/design-system.md.
  */
 
+export * from './i18n.js';
+
 /** Status → presentation mapping, shared so API-ish labels stay consistent. */
 export const STATUS_PRESENTATION: Record<
   string,
