@@ -5,5 +5,7 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  // Keep the production bundle lean: never emit tests or their helpers.
+  "exclude": ["src/**/*.test.ts", "src/test/**"]
 }

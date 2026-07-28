@@ -11,7 +11,8 @@ import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
 
 const SERVICE = 'smart-approval-flow-api';
-const VERSION = '1.0.0-block1';
+// Overridable at deploy time (e.g. a git SHA or release tag); sensible default.
+const VERSION = process.env.APP_VERSION ?? '1.0.0';
 
 export async function systemRoutes(app: FastifyInstance) {
   app.get(

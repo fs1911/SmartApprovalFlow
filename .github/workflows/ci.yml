@@ -145,3 +145,62 @@ jobs:
           path: apps/e2e/playwright-report
           retention-days: 7
           if-no-files-found: ignore
+
+  # Release readiness (Block 18): boot the API exactly as production does and
+  # smoke its liveness + DB-readiness probes. This is what catches a broken
+  # production start path (e.g. an unrunnable entrypoint) that unit tests miss.
+  # Deterministic and fast, so it gates.
+  release-smoke:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: saf
+          POSTGRES_PASSWORD: saf
+          POSTGRES_DB: smart_approval_flow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saf -d smart_approval_flow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://saf:saf@localhost:5432/smart_approval_flow?schema=public
+      # Production mode exercises the launch guard in apps/api/src/config.ts —
+      # hence a real (non-default, 32+ char) secret and explicit provider knobs.
+      NODE_ENV: production
+      AUTH_JWT_SECRET: ci-release-smoke-secret-least-thirty-two-chars
+      EMAIL_PROVIDER: console
+      STORAGE_DRIVER: local
+      API_PORT: '4000'
+      API_BASE_URL: http://localhost:4000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+
+      - name: Production-start the API and smoke it
+        run: |
+          npm run start --workspace @saf/api &
+          API_PID=$!
+          npm run smoke --workspace @saf/api -- "$API_BASE_URL"
+          SMOKE_RC=$?
+          kill "$API_PID" 2>/dev/null || true
+          exit $SMOKE_RC

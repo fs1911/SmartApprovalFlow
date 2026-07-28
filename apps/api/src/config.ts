@@ -107,3 +107,76 @@ if (!parsed.success) {
 
 export const config = parsed.data;
 export const isProd = config.NODE_ENV === 'production';
+
+/**
+ * Production launch guard (Block 18).
+ *
+ * The Zod schema keeps permissive defaults so `npm run dev`/tests run with zero
+ * setup. In production those defaults are unsafe, so we fail fast here with a
+ * single, explicit message instead of booting a mis-configured service. Every
+ * check is inert outside production — dev/test behaviour is unchanged.
+ */
+const DEV_JWT_SECRET = 'dev-insecure-secret-change-me';
+
+function productionConfigErrors(c: typeof config): string[] {
+  const problems: string[] = [];
+
+  if (!c.DATABASE_URL) {
+    problems.push('DATABASE_URL is required in production (no database configured).');
+  }
+  if (c.AUTH_JWT_SECRET === DEV_JWT_SECRET) {
+    problems.push('AUTH_JWT_SECRET is still the insecure development default — set a real secret.');
+  } else if (c.AUTH_JWT_SECRET.length < 32) {
+    problems.push('AUTH_JWT_SECRET must be at least 32 characters in production.');
+  }
+
+  // Providers must actually be wired when explicitly selected — otherwise the
+  // safe dev fallback would silently mask a broken production integration.
+  if (c.EMAIL_PROVIDER === 'resend' && !c.RESEND_API_KEY) {
+    problems.push('EMAIL_PROVIDER=resend requires RESEND_API_KEY.');
+  }
+  if (c.STORAGE_DRIVER === 'supabase' && (!c.SUPABASE_URL || !c.SUPABASE_SERVICE_ROLE_KEY)) {
+    problems.push('STORAGE_DRIVER=supabase requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
+  }
+  if (
+    c.STORAGE_DRIVER === 'r2' &&
+    (!c.R2_ACCOUNT_ID || !c.R2_ACCESS_KEY_ID || !c.R2_SECRET_ACCESS_KEY)
+  ) {
+    problems.push('STORAGE_DRIVER=r2 requires R2_ACCOUNT_ID, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY.');
+  }
+  if (c.BILLING_PROVIDER === 'stripe' && !c.STRIPE_SECRET_KEY) {
+    problems.push('BILLING_PROVIDER=stripe requires STRIPE_SECRET_KEY.');
+  }
+  if (c.ERROR_MONITORING !== 'none' && !c.ERROR_MONITORING_DSN) {
+    problems.push(`ERROR_MONITORING=${c.ERROR_MONITORING} requires ERROR_MONITORING_DSN.`);
+  }
+
+  return problems;
+}
+
+/** Non-fatal production warnings (safe fallbacks that are usually a mistake). */
+function productionConfigWarnings(c: typeof config): string[] {
+  const warnings: string[] = [];
+  if (c.EMAIL_PROVIDER === 'console') {
+    warnings.push('EMAIL_PROVIDER=console: e-mails are only logged, never delivered.');
+  }
+  if (c.STORAGE_DRIVER === 'local') {
+    warnings.push('STORAGE_DRIVER=local: attachments are stored on the local filesystem (not durable).');
+  }
+  if (c.BILLING_WEBHOOK_SECRET === 'whsec_dev_billing') {
+    warnings.push('BILLING_WEBHOOK_SECRET is still the development default.');
+  }
+  return warnings;
+}
+
+if (isProd) {
+  for (const w of productionConfigWarnings(config)) {
+    console.warn(`⚠️  production config: ${w}`);
+  }
+  const problems = productionConfigErrors(config);
+  if (problems.length > 0) {
+    console.error('❌ Invalid production configuration:');
+    for (const p of problems) console.error(`   • ${p}`);
+    process.exit(1);
+  }
+}

@@ -30,12 +30,17 @@ npm run db:generate
 npm run db:migrate:deploy   # in CI/Prod: migrate deploy (nicht dev)
 
 # Build
-npm run build               # baut apps/web (+ tsc für api, falls genutzt)
+npm run build               # next build (web) + tsc Compile-Check (api)
 
-# Start
-npm run start --workspace apps/api   # node dist/server.js
+# Start (Production)
+npm run start --workspace apps/api   # tsx src/server.ts (siehe Runbook, warum)
 npm run start --workspace apps/web   # next start
+
+# Readiness-Smoke gegen die gestartete API
+npm run smoke --workspace apps/api
 ```
+
+Details + Launch-Guard: `docs/release-and-deployment-runbook.md`.
 
 Empfehlung: **Web** auf einer Next.js-fähigen Plattform (oder Container),
 **API** als Node-Container. Beide sind zustandslos; Zustand liegt in Postgres +
