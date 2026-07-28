@@ -79,3 +79,69 @@ jobs:
       - name: Format check (informational)
         run: npm run format:check
         continue-on-error: true
+
+  # Playwright end-to-end + a11y smoke for the loginless customer page.
+  # A SEPARATE job so it never destabilises `verify` (the primary gate). Marked
+  # non-blocking for now (like format:check) while the browser layer settles —
+  # see docs/e2e-testing.md. The node:test suites in `verify` remain the gate.
+  e2e:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: saf
+          POSTGRES_PASSWORD: saf
+          POSTGRES_DB: smart_approval_flow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U saf -d smart_approval_flow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://saf:saf@localhost:5432/smart_approval_flow?schema=public
+      NODE_ENV: test
+      AUTH_JWT_SECRET: ci-insecure-secret
+      EMAIL_PROVIDER: console
+      STORAGE_DRIVER: local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy --schema packages/db/prisma/schema.prisma
+
+      - name: Seed database (E2E attaches cases to the demo tenant)
+        run: npm run seed --workspace packages/db
+
+      - name: Install Playwright browser (chromium)
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/e2e
+
+      - name: Run E2E + a11y smoke
+        run: npm run e2e --workspace @saf/e2e
+
+      - name: Upload Playwright report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 7
+          if-no-files-found: ignore

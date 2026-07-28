@@ -28,7 +28,8 @@
   --color-border-strong: #cfd8e0;
 
   /* --- Status colours (accessible on white) ------------------------------- */
-  --color-success-500: #1f8a4c;
+  /* success-500 darkened so white text on the green CTA clears WCAG AA (4.5:1). */
+  --color-success-500: #1a7f43;
   --color-success-50: #e9f6ee;
   --color-warning-500: #b26a00;
   --color-warning-50: #fbf1e0;

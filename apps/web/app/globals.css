@@ -521,7 +521,8 @@ textarea {
 .public-foot {
   text-align: center;
   font-size: var(--text-xs);
-  color: var(--color-ink-300);
+  /* ink-500 (not the muted ink-300) to clear WCAG AA contrast at this size. */
+  color: var(--color-ink-500);
   padding: var(--space-4) 0;
 }
 .trust-row {

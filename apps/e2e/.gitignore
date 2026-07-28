@@ -1,0 +1,6 @@
+# Playwright + E2E run artifacts (never committed)
+.fixtures.json
+playwright-report/
+test-results/
+blob-report/
+.last-run.json
