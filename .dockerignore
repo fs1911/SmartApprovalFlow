@@ -1,0 +1,35 @@
+# Keep the build context small and reproducible: never ship local state or
+# build outputs into the image (they are regenerated inside the build).
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/*.tsbuildinfo
+
+# Local env + secrets (images get config via runtime env, never baked-in).
+.env
+**/.env
+!**/.env.example
+
+# VCS + editor + CI noise
+.git
+.gitignore
+.github
+**/.vscode
+**/.idea
+
+# E2E + test run artifacts
+apps/e2e/.fixtures.json
+apps/e2e/playwright-report
+apps/e2e/test-results
+apps/e2e/blob-report
+
+# Local uploads (local storage driver) + logs
+**/.uploads
+**/*.log
+
+# Container files themselves
+**/Dockerfile
+.dockerignore
+docker-compose.yml

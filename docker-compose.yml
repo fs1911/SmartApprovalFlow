@@ -1,0 +1,86 @@
+# Local, self-contained container stack (Block 19).
+#
+#   docker compose up --build
+#
+# Brings up Postgres, applies migrations + seeds the demo tenant, then starts the
+# API (production mode) and Web. No external accounts: console e-mail + local
+# storage. See docs/containerization.md.
+#
+# Note: the AUTH_JWT_SECRET below is a throwaway for LOCAL use only (it just has
+# to clear the production launch guard's length check). Never reuse it anywhere.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: saf
+      POSTGRES_PASSWORD: saf
+      POSTGRES_DB: smart_approval_flow
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U saf -d smart_approval_flow']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: apply migrations and seed, then exit. The API waits for this to
+  # finish successfully before it starts.
+  migrate:
+    image: saf-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://saf:saf@db:5432/smart_approval_flow?schema=public
+      AUTH_JWT_SECRET: local-compose-secret-at-least-32-characters
+    command:
+      - sh
+      - -c
+      - >-
+        npx prisma migrate deploy --schema packages/db/prisma/schema.prisma &&
+        npm run seed --workspace packages/db
+    restart: 'no'
+
+  api:
+    image: saf-api
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://saf:saf@db:5432/smart_approval_flow?schema=public
+      AUTH_JWT_SECRET: local-compose-secret-at-least-32-characters
+      # Browser-facing base URL (photo download links) → published on the host.
+      API_BASE_URL: http://localhost:4000
+      WEB_BASE_URL: http://localhost:3000
+      EMAIL_PROVIDER: console
+      STORAGE_DRIVER: local
+    ports:
+      - '4000:4000'
+
+  web:
+    image: saf-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Server-side (web → api) base URL over the compose network. Inlined at
+        # build time by Next.js.
+        NEXT_PUBLIC_API_BASE_URL: http://api:4000
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+    ports:
+      - '3000:3000'
+
+volumes:
+  db-data:

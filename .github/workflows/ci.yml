@@ -204,3 +204,22 @@ jobs:
           SMOKE_RC=$?
           kill "$API_PID" 2>/dev/null || true
           exit $SMOKE_RC
+
+  # Container images (Block 19): build both Dockerfiles so a broken image build
+  # is caught in CI. NON-BLOCKING (image builds are slow); the app-level gates
+  # remain `verify` + `release-smoke`. See docs/containerization.md.
+  image-build:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f apps/api/Dockerfile -t saf-api:ci .
+
+      - name: Build Web image
+        run: |
+          docker build -f apps/web/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=http://api:4000 \
+            -t saf-web:ci .

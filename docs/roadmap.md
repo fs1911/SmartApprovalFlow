@@ -23,6 +23,7 @@ riesig".
 | **Block 16** | **Barrierefreiheit, Lokalisierung & finaler Produktschliff** — WCAG-Feinschliff, Mehrsprachigkeit (Kundenseite de/fr/it), Leerzustände/Fehlerseiten, E2E-Politur | ✅ abgeschlossen |
 | **Block 17** | **End-to-End-Tests & Release-Härtung** — Playwright-E2E der loginlosen Kundenpfade + axe-A11y-Smoke, eigener nicht-blockierender CI-Job | ✅ abgeschlossen |
 | **Block 18** | **Deployment- & Launch-Härtung** — reproduzierbarer Prod-Start (API via tsx), Fail-fast-Config-Guard, Readiness-Smoke + gatender CI-Job | ✅ abgeschlossen |
+| **Block 19** | **Containerisierung** — Multi-Stage-Dockerfiles (API/Web), docker-compose (db+migrate+api+web), nicht-blockierender CI-Image-Build | ✅ abgeschlossen |
 | **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
 
 ## Leitplanken über alle Blöcke
