@@ -8,6 +8,10 @@
 #
 # Note: the AUTH_JWT_SECRET below is a throwaway for LOCAL use only (it just has
 # to clear the production launch guard's length check). Never reuse it anywhere.
+#
+# Image tags and the API's reported version come from APP_VERSION (Block 20):
+# defaults to "dev" locally; CI sets it to the commit SHA so /api/v1/health
+# reflects exactly which build is running.
 
 services:
   db:
@@ -27,7 +31,7 @@ services:
   # One-shot: apply migrations and seed, then exit. The API waits for this to
   # finish successfully before it starts.
   migrate:
-    image: saf-api
+    image: saf-api:${APP_VERSION:-dev}
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -47,7 +51,7 @@ services:
     restart: 'no'
 
   api:
-    image: saf-api
+    image: saf-api:${APP_VERSION:-dev}
     depends_on:
       db:
         condition: service_healthy
@@ -62,11 +66,13 @@ services:
       WEB_BASE_URL: http://localhost:3000
       EMAIL_PROVIDER: console
       STORAGE_DRIVER: local
+      # Reported by /api/v1/health so you can confirm the running build.
+      APP_VERSION: ${APP_VERSION:-dev}
     ports:
       - '4000:4000'
 
   web:
-    image: saf-web
+    image: saf-web:${APP_VERSION:-dev}
     build:
       context: .
       dockerfile: apps/web/Dockerfile

@@ -72,11 +72,67 @@ ist ein gewählter Provider unvollständig, startet der Container nicht. Das in
 `docker-compose.yml` hinterlegte `AUTH_JWT_SECRET` ist ein **Wegwerf-Wert nur für
 lokal** (erfüllt nur die 32-Zeichen-Prüfung) — niemals wiederverwenden.
 
+## Versionierung / Tagging (Block 20)
+
+`APP_VERSION` steuert sowohl die **Image-Tags** als auch die **von der API
+gemeldete Version**:
+
+- lokal ungesetzt → Tags `saf-api:dev` / `saf-web:dev`, `/api/v1/health` meldet
+  `version: "dev"`;
+- in CI = Commit-SHA → Tags `saf-api:<sha>` / `saf-web:<sha>`, `/api/v1/health`
+  meldet `version: "<sha>"`.
+
+So lässt sich am laufenden Container zweifelsfrei ablesen, welcher Build bedient
+wird:
+
+```bash
+APP_VERSION=$(git rev-parse HEAD) docker compose up --build -d
+curl -s localhost:4000/api/v1/health   # → "version":"<sha>"
+```
+
 ## CI
 
-`.github/workflows/ci.yml` → Job **`image-build`** (nicht-blockierend): baut beide
-Images bei jedem Push, damit Dockerfile-Regressionen auffallen. Die
-App-Gates bleiben `verify` + `release-smoke`.
+`.github/workflows/ci.yml` → Job **`container-smoke`** (nicht-blockierend, ersetzt
+den früheren reinen `image-build`): baut die Images via `docker compose build`
+(Tag = Commit-SHA), fährt mit `docker compose up -d` den ganzen Stack hoch,
+wartet auf den **Healthy**-Status des API-Containers, führt den Readiness-Smoke
+**im API-Container** aus (`docker compose exec api npm run smoke …`), prüft, dass
+`/api/v1/health` die gebaute Version meldet, und lädt die Web-Startseite. Bei
+Fehler werden die Container-Logs ausgegeben; am Ende `docker compose down -v`.
+
+Damit validiert ein einziger Job **Build _und_ Laufzeit** der Container — keine
+doppelte, langsame Arbeit. **Gate-Einteilung:**
+
+| Job | Rolle | Blockierend |
+| --- | --- | --- |
+| `verify` | typecheck + build + node:test | ✅ Gate |
+| `release-smoke` | Prod-Start (nackter Node) + Health-Smoke | ✅ Gate |
+| `container-smoke` | Images bauen + Stack hochfahren + Smoke | ⬜ non-blocking |
+| `e2e` | Playwright + a11y | ⬜ non-blocking |
+
+`container-smoke` bleibt bewusst non-blocking: Container-Builds sind langsam und
+lokal (siehe unten) nicht reproduzierbar. Der schnelle, deterministische
+`release-smoke` deckt den Start-Pfad bereits als Gate ab.
+
+## Registry-Push (TODO PROVIDER SETUP)
+
+Bewusst **nicht aktiviert** (keine echten Credentials im Repo). Um Images in eine
+Registry zu pushen, den `container-smoke`-Job (oder einen eigenen Release-Job) um
+einen Login + Push erweitern:
+
+```yaml
+# TODO PROVIDER SETUP — nur mit echten Registry-Credentials (GitHub Secrets):
+# - name: Log in to registry
+#   run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+# - name: Tag & push
+#   run: |
+#     docker tag saf-api:${{ github.sha }} ghcr.io/<org>/saf-api:${{ github.sha }}
+#     docker push ghcr.io/<org>/saf-api:${{ github.sha }}
+```
+
+Die Images tragen dank `APP_VERSION` bereits den SHA-Tag; es fehlt nur der
+Registry-Namespace + Push. Secrets gehören in die CI-Secret-Verwaltung, nie ins
+Repo.
 
 ## Lokal in dieser Umgebung nicht ausführbar
 
@@ -86,17 +142,18 @@ Der Docker-Daemon läuft in dieser Managed-Umgebung zwar (v29, BuildKit), aber d
 `postgres:16`) und nicht einmal das `docker/dockerfile`-Frontend geladen werden
 kann. Deshalb wurde hier **verifiziert**:
 
-- `docker compose config` (Compose-Datei valide, 4 Services aufgelöst),
-- Dockerfile-Struktur/Logik per Review,
+- `docker compose config` (valide; Tag-/`APP_VERSION`-Interpolation für `dev` und
+  SHA geprüft),
+- Dockerfile-/Compose-/CI-Logik per Review,
 - unveränderte App-Gates (typecheck + Tests grün).
 
-**Nicht** lokal ausführbar war der eigentliche `docker build` / `docker compose
-up` — das deckt der CI-Job `image-build` ab (auf GitHub-Runnern ist Docker Hub
-erreichbar).
+**Nicht** lokal ausführbar waren `docker build` / `docker compose up` und damit
+der `container-smoke`-Ablauf — das deckt der CI-Job ab (auf GitHub-Runnern ist
+Docker Hub erreichbar).
 
 ## Bewusst offen
 
-- Kein Registry-Push / kein Image-Tagging-Schema (nur Build zur Validierung).
+- Kein aktiver Registry-Push (nur als TODO dokumentiert, s. o.).
 - Kein Kubernetes/Helm; Compose deckt den lokalen/Single-Host-Fall ab.
 - API-Image trägt devDependencies (geteilt mit `migrate`); separates schlankes
   Runtime-Image ist ein möglicher späterer Schritt.

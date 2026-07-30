@@ -22,7 +22,8 @@ Block 15 (Mandantenfähige Skalierung & Datenlebenszyklus) ✅ ·
 Block 16 (Barrierefreiheit, Lokalisierung & finaler Produktschliff) ✅ ·
 Block 17 (End-to-End-Tests & Release-Härtung) ✅ ·
 Block 18 (Deployment- & Launch-Härtung) ✅ ·
-Block 19 (Containerisierung) ✅
+Block 19 (Containerisierung) ✅ ·
+Block 20 (Container-Release-Pipeline & Container-Smoke) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
@@ -198,8 +199,8 @@ npm run format                      # Prettier
 | A11y & Lokalisierung (Block 16) | [`accessibility.md`](docs/accessibility.md) · [`i18n-and-localization.md`](docs/i18n-and-localization.md) |
 | E2E-Tests (Block 17) | [`e2e-testing.md`](docs/e2e-testing.md) |
 | Release & Deployment (Block 18) | [`release-and-deployment-runbook.md`](docs/release-and-deployment-runbook.md) · [`deployment.md`](docs/deployment.md) |
-| Containerisierung (Block 19) | [`containerization.md`](docs/containerization.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) · [14](docs/block-14-summary.md) · [15](docs/block-15-summary.md) · [16](docs/block-16-summary.md) · [17](docs/block-17-summary.md) · [18](docs/block-18-summary.md) · [19](docs/block-19-summary.md) |
+| Containerisierung (Block 19–20) | [`containerization.md`](docs/containerization.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) · [14](docs/block-14-summary.md) · [15](docs/block-15-summary.md) · [16](docs/block-16-summary.md) · [17](docs/block-17-summary.md) · [18](docs/block-18-summary.md) · [19](docs/block-19-summary.md) · [20](docs/block-20-summary.md) |
 
 ## Rollen ausprobieren
 
