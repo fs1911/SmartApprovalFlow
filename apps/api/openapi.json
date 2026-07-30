@@ -1631,6 +1631,25 @@
         }
       }
     },
+    "/api/v1/voice/transcribe": {
+      "post": {
+        "summary": "Transcribe a dictation and return a case draft",
+        "tags": [
+          "voice"
+        ],
+        "description": "Accepts base64 audio or (with the mock provider) a transcript directly. Returns the transcript plus a parsed draft that pre-fills the create-case form.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/public/approvals/{token}": {
       "get": {
         "summary": "Read an approval request via its secure token (no login)",

@@ -25,7 +25,7 @@ riesig".
 | **Block 18** | **Deployment- & Launch-Härtung** — reproduzierbarer Prod-Start (API via tsx), Fail-fast-Config-Guard, Readiness-Smoke + gatender CI-Job | ✅ abgeschlossen |
 | **Block 19** | **Containerisierung** — Multi-Stage-Dockerfiles (API/Web), docker-compose (db+migrate+api+web), nicht-blockierender CI-Image-Build | ✅ abgeschlossen |
 | **Block 20** | **Container-Release-Pipeline & Container-Smoke** — SHA-getaggte Images, `container-smoke`-CI-Job (build→up→smoke→teardown), Registry-Push als TODO | ✅ abgeschlossen |
-| **Später** | **Voice Layer** — Voice-Erfassung/-Rapportierung als Erweiterung der Fallerstellung | später |
+| **Block 21** | **Voice-Layer** — Sprach-Erfassung der Fallerstellung: Transkriptions-Adapter (mock/whisper), Draft-Parser, `POST /voice/transcribe`, Formular-Vorbefüllung | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

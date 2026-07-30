@@ -179,3 +179,54 @@ export const listQuerySchema = z.object({
   status: z.string().optional(),
 });
 export type ListQuery = z.infer<typeof listQuerySchema>;
+
+// --- Voice capture (Block 21) ----------------------------------------------
+// The mechanic dictates the extra work; it is transcribed and parsed into a
+// draft that pre-fills the create-case form. Everything runs locally with the
+// `mock` transcription provider (no external account).
+
+/** One suggested position parsed from the dictation (user edits before saving). */
+export const voiceDraftItemSchema = z.object({
+  title: z.string().min(1).max(160),
+  priceBand: priceBandSchema.optional(),
+});
+export type VoiceDraftItem = z.infer<typeof voiceDraftItemSchema>;
+
+/** Structured draft the parser derives from a transcript. Advisory only —
+ * the real create-case schema still validates on submit. */
+export const voiceDraftSchema = z.object({
+  subject: z.string().max(200),
+  description: z.string().max(4000).optional(),
+  urgency: z.enum(URGENCY).default('MEDIUM'),
+  items: z.array(voiceDraftItemSchema).max(30).default([]),
+});
+export type VoiceDraft = z.infer<typeof voiceDraftSchema>;
+
+/** Request body for POST /voice/transcribe. Either real audio (base64) or, for
+ * local/dev use with the mock provider, a transcript supplied directly. */
+export const voiceTranscribeRequestSchema = z
+  .object({
+    /** Base64-encoded audio bytes (used by real providers). */
+    audioBase64: z.string().max(20_000_000).optional(),
+    contentType: z.string().max(100).optional(),
+    durationSec: z.number().nonnegative().max(3600).optional(),
+    /** Dev/mock convenience: the transcript text itself. Ignored by real
+     * providers, which transcribe the audio. */
+    mockTranscript: z.string().max(8000).optional(),
+  })
+  .refine((v) => !!v.audioBase64 || !!v.mockTranscript, {
+    message: 'audioBase64 oder mockTranscript erforderlich',
+    path: ['audioBase64'],
+  });
+export type VoiceTranscribeRequest = z.infer<typeof voiceTranscribeRequestSchema>;
+
+/** Response of POST /voice/transcribe. */
+export const voiceTranscribeResultSchema = z.object({
+  id: z.string().optional(),
+  transcript: z.string(),
+  language: z.string().optional(),
+  durationSec: z.number().optional(),
+  provider: z.string(),
+  draft: voiceDraftSchema,
+});
+export type VoiceTranscribeResult = z.infer<typeof voiceTranscribeResultSchema>;

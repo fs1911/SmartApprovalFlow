@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { redirect } from 'next/navigation';
-import { createApprovalCaseSchema } from '@saf/types';
+import { createApprovalCaseSchema, type VoiceDraft } from '@saf/types';
 import { api, ApiClientError } from '@/lib/api';
 
 export interface CreateState {
@@ -86,4 +86,38 @@ export async function createApprovalCase(
   }
 
   redirect(`/approvals/${id}?created=1`);
+}
+
+// --- Voice capture (Block 21) ----------------------------------------------
+
+export interface VoiceActionResult {
+  ok: boolean;
+  error?: string;
+  transcript?: string;
+  draft?: VoiceDraft;
+}
+
+/**
+ * Send a dictation to the API for transcription + draft parsing. Pass either
+ * recorded audio (base64) or, for the local/mock provider, the transcript text
+ * directly. Returns the transcript + advisory draft for the form to pre-fill.
+ */
+export async function transcribeVoice(input: {
+  audioBase64?: string;
+  contentType?: string;
+  durationSec?: number;
+  mockTranscript?: string;
+}): Promise<VoiceActionResult> {
+  try {
+    const res = await api.request<{ transcript: string; draft: VoiceDraft }>(
+      '/api/v1/voice/transcribe',
+      { method: 'POST', body: input },
+    );
+    return { ok: true, transcript: res.transcript, draft: res.draft };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Transkription fehlgeschlagen.',
+    };
+  }
 }

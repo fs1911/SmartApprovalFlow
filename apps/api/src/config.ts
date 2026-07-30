@@ -83,6 +83,13 @@ const envSchema = z.object({
   EMAIL_FROM: z.string().default('freigabe@example-garage.ch'),
   RESEND_API_KEY: z.string().optional(),
 
+  // --- Voice capture (Block 21) -------------------------------------------
+  // `mock` (default) needs no account and transcribes from a supplied text /
+  // deterministic sample. `whisper` is the real speech-to-text seam, activated
+  // once VOICE_PROVIDER_API_KEY is set. TODO PROVIDER SETUP.
+  VOICE_PROVIDER: z.enum(['mock', 'whisper']).default('mock'),
+  VOICE_PROVIDER_API_KEY: z.string().optional(),
+
   // --- Storage (attachments) ----------------------------------------------
   // `local` (default) writes to the filesystem and works with no credentials.
   // `supabase` / `r2` are real drivers, activated once their env is set.
@@ -146,6 +153,9 @@ function productionConfigErrors(c: typeof config): string[] {
   }
   if (c.BILLING_PROVIDER === 'stripe' && !c.STRIPE_SECRET_KEY) {
     problems.push('BILLING_PROVIDER=stripe requires STRIPE_SECRET_KEY.');
+  }
+  if (c.VOICE_PROVIDER === 'whisper' && !c.VOICE_PROVIDER_API_KEY) {
+    problems.push('VOICE_PROVIDER=whisper requires VOICE_PROVIDER_API_KEY.');
   }
   if (c.ERROR_MONITORING !== 'none' && !c.ERROR_MONITORING_DSN) {
     problems.push(`ERROR_MONITORING=${c.ERROR_MONITORING} requires ERROR_MONITORING_DSN.`);

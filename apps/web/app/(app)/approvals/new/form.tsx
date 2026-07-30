@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from 'react-dom';
 import { createApprovalCase, type CreateState } from './actions';
+import { VoicePanel } from './_voice-panel';
 
 const initialState: CreateState = { ok: true };
 
@@ -29,6 +30,9 @@ export function CreateApprovalForm() {
           {state.error}
         </div>
       )}
+
+      {/* Optional: dictate the recommendation to pre-fill the fields below. */}
+      <VoicePanel />
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card__body">
