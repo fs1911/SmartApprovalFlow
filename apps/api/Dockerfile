@@ -11,6 +11,10 @@
 # --- deps: install once, cached on the manifest set -------------------------
 FROM node:22-slim AS deps
 WORKDIR /app
+# Prisma's engines need libssl; node:*-slim (Debian) ships without it. Install
+# it here so `prisma generate` detects the correct OpenSSL 3 engine target.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 # Copy every workspace manifest so `npm ci` can resolve the workspace tree.
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
@@ -31,6 +35,11 @@ RUN npm run db:generate
 FROM node:22-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# libssl for the Prisma query + schema engines (used by the API at runtime and
+# by the `migrate` service). Must match the OpenSSL version present at generate
+# time above, or Prisma picks the wrong engine and fails at runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 # Only what the API needs at runtime: deps (with the generated client), the
 # API source, and the shared packages. The web app is intentionally excluded.
 COPY --from=build /app/node_modules ./node_modules
