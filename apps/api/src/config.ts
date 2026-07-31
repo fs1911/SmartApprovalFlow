@@ -89,6 +89,9 @@ const envSchema = z.object({
   // once VOICE_PROVIDER_API_KEY is set. TODO PROVIDER SETUP.
   VOICE_PROVIDER: z.enum(['mock', 'whisper']).default('mock'),
   VOICE_PROVIDER_API_KEY: z.string().optional(),
+  // OpenAI-compatible speech-to-text endpoint + model (only read by `whisper`).
+  VOICE_PROVIDER_URL: z.string().url().default('https://api.openai.com/v1/audio/transcriptions'),
+  VOICE_PROVIDER_MODEL: z.string().default('whisper-1'),
 
   // --- Storage (attachments) ----------------------------------------------
   // `local` (default) writes to the filesystem and works with no credentials.

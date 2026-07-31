@@ -19,13 +19,42 @@ function toMinor(v: FormDataEntryValue | null): number | undefined {
   return Math.round(n * 100);
 }
 
+/** Collect the dynamic `items[i].{title,priceMin,priceMax}` rows from the form. */
+function parseItems(formData: FormData) {
+  const indices = new Set<number>();
+  for (const key of formData.keys()) {
+    const m = /^items\[(\d+)\]\.(?:title|priceMin|priceMax)$/.exec(key);
+    if (m) indices.add(Number(m[1]));
+  }
+  const items: {
+    title: string;
+    category: 'REPAIR';
+    priceBand?: { minMinor: number; maxMinor: number; currency: 'CHF' };
+  }[] = [];
+  for (const i of [...indices].sort((a, b) => a - b)) {
+    const title = String(formData.get(`items[${i}].title`) ?? '').trim();
+    const min = toMinor(formData.get(`items[${i}].priceMin`));
+    const max = toMinor(formData.get(`items[${i}].priceMax`));
+    // Skip fully empty rows so a stray blank row never blocks submission.
+    if (!title && min == null && max == null) continue;
+    items.push({
+      title,
+      category: 'REPAIR',
+      priceBand:
+        min != null || max != null
+          ? { minMinor: min ?? max ?? 0, maxMinor: max ?? min ?? 0, currency: 'CHF' }
+          : undefined,
+    });
+  }
+  // Keep at least one (empty) item so validation reports items.0.title clearly.
+  if (items.length === 0) items.push({ title: '', category: 'REPAIR' });
+  return items;
+}
+
 export async function createApprovalCase(
   _prev: CreateState,
   formData: FormData,
 ): Promise<CreateState> {
-  const priceMin = toMinor(formData.get('priceMin'));
-  const priceMax = toMinor(formData.get('priceMax'));
-
   const payload = {
     subject: String(formData.get('subject') ?? '').trim(),
     description: String(formData.get('issueSummary') ?? '').trim() || undefined,
@@ -43,21 +72,7 @@ export async function createApprovalCase(
       make: String(formData.get('vehicleMake') ?? '').trim() || undefined,
       model: String(formData.get('vehicleModel') ?? '').trim() || undefined,
     },
-    items: [
-      {
-        title: String(formData.get('recommendationSummary') ?? '').trim(),
-        description: String(formData.get('issueSummary') ?? '').trim() || undefined,
-        category: 'REPAIR' as const,
-        priceBand:
-          priceMin != null || priceMax != null
-            ? {
-                minMinor: priceMin ?? priceMax ?? 0,
-                maxMinor: priceMax ?? priceMin ?? 0,
-                currency: 'CHF',
-              }
-            : undefined,
-      },
-    ],
+    items: parseItems(formData),
     sendImmediately: formData.get('sendImmediately') === 'on',
   };
 

@@ -1,10 +1,28 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
+import type { VoiceDraft } from '@saf/types';
 import { createApprovalCase, type CreateState } from './actions';
 import { VoicePanel } from './_voice-panel';
+import { ItemsEditor, emptyItem, type ItemRow } from './_items-editor';
 
 const initialState: CreateState = { ok: true };
+
+function setField(id: string, value: string) {
+  const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
+  if (el) el.value = value;
+}
+
+/** Map a parsed voice draft's items to editor rows (minor units → CHF string). */
+function draftToRows(draft: VoiceDraft): ItemRow[] {
+  if (draft.items.length === 0) return [emptyItem()];
+  return draft.items.map((it) => ({
+    title: it.title,
+    priceMin: it.priceBand ? (it.priceBand.minMinor / 100).toFixed(2) : '',
+    priceMax: it.priceBand ? (it.priceBand.maxMinor / 100).toFixed(2) : '',
+  }));
+}
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,6 +40,15 @@ function FieldError({ errors, name }: { errors?: Record<string, string>; name: s
 
 export function CreateApprovalForm() {
   const [state, formAction] = useFormState(createApprovalCase, initialState);
+  const [items, setItems] = useState<ItemRow[]>([emptyItem()]);
+
+  /** Apply a parsed voice draft: subject/description/urgency + the item rows. */
+  function applyDraft(draft: VoiceDraft) {
+    setField('subject', draft.subject ?? '');
+    if (draft.description) setField('issueSummary', draft.description);
+    setField('urgency', draft.urgency);
+    setItems(draftToRows(draft));
+  }
 
   return (
     <form action={formAction}>
@@ -32,7 +59,7 @@ export function CreateApprovalForm() {
       )}
 
       {/* Optional: dictate the recommendation to pre-fill the fields below. */}
-      <VoicePanel />
+      <VoicePanel onDraft={applyDraft} />
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card__body">
@@ -56,30 +83,6 @@ export function CreateApprovalForm() {
           </div>
 
           <div className="field">
-            <label htmlFor="recommendationSummary">
-              Empfohlene Arbeit <span className="required-mark">*</span>
-            </label>
-            <input
-              id="recommendationSummary"
-              name="recommendationSummary"
-              placeholder="z. B. Bremsbeläge und -scheiben hinten ersetzen"
-              required
-            />
-            <FieldError errors={state.fieldErrors} name="items.0.title" />
-          </div>
-
-          <div className="grid-2">
-            <div className="field">
-              <label htmlFor="priceMin">Preis von (CHF)</label>
-              <input id="priceMin" name="priceMin" inputMode="decimal" placeholder="180.00" />
-            </div>
-            <div className="field">
-              <label htmlFor="priceMax">Preis bis (CHF)</label>
-              <input id="priceMax" name="priceMax" inputMode="decimal" placeholder="240.00" />
-            </div>
-          </div>
-
-          <div className="field">
             <label htmlFor="urgency">Dringlichkeit</label>
             <select id="urgency" name="urgency" defaultValue="MEDIUM">
               <option value="LOW">Niedrig — kann warten</option>
@@ -89,6 +92,8 @@ export function CreateApprovalForm() {
           </div>
         </div>
       </div>
+
+      <ItemsEditor items={items} setItems={setItems} errors={state.fieldErrors} />
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="card__body">

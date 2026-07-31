@@ -1,26 +1,17 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import type { VoiceDraft } from '@saf/types';
 import { transcribeVoice } from './actions';
 
 /**
- * Optional voice capture for case creation (Block 21). The mechanic dictates
- * the extra work; we transcribe it and pre-fill the form below. Two paths:
+ * Optional voice capture for case creation (Block 21/22). The mechanic dictates
+ * the extra work; we transcribe it and hand the parsed draft up to the form via
+ * `onDraft`, which fills the subject/description/urgency fields and the dynamic
+ * item rows. Two paths:
  *  - Record via the microphone (uses the configured transcription provider).
  *  - Type/paste a dictation (works with the local mock provider, no account).
- *
- * Pre-filling is imperative (the form fields are uncontrolled), so this panel
- * just writes values into them by id — the user reviews and edits as normal.
  */
-
-function setField(id: string, value: string) {
-  const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null;
-  if (el) el.value = value;
-}
-
-function minorToChf(minor: number): string {
-  return (minor / 100).toFixed(2);
-}
 
 const canRecord =
   typeof window !== 'undefined' &&
@@ -39,33 +30,23 @@ function toBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-export function VoicePanel() {
+export function VoicePanel({ onDraft }: { onDraft: (draft: VoiceDraft) => void }) {
   const [open, setOpen] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [busy, setBusy] = useState<null | 'record' | 'draft'>(null);
   const [recording, setRecording] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [extraItems, setExtraItems] = useState<string[]>([]);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const startedAtRef = useRef<number>(0);
 
-  function applyDraft(draft: NonNullable<Awaited<ReturnType<typeof transcribeVoice>>['draft']>) {
-    setField('subject', draft.subject ?? '');
-    if (draft.description) setField('issueSummary', draft.description);
-    setField('urgency', draft.urgency);
-    const [first, ...rest] = draft.items;
-    if (first) {
-      setField('recommendationSummary', first.title);
-      if (first.priceBand) {
-        setField('priceMin', minorToChf(first.priceBand.minMinor));
-        setField('priceMax', minorToChf(first.priceBand.maxMinor));
-      }
-    }
-    setExtraItems(rest.map((it) => it.title));
-    setStatus('Formular ausgefüllt — bitte prüfen und ergänzen.');
+  function applyDraft(draft: VoiceDraft) {
+    onDraft(draft);
+    setStatus(
+      `Formular ausgefüllt (${draft.items.length} Position${draft.items.length === 1 ? '' : 'en'}) — bitte prüfen und ergänzen.`,
+    );
   }
 
   async function sendTranscript() {
@@ -185,11 +166,6 @@ export function VoicePanel() {
               <div className="alert alert--success" role="status">
                 {status}
               </div>
-            )}
-            {extraItems.length > 0 && (
-              <p className="hint" style={{ margin: 0 }}>
-                Weitere erkannte Positionen (bitte manuell ergänzen): {extraItems.join(' · ')}
-              </p>
             )}
             {error && (
               <div className="alert alert--danger" role="alert">

@@ -46,14 +46,49 @@ class MockTranscriptionProvider implements TranscriptionProvider {
   }
 }
 
-class UnconfiguredWhisperProvider implements TranscriptionProvider {
+/**
+ * Real speech-to-text adapter against an OpenAI-compatible
+ * `/audio/transcriptions` endpoint. Encapsulated but **deactivated** by default:
+ * it is only ever constructed when VOICE_PROVIDER=whisper AND a key is present
+ * (see resolveVoiceProviderName + getTranscriptionProvider), so locally and in
+ * CI the mock provider is used and this code path is never hit.
+ *
+ * TODO PROVIDER SETUP — set VOICE_PROVIDER=whisper + VOICE_PROVIDER_API_KEY
+ * (optionally VOICE_PROVIDER_URL / VOICE_PROVIDER_MODEL) and verify against your
+ * chosen backend before enabling in production.
+ */
+export class WhisperProvider implements TranscriptionProvider {
   readonly name = 'whisper';
-  async transcribe(): Promise<TranscriptionResult> {
-    // TODO PROVIDER SETUP — POST the audio to the speech-to-text API using
-    // config.VOICE_PROVIDER_API_KEY and map its response to TranscriptionResult.
-    throw new Error(
-      'VOICE_PROVIDER=whisper is selected but not implemented yet (placeholder). Use the mock provider locally.',
-    );
+  constructor(
+    private readonly apiKey: string,
+    private readonly url: string,
+    private readonly model: string,
+  ) {}
+
+  async transcribe(input: TranscriptionInput): Promise<TranscriptionResult> {
+    if (!input.audioBase64) {
+      throw new Error('whisper provider requires audio (audioBase64 was empty).');
+    }
+    const bytes = new Uint8Array(Buffer.from(input.audioBase64, 'base64'));
+    const form = new FormData();
+    form.append('model', this.model);
+    form.append('file', new Blob([bytes], { type: input.contentType ?? 'audio/webm' }), 'audio.webm');
+
+    const res = await fetch(this.url, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${this.apiKey}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      throw new Error(`whisper transcription failed (HTTP ${res.status}): ${detail.slice(0, 200)}`);
+    }
+    const json = (await res.json()) as { text?: string; language?: string };
+    return {
+      text: (json.text ?? '').trim(),
+      language: json.language ?? 'de',
+      durationSec: input.durationSec,
+    };
   }
 }
 
@@ -80,7 +115,11 @@ export function getTranscriptionProvider(): TranscriptionProvider {
   if (cached) return cached;
   cached =
     resolveVoiceProviderName() === 'whisper'
-      ? new UnconfiguredWhisperProvider()
+      ? new WhisperProvider(
+          config.VOICE_PROVIDER_API_KEY!,
+          config.VOICE_PROVIDER_URL,
+          config.VOICE_PROVIDER_MODEL,
+        )
       : new MockTranscriptionProvider();
   return cached;
 }
