@@ -1,0 +1,57 @@
+# Release images (Block 23).
+#
+# Builds the SHA/tag-stamped container images on a version tag (or manual
+# dispatch). The push to a registry is PREPARED but OFF by default — it only
+# runs when the repo variable ENABLE_REGISTRY_PUSH == 'true'. That way no
+# secret needs to exist for the default path; a maintainer enables publishing by
+# setting the variable + secrets below. TODO PROVIDER SETUP.
+#
+# This is separate from ci.yml on purpose: `container-smoke` (in ci.yml) builds
+# + runs + smokes on every push; this workflow only fires on tags/dispatch and
+# is the artefact-publishing path — no duplicate work on ordinary pushes.
+name: Release images
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+
+    env:
+      # Tags the images and is reported by /api/v1/health. A tag build uses the
+      # tag name (e.g. v1.2.3); a manual dispatch uses the commit SHA.
+      APP_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images (tagged with APP_VERSION)
+        run: docker compose build
+
+      # --- Registry publish (TODO PROVIDER SETUP) ----------------------------
+      # Enable by setting repository variable ENABLE_REGISTRY_PUSH=true and
+      # secrets REGISTRY_USER / REGISTRY_TOKEN, plus variables REGISTRY_HOST
+      # (e.g. ghcr.io) and REGISTRY_NAMESPACE (e.g. your-org). Until then these
+      # steps are skipped and no credentials are required.
+      - name: Log in to the registry
+        if: ${{ vars.ENABLE_REGISTRY_PUSH == 'true' }}
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login "${{ vars.REGISTRY_HOST }}" -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Tag & push images
+        if: ${{ vars.ENABLE_REGISTRY_PUSH == 'true' }}
+        run: |
+          set -euo pipefail
+          for img in saf-api saf-web saf-migrate; do
+            src="$img:${APP_VERSION}"
+            dst="${{ vars.REGISTRY_HOST }}/${{ vars.REGISTRY_NAMESPACE }}/$img:${APP_VERSION}"
+            docker tag "$src" "$dst"
+            docker push "$dst"
+            echo "pushed $dst"
+          done
+
+      - name: Publishing is disabled (note)
+        if: ${{ vars.ENABLE_REGISTRY_PUSH != 'true' }}
+        run: echo "Registry push skipped — set repo variable ENABLE_REGISTRY_PUSH=true to enable (see docs/containerization.md)."

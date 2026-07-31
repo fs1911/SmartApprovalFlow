@@ -1,21 +1,21 @@
 # syntax=docker/dockerfile:1
 #
-# API image (Block 19). Build context is the REPO ROOT (monorepo workspaces):
-#   docker build -f apps/api/Dockerfile -t saf-api .
+# API images (Block 19, slimmed in Block 23). Build context is the REPO ROOT
+# (monorepo workspaces). Two targets share the heavy `deps`/`build` layers:
+#   - target `runtime` (default): the slim API image (production deps only),
+#       started via `tsx`. Used by the `api` service.  →  saf-api
+#   - target `migrate`: keeps the full deps (incl. the Prisma CLI) so it can run
+#       `prisma migrate deploy` + seed. Used by the one-shot `migrate` service. → saf-migrate
 #
-# The API runs via `tsx` against TypeScript source (the shared @saf/* packages
-# are consumed as source — see docs/release-and-deployment-runbook.md), so the
-# runtime image ships the source + node_modules (incl. the generated Prisma
-# client), not a compiled dist.
+#   docker build -f apps/api/Dockerfile --target runtime -t saf-api .
+#   docker build -f apps/api/Dockerfile --target migrate -t saf-migrate .
 
 # --- deps: install once, cached on the manifest set -------------------------
 FROM node:22-slim AS deps
 WORKDIR /app
-# Prisma's engines need libssl; node:*-slim (Debian) ships without it. Install
-# it here so `prisma generate` detects the correct OpenSSL 3 engine target.
+# Prisma's engines need libssl; node:*-slim (Debian) ships without it.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
-# Copy every workspace manifest so `npm ci` can resolve the workspace tree.
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY apps/web/package.json apps/web/package.json
@@ -31,24 +31,38 @@ FROM deps AS build
 COPY . .
 RUN npm run db:generate
 
-# --- runtime: lean, non-root ------------------------------------------------
-FROM node:22-slim AS runtime
+# --- shared runtime base (non-root, libssl) ---------------------------------
+FROM node:22-slim AS base-runtime
 ENV NODE_ENV=production
 WORKDIR /app
-# libssl for the Prisma query + schema engines (used by the API at runtime and
-# by the `migrate` service). Must match the OpenSSL version present at generate
-# time above, or Prisma picks the wrong engine and fails at runtime.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-# Only what the API needs at runtime: deps (with the generated client), the
-# API source, and the shared packages. The web app is intentionally excluded.
+  && rm -rf /var/lib/apt/lists/* \
+  && useradd --create-home --uid 10001 appuser
+
+# --- migrate: full deps (Prisma CLI + tsx) for `migrate deploy` + seed -------
+FROM base-runtime AS migrate
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/apps/api ./apps/api
 COPY --from=build /app/packages ./packages
+RUN chown -R appuser /app
+USER appuser
+# The concrete command (prisma migrate deploy + seed) is supplied by compose.
+CMD ["node", "-e", "console.error('Provide a command (e.g. prisma migrate deploy).'); process.exit(1)"]
 
-# Drop privileges.
-RUN useradd --create-home --uid 10001 appuser && chown -R appuser /app
+# --- prune: drop dev dependencies for the slim API image --------------------
+FROM build AS prune
+RUN npm prune --omit=dev
+
+# --- runtime: slim API image (production deps only), runs via tsx -----------
+FROM base-runtime AS runtime
+# Production node_modules (dev deps pruned: no typescript/prisma CLI/@types).
+COPY --from=prune /app/node_modules ./node_modules
+# Overlay the generated Prisma client + query engine so a prune can never strip it.
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=prune /app/package.json ./package.json
+COPY --from=prune /app/apps/api ./apps/api
+COPY --from=prune /app/packages ./packages
+RUN chown -R appuser /app
 USER appuser
 
 EXPOSE 4000

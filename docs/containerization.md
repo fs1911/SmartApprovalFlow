@@ -28,19 +28,25 @@ API_BASE_URL=http://localhost:4000 npm run smoke --workspace @saf/api
 Beide Images bauen aus dem **Repo-Root** als Kontext (Monorepo-Workspaces) und
 sind Multi-Stage, non-root, mit `HEALTHCHECK`.
 
-### API — `apps/api/Dockerfile`
+### API — `apps/api/Dockerfile` (zwei Targets, Block 23)
 ```bash
-docker build -f apps/api/Dockerfile -t saf-api .
+docker build -f apps/api/Dockerfile --target runtime -t saf-api .    # schlankes API-Image
+docker build -f apps/api/Dockerfile --target migrate -t saf-migrate . # Migrations-Image
 ```
-- `deps` → `npm ci` (alle Workspace-Manifeste kopiert, damit npm den Tree auflöst)
-- `build` → Quellcode + `npm run db:generate` (Prisma-Client)
-- `runtime` → node_modules (inkl. generiertem Client) + `apps/api` + `packages`;
-  Start via `npm run start --workspace @saf/api` (= `tsx src/server.ts`, siehe
-  Runbook, warum kein `node dist`).
-- Healthcheck: `GET /api/v1/health`.
-- **Bewusst mit devDependencies:** dasselbe Image dient auch dem `migrate`-Service,
-  der die Prisma-CLI braucht. Ein separates schlankes Runtime-Image wäre ein
-  späterer Optimierungsschritt.
+Gemeinsame `deps`/`build`-Layer (npm ci + `db:generate`), dann zwei Targets:
+
+- **`runtime`** (Default, → `saf-api`): **schlank** — `npm prune --omit=dev`
+  entfernt Dev-Dependencies (TypeScript, Prisma-CLI, `@types`, …); behalten
+  bleiben `tsx` (Runtime-Dep), `@prisma/client` + `openssl`. Der generierte
+  Prisma-Client (`node_modules/.prisma`) wird zusätzlich aus dem `build`-Stage
+  überkopiert, damit ihn ein Prune nie entfernt. Start via
+  `npm run start --workspace @saf/api` (= `tsx src/server.ts`). Healthcheck:
+  `GET /api/v1/health`.
+- **`migrate`** (→ `saf-migrate`): **volle** Deps inkl. Prisma-CLI, damit der
+  one-shot `migrate`-Service `prisma migrate deploy` + Seed fahren kann. Das
+  API-Image bleibt dadurch schlank.
+
+Beide teilen die teuren Layer (npm ci, generate) — kein doppelter schwerer Build.
 
 ### Web — `apps/web/Dockerfile`
 ```bash
@@ -114,25 +120,30 @@ doppelte, langsame Arbeit. **Gate-Einteilung:**
 lokal (siehe unten) nicht reproduzierbar. Der schnelle, deterministische
 `release-smoke` deckt den Start-Pfad bereits als Gate ab.
 
-## Registry-Push (TODO PROVIDER SETUP)
+## Release & Registry-Push (Block 23)
 
-Bewusst **nicht aktiviert** (keine echten Credentials im Repo). Um Images in eine
-Registry zu pushen, den `container-smoke`-Job (oder einen eigenen Release-Job) um
-einen Login + Push erweitern:
+Eigener Workflow **`.github/workflows/release.yml`**, getriggert nur auf
+**Version-Tags** (`v*`) oder **manuellem Dispatch** — getrennt von `ci.yml`
+(dort baut+smoked `container-smoke` bei jedem Push). Trigger-Übersicht:
 
-```yaml
-# TODO PROVIDER SETUP — nur mit echten Registry-Credentials (GitHub Secrets):
-# - name: Log in to registry
-#   run: echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
-# - name: Tag & push
-#   run: |
-#     docker tag saf-api:${{ github.sha }} ghcr.io/<org>/saf-api:${{ github.sha }}
-#     docker push ghcr.io/<org>/saf-api:${{ github.sha }}
-```
+| Workflow / Job | Trigger | Tut |
+| --- | --- | --- |
+| `ci.yml` → `container-smoke` | jeder Push | bauen → hochfahren → smoken (non-blocking) |
+| `release.yml` → `images` | Tag `v*` / Dispatch | Images bauen (Tag = Tag-Name/SHA), optional pushen |
 
-Die Images tragen dank `APP_VERSION` bereits den SHA-Tag; es fehlt nur der
-Registry-Namespace + Push. Secrets gehören in die CI-Secret-Verwaltung, nie ins
-Repo.
+Der Build läuft immer; der **Push ist standardmäßig AUS** und wird nur
+ausgeführt, wenn die Repo-Variable `ENABLE_REGISTRY_PUSH == 'true'` gesetzt ist.
+So braucht der Default-Pfad **kein Secret**. Zum Aktivieren (**TODO PROVIDER
+SETUP**):
+
+1. Repo-Variable `ENABLE_REGISTRY_PUSH=true` setzen.
+2. Variablen `REGISTRY_HOST` (z. B. `ghcr.io`) + `REGISTRY_NAMESPACE` (z. B. die
+   Org) setzen.
+3. Secrets `REGISTRY_USER` + `REGISTRY_TOKEN` hinterlegen.
+
+Der Workflow taggt dann `saf-api` / `saf-web` / `saf-migrate` auf
+`<host>/<namespace>/<image>:<version>` und pusht sie. Secrets gehören in die
+CI-Secret-Verwaltung, nie ins Repo.
 
 ## Lokal in dieser Umgebung nicht ausführbar
 
@@ -153,7 +164,7 @@ Docker Hub erreichbar).
 
 ## Bewusst offen
 
-- Kein aktiver Registry-Push (nur als TODO dokumentiert, s. o.).
+- Registry-Push ist vorbereitet, aber standardmäßig deaktiviert (opt-in per
+  `ENABLE_REGISTRY_PUSH`); kein Live-Push in diesem Repo verifiziert.
 - Kein Kubernetes/Helm; Compose deckt den lokalen/Single-Host-Fall ab.
-- API-Image trägt devDependencies (geteilt mit `migrate`); separates schlankes
-  Runtime-Image ist ein möglicher späterer Schritt.
+- Kein Multi-Arch-Build.

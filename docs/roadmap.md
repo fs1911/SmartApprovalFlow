@@ -27,6 +27,7 @@ riesig".
 | **Block 20** | **Container-Release-Pipeline & Container-Smoke** — SHA-getaggte Images, `container-smoke`-CI-Job (build→up→smoke→teardown), Registry-Push als TODO | ✅ abgeschlossen |
 | **Block 21** | **Voice-Layer** — Sprach-Erfassung der Fallerstellung: Transkriptions-Adapter (mock/whisper), Draft-Parser, `POST /voice/transcribe`, Formular-Vorbefüllung | ✅ abgeschlossen |
 | **Block 22** | **Voice-Ausbau** — dynamische Mehr-Positionen-UI im Fall-Formular, echter (deaktivierter) whisper-STT-Adapter | ✅ abgeschlossen |
+| **Block 23** | **Release-Abschluss** — schlankes API-Runtime-Image (+ separates Migrate-Image), tag-getriggerter Release-Workflow mit optionalem Registry-Push | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 
