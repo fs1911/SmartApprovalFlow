@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { ITEM_CATEGORY_LABELS } from '@saf/types';
+import { ITEM_CATEGORY_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 
@@ -20,6 +22,7 @@ interface Summary {
   approvalRate: number | null;
   responseHours: { avg: number | null; median: number | null; count: number };
   revenue: { minMinor: number; maxMinor: number; approvedItems: number; display: string };
+  categories: { category: string; count: number; display: string }[];
   trend: { granularity: string; buckets: { label: string; created: number; sent: number }[] };
 }
 
@@ -142,6 +145,62 @@ export default async function ReportingPage({
                 <Trend buckets={s.trend.buckets} />
               ) : (
                 <p className="subtle">Keine Daten im gewählten Zeitraum.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card__body">
+              <h2>Positionen nach Kategorie ({PRESETS.find((p) => p.key === preset)?.label})</h2>
+              {s.categories.length > 0 ? (
+                <div className="stack">
+                  {(() => {
+                    const max = Math.max(1, ...s.categories.map((c) => c.count));
+                    return s.categories.map((c) => {
+                      const label =
+                        ITEM_CATEGORY_LABELS[c.category as keyof typeof ITEM_CATEGORY_LABELS] ??
+                        c.category;
+                      const tone = ITEM_CATEGORY_PRESENTATION[c.category]?.tone ?? 'neutral';
+                      return (
+                        <div key={c.category}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span>
+                              <span className={`badge badge--${tone}`}>{label}</span>{' '}
+                              <span className="subtle">· {c.display}</span>
+                            </span>
+                            <strong>{c.count}</strong>
+                          </div>
+                          <div
+                            aria-hidden
+                            style={{
+                              height: 8,
+                              borderRadius: 4,
+                              background: 'var(--color-surface-subtle)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${Math.round((c.count / max) * 100)}%`,
+                                height: '100%',
+                                borderRadius: 4,
+                                background: 'var(--color-brand-500)',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : (
+                <p className="subtle">Keine Positionen im gewählten Zeitraum.</p>
               )}
             </div>
           </div>

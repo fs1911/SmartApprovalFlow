@@ -27,7 +27,8 @@ Block 20 (Container-Release-Pipeline & Container-Smoke) ✅ ·
 Block 21 (Voice-Layer) ✅ ·
 Block 22 (Voice-Ausbau) ✅ ·
 Block 23 (Release-Abschluss) ✅ ·
-Block 24 (Produkt-Feinschliff) ✅
+Block 24 (Produkt-Feinschliff) ✅ ·
+Block 25 (Reporting nach Kategorie) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---

@@ -21,6 +21,13 @@ test('reporting summary honours the period filter and returns insights', async (
   assert.equal(typeof res.body.data.revenue.minMinor, 'number');
   assert.ok(Array.isArray(res.body.data.trend.buckets));
   assert.ok('median' in res.body.data.responseHours);
+  // Block 25: positions-by-category breakdown.
+  assert.ok(Array.isArray(res.body.data.categories));
+  for (const c of res.body.data.categories) {
+    assert.equal(typeof c.category, 'string');
+    assert.equal(typeof c.count, 'number');
+    assert.equal(typeof c.display, 'string');
+  }
 });
 
 test('reporting summary accepts an explicit from/to range', async (t) => {

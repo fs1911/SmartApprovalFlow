@@ -16,6 +16,7 @@ import {
   resolvePeriod,
   approvalBreakdown,
   revenueRange,
+  itemsByCategory,
   mean,
   median,
   round1,
@@ -44,7 +45,7 @@ async function loadCases(tenantId: string, from: Date, to: Date) {
       sentAt: true,
       respondedAt: true,
       customer: { select: { name: true } },
-      items: { select: { decision: true, priceMinMinor: true, priceMaxMinor: true } },
+      items: { select: { decision: true, category: true, priceMinMinor: true, priceMaxMinor: true } },
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -76,6 +77,7 @@ export async function reportingRoutes(app: FastifyInstance) {
 
       const breakdown = approvalBreakdown(cases.map((c) => c.status));
       const revenue = revenueRange(cases);
+      const categories = itemsByCategory(cases.flatMap((c) => c.items));
 
       // Response times (sent → responded), in hours, for cases with both stamps.
       const responseHours = cases
@@ -123,6 +125,11 @@ export async function reportingRoutes(app: FastifyInstance) {
           approvedItems: revenue.approvedItems,
           display: formatPriceBand(revenue.minMinor || null, revenue.maxMinor || null, 'CHF'),
         },
+        categories: categories.map((c) => ({
+          category: c.category,
+          count: c.count,
+          display: formatPriceBand(c.minMinor || null, c.maxMinor || null, 'CHF'),
+        })),
         trend: {
           granularity,
           buckets: buckets.map((b, i) => ({

@@ -5,6 +5,7 @@ import {
   median,
   approvalBreakdown,
   revenueRange,
+  itemsByCategory,
   resolvePeriod,
   makeBuckets,
   pickGranularity,
@@ -89,4 +90,25 @@ test('CSV escaping and serialisation', () => {
   assert.equal(csvEscape('line\nbreak'), '"line\nbreak"');
   const csv = toCsv(['ref', 'note'], [['AC-1', 'ok'], ['AC-2', 'a,b']]);
   assert.equal(csv, 'ref,note\r\nAC-1,ok\r\nAC-2,"a,b"\r\n');
+});
+
+test('itemsByCategory: counts + price sums per category, canonical order', () => {
+  const stats = itemsByCategory([
+    { category: 'REPAIR', priceMinMinor: 5000, priceMaxMinor: 7000 },
+    { category: 'SAFETY', priceMinMinor: 18000, priceMaxMinor: 24000 },
+    { category: 'SAFETY', priceMinMinor: 2000, priceMaxMinor: 2000 },
+    { category: null, priceMinMinor: 1000, priceMaxMinor: 1000 }, // → OTHER
+    { category: 'BOGUS' }, // unknown → OTHER
+  ]);
+  // Canonical order: SAFETY before REPAIR before OTHER; empty categories omitted.
+  assert.deepEqual(
+    stats.map((s) => [s.category, s.count]),
+    [['SAFETY', 2], ['REPAIR', 1], ['OTHER', 2]],
+  );
+  const safety = stats.find((s) => s.category === 'SAFETY')!;
+  assert.deepEqual([safety.minMinor, safety.maxMinor], [20000, 26000]);
+});
+
+test('itemsByCategory: empty input yields no rows', () => {
+  assert.deepEqual(itemsByCategory([]), []);
 });

@@ -123,6 +123,44 @@ export function revenueRange(cases: RevenueCase[]): RevenueRange {
   return { minMinor, maxMinor, approvedItems };
 }
 
+// --- Positions by category (Block 25) --------------------------------------
+
+/** Canonical order for a stable, predictable category breakdown. */
+const CATEGORY_ORDER = ['SAFETY', 'MAINTENANCE', 'REPAIR', 'DIAGNOSTIC', 'OTHER'] as const;
+
+export interface CategoryItem {
+  category?: string | null;
+  priceMinMinor?: number | null;
+  priceMaxMinor?: number | null;
+}
+export interface CategoryStat {
+  category: string;
+  count: number;
+  /** Summed price band across the positions in this category. */
+  minMinor: number;
+  maxMinor: number;
+}
+
+/**
+ * Count positions per category and sum their price bands. Returns only
+ * categories that actually occur, in the canonical order above (unknown
+ * categories fall back to OTHER). Pure → unit-tested.
+ */
+export function itemsByCategory(items: CategoryItem[]): CategoryStat[] {
+  const acc = new Map<string, CategoryStat>();
+  for (const it of items) {
+    const key = (CATEGORY_ORDER as readonly string[]).includes(it.category ?? '')
+      ? (it.category as string)
+      : 'OTHER';
+    const stat = acc.get(key) ?? { category: key, count: 0, minMinor: 0, maxMinor: 0 };
+    stat.count += 1;
+    stat.minMinor += it.priceMinMinor ?? 0;
+    stat.maxMinor += it.priceMaxMinor ?? 0;
+    acc.set(key, stat);
+  }
+  return CATEGORY_ORDER.filter((c) => acc.has(c)).map((c) => acc.get(c)!);
+}
+
 // --- Time-series bucketing -------------------------------------------------
 
 export interface Bucket {

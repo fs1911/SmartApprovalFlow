@@ -48,6 +48,21 @@ Im Web lädt ein same-origin Route-Handler (`/reporting/export`) das CSV
 serverseitig mit der Session und streamt es an den Browser (die httpOnly-Session
 erreicht die API nicht direkt).
 
+## Positionen nach Kategorie (Block 25)
+
+`GET /reporting/summary` liefert zusätzlich `categories`: pro Positions-Kategorie
+(`SAFETY|MAINTENANCE|REPAIR|DIAGNOSTIC|OTHER`) die **Anzahl** Positionen und die
+summierte **Preisspanne** (`display`). Reine Funktion `itemsByCategory` in
+`reporting.ts` (unit-getestet), kanonische Reihenfolge, leere Kategorien werden
+weggelassen, unbekannte fallen auf `OTHER`. Die Web-Auswertung zeigt sie als
+beschriftete Balkenliste (Label + Anzahl + Preis, Kategorie über Text-Chip, nicht
+nur Farbe → a11y).
+
+**CSV bewusst unverändert:** Der Export ist **pro Fall** (eine Zeile je Fall),
+Kategorien sind aber **Positions-Ebene** (mehrere pro Fall) — sie passen nicht in
+das Fall-Schema. Die Kategorie-Kennzahl steht daher in der JSON-Summary, nicht im
+Fall-CSV.
+
 ## Datenschutz / Datensparsamkeit
 
 Export enthält nur freigaberelevante Felder (Kundenname, keine Kontaktdaten/
