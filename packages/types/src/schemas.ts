@@ -188,6 +188,7 @@ export type ListQuery = z.infer<typeof listQuerySchema>;
 /** One suggested position parsed from the dictation (user edits before saving). */
 export const voiceDraftItemSchema = z.object({
   title: z.string().min(1).max(160),
+  category: z.enum(ITEM_CATEGORY).default('REPAIR'),
   priceBand: priceBandSchema.optional(),
 });
 export type VoiceDraftItem = z.infer<typeof voiceDraftItemSchema>;

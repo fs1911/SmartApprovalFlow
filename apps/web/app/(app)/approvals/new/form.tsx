@@ -19,6 +19,8 @@ function draftToRows(draft: VoiceDraft): ItemRow[] {
   if (draft.items.length === 0) return [emptyItem()];
   return draft.items.map((it) => ({
     title: it.title,
+    category: it.category,
+    description: '',
     priceMin: it.priceBand ? (it.priceBand.minMinor / 100).toFixed(2) : '',
     priceMax: it.priceBand ? (it.priceBand.maxMinor / 100).toFixed(2) : '',
   }));

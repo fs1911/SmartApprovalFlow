@@ -1,4 +1,4 @@
-import { formatPriceBand, resolveLocale, t, type Locale } from '@saf/ui';
+import { formatPriceBand, resolveLocale, t, ITEM_CATEGORY_PRESENTATION, type Locale } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { ActionsPanel } from './_actions-panel';
 
@@ -23,6 +23,7 @@ interface PublicView {
     id: string;
     title: string;
     description?: string | null;
+    category?: string | null;
     priceMinMinor?: number | null;
     priceMaxMinor?: number | null;
     currency: string;
@@ -145,7 +146,17 @@ export default async function PublicApprovalPage({
               {view.items.map((it, i) => (
                 <div key={it.id ?? i} className="public-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                    <strong>{it.title}</strong>
+                    <div>
+                      <strong>{it.title}</strong>
+                      {it.category && ITEM_CATEGORY_PRESENTATION[it.category] && (
+                        <span
+                          className={`badge badge--${ITEM_CATEGORY_PRESENTATION[it.category]!.tone}`}
+                          style={{ marginLeft: 8, verticalAlign: 'middle' }}
+                        >
+                          {ITEM_CATEGORY_PRESENTATION[it.category]!.label}
+                        </span>
+                      )}
+                    </div>
                     <span style={{ whiteSpace: 'nowrap' }}>
                       {formatPriceBand(it.priceMinMinor, it.priceMaxMinor, it.currency)}
                     </span>

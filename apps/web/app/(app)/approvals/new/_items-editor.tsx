@@ -1,12 +1,22 @@
 'use client';
 
+import { ITEM_CATEGORY, ITEM_CATEGORY_LABELS, type ItemCategory } from '@saf/types';
+
 export interface ItemRow {
   title: string;
+  category: ItemCategory;
+  description: string;
   priceMin: string;
   priceMax: string;
 }
 
-export const emptyItem = (): ItemRow => ({ title: '', priceMin: '', priceMax: '' });
+export const emptyItem = (): ItemRow => ({
+  title: '',
+  category: 'REPAIR',
+  description: '',
+  priceMin: '',
+  priceMax: '',
+});
 
 /**
  * Dynamic list of recommended positions (Block 22). Controlled by the parent so
@@ -65,6 +75,33 @@ export function ItemsEditor({
               {errors?.[`items.${i}.title`] && (
                 <span className="error">{errors[`items.${i}.title`]}</span>
               )}
+            </div>
+            <div className="grid-2">
+              <div className="field">
+                <label htmlFor={`item-${i}-category`}>Kategorie</label>
+                <select
+                  id={`item-${i}-category`}
+                  name={`items[${i}].category`}
+                  value={row.category}
+                  onChange={(e) => update(i, { category: e.target.value as ItemCategory })}
+                >
+                  {ITEM_CATEGORY.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {ITEM_CATEGORY_LABELS[cat]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor={`item-${i}-desc`}>Beschreibung (optional)</label>
+                <input
+                  id={`item-${i}-desc`}
+                  name={`items[${i}].description`}
+                  value={row.description}
+                  onChange={(e) => update(i, { description: e.target.value })}
+                  placeholder="Kurzer Zusatz für den Kunden"
+                />
+              </div>
             </div>
             <div className="grid-2">
               <div className="field">

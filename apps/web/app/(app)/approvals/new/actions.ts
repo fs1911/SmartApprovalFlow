@@ -19,27 +19,37 @@ function toMinor(v: FormDataEntryValue | null): number | undefined {
   return Math.round(n * 100);
 }
 
-/** Collect the dynamic `items[i].{title,priceMin,priceMax}` rows from the form. */
+const CATEGORIES = ['SAFETY', 'MAINTENANCE', 'REPAIR', 'DIAGNOSTIC', 'OTHER'] as const;
+type Category = (typeof CATEGORIES)[number];
+function toCategory(v: FormDataEntryValue | null): Category {
+  const s = String(v ?? '');
+  return (CATEGORIES as readonly string[]).includes(s) ? (s as Category) : 'REPAIR';
+}
+
+/** Collect the dynamic `items[i].{title,category,description,priceMin,priceMax}` rows. */
 function parseItems(formData: FormData) {
   const indices = new Set<number>();
   for (const key of formData.keys()) {
-    const m = /^items\[(\d+)\]\.(?:title|priceMin|priceMax)$/.exec(key);
+    const m = /^items\[(\d+)\]\.(?:title|category|description|priceMin|priceMax)$/.exec(key);
     if (m) indices.add(Number(m[1]));
   }
   const items: {
     title: string;
-    category: 'REPAIR';
+    category: Category;
+    description?: string;
     priceBand?: { minMinor: number; maxMinor: number; currency: 'CHF' };
   }[] = [];
   for (const i of [...indices].sort((a, b) => a - b)) {
     const title = String(formData.get(`items[${i}].title`) ?? '').trim();
+    const description = String(formData.get(`items[${i}].description`) ?? '').trim();
     const min = toMinor(formData.get(`items[${i}].priceMin`));
     const max = toMinor(formData.get(`items[${i}].priceMax`));
     // Skip fully empty rows so a stray blank row never blocks submission.
-    if (!title && min == null && max == null) continue;
+    if (!title && !description && min == null && max == null) continue;
     items.push({
       title,
-      category: 'REPAIR',
+      category: toCategory(formData.get(`items[${i}].category`)),
+      description: description || undefined,
       priceBand:
         min != null || max != null
           ? { minMinor: min ?? max ?? 0, maxMinor: max ?? min ?? 0, currency: 'CHF' }

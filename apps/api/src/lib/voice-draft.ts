@@ -12,7 +12,7 @@
  *    Außerdem Ölwechsel für 120 CHF. Das ist dringend."
  */
 import type { VoiceDraft, VoiceDraftItem } from '@saf/types';
-import type { Urgency } from '@saf/types';
+import type { ItemCategory, Urgency } from '@saf/types';
 
 export interface ParsedPrice {
   minMinor: number;
@@ -98,6 +98,24 @@ export function extractPrice(segment: string): ParsedPrice | null {
   return null;
 }
 
+/**
+ * Guess a position category from its title (advisory; user can change it).
+ * Deliberately uses no `\b`/`\w` anchors — those are ASCII-only and fail around
+ * German umlauts (e.g. "Ölwechsel"). Substring stems are enough for a heuristic.
+ */
+export function detectCategory(title: string): ItemCategory {
+  if (/brems|sicherheit|reifen|lenkung|airbag|gef[äa]hrlich|verkehrsunsicher|beleuchtung|licht/i.test(title)) {
+    return 'SAFETY';
+  }
+  if (/[öo]lwechsel|service|inspektion|filter|wartung|fl[üu]ssigkeit|z[üu]ndkerze|scheibenwischer/i.test(title)) {
+    return 'MAINTENANCE';
+  }
+  if (/diagnose|fehlersuche|auslesen|pr[üu]f|messen|fehlerspeicher/i.test(title)) {
+    return 'DIAGNOSTIC';
+  }
+  return 'REPAIR';
+}
+
 /** Detect urgency from the whole transcript. */
 export function detectUrgency(text: string): Urgency {
   if (/\b(?:dringend|sofort|umgehend|sicherheitsrelevant|gef[äa]hrlich|akut|nicht mehr (?:fahren|fahrbar)|verkehrsunsicher)\b/i.test(text)) {
@@ -144,7 +162,8 @@ export function parseVoiceDraft(transcript: string): VoiceDraft {
     const price = extractPrice(segment);
     const title = toTitle(segment, price);
     if (title.length < 2) continue; // skip fragments that carry no real task
-    const item: VoiceDraftItem = { title: title.slice(0, 160) };
+    const clipped = title.slice(0, 160);
+    const item: VoiceDraftItem = { title: clipped, category: detectCategory(clipped) };
     if (price) {
       item.priceBand = { minMinor: price.minMinor, maxMinor: price.maxMinor, currency: CURRENCY };
     }

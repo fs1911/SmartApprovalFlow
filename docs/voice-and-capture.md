@@ -64,6 +64,12 @@ unit-getestet, für deutsche Werkstatt-Diktate. Heuristiken (kein LLM):
   jede Aufgabe wird zu einem Titel (Füllwörter/Preis-Phrase entfernt). Reine
   Dringlichkeits-Bemerkungen („Das ist sicherheitsrelevant") werden **nicht** zu
   Positionen.
+- **Kategorie** je Position (Block 24): `detectCategory(title)` rät die Kategorie
+  aus Stichwörtern — `brems…|sicherheit|reifen…` → `SAFETY`,
+  `ölwechsel|service|filter|wartung…` → `MAINTENANCE`,
+  `diagnose|auslesen|fehlerspeicher…` → `DIAGNOSTIC`, sonst `REPAIR`. Advisory;
+  der Nutzer kann sie im Formular ändern. (Bewusst ohne `\b`/`\w`-Anker, die an
+  Umlauten wie „Ölwechsel" scheitern.)
 - **Betreff**: Titel der ersten Position (sonst erster Satz).
 - **Beschreibung**: das Transkript (als „festgestelltes Problem").
 

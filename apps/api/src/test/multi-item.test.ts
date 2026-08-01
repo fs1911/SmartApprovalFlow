@@ -21,8 +21,13 @@ test('create a case with multiple items persists all positions', async (t) => {
       subject: 'Mehrere Positionen',
       customer: { name: 'Testkunde', email: 'multi@example.com' },
       items: [
-        { title: 'Bremsbeläge vorne ersetzen', priceBand: { minMinor: 18000, maxMinor: 24000, currency: 'CHF' } },
-        { title: 'Ölwechsel', priceBand: { minMinor: 12000, maxMinor: 12000, currency: 'CHF' } },
+        {
+          title: 'Bremsbeläge vorne ersetzen',
+          category: 'SAFETY',
+          description: 'Beläge unter Verschleissgrenze.',
+          priceBand: { minMinor: 18000, maxMinor: 24000, currency: 'CHF' },
+        },
+        { title: 'Ölwechsel', category: 'MAINTENANCE', priceBand: { minMinor: 12000, maxMinor: 12000, currency: 'CHF' } },
         { title: 'Luftfilter tauschen' },
       ],
     },
@@ -38,4 +43,10 @@ test('create a case with multiple items persists all positions', async (t) => {
     items.map((i: { title: string }) => i.title),
     ['Bremsbeläge vorne ersetzen', 'Ölwechsel', 'Luftfilter tauschen'],
   );
+  // Block 24: category + description round-trip per position.
+  assert.deepEqual(
+    items.map((i: { category: string }) => i.category),
+    ['SAFETY', 'MAINTENANCE', 'REPAIR'],
+  );
+  assert.equal(items[0].description, 'Beläge unter Verschleissgrenze.');
 });

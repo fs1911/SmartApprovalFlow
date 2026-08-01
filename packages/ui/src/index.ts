@@ -46,6 +46,15 @@ export const AUDIT_LABELS: Record<string, string> = {
   MESSAGE_FAILED: 'Nachricht fehlgeschlagen',
 };
 
+/** Position category → customer-facing German label + tone (Block 24). */
+export const ITEM_CATEGORY_PRESENTATION: Record<string, { label: string; tone: string }> = {
+  SAFETY: { label: 'Sicherheit', tone: 'danger' },
+  MAINTENANCE: { label: 'Wartung', tone: 'info' },
+  REPAIR: { label: 'Reparatur', tone: 'neutral' },
+  DIAGNOSTIC: { label: 'Diagnose', tone: 'info' },
+  OTHER: { label: 'Sonstiges', tone: 'neutral' },
+};
+
 export const URGENCY_PRESENTATION: Record<string, { label: string; tone: string }> = {
   LOW: { label: 'Niedrig', tone: 'neutral' },
   MEDIUM: { label: 'Mittel', tone: 'info' },

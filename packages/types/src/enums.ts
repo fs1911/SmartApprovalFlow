@@ -69,6 +69,15 @@ export type CustomerDecision = (typeof CUSTOMER_DECISION)[number];
 export const ITEM_CATEGORY = ['SAFETY', 'MAINTENANCE', 'REPAIR', 'DIAGNOSTIC', 'OTHER'] as const;
 export type ItemCategory = (typeof ITEM_CATEGORY)[number];
 
+/** German labels for the position category (shared by form + customer page). */
+export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
+  SAFETY: 'Sicherheit',
+  MAINTENANCE: 'Wartung',
+  REPAIR: 'Reparatur',
+  DIAGNOSTIC: 'Diagnose',
+  OTHER: 'Sonstiges',
+};
+
 /** Delivery channel of an outbound message to the customer. */
 export const MESSAGE_CHANNEL = ['EMAIL', 'SMS'] as const;
 export type MessageChannel = (typeof MESSAGE_CHANNEL)[number];

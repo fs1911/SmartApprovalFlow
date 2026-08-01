@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseVoiceDraft, extractPrice, detectUrgency } from './voice-draft.js';
+import { parseVoiceDraft, extractPrice, detectUrgency, detectCategory } from './voice-draft.js';
 
 test('extractPrice: single amount with trailing currency', () => {
   const p = extractPrice('Ölwechsel für 120 CHF');
@@ -48,6 +48,21 @@ test('parseVoiceDraft: full dictation → subject, items, prices, urgency', () =
   assert.deepEqual(draft.items[1]!.priceBand, { minMinor: 12000, maxMinor: 12000, currency: 'CHF' });
   assert.equal(draft.subject, 'Bremsbeläge vorne ersetzen');
   assert.ok(draft.description?.includes('Bremsbeläge'));
+});
+
+test('detectCategory maps common workshop terms', () => {
+  assert.equal(detectCategory('Bremsbeläge vorne ersetzen'), 'SAFETY');
+  assert.equal(detectCategory('Ölwechsel'), 'MAINTENANCE');
+  assert.equal(detectCategory('Fehlerspeicher auslesen'), 'DIAGNOSTIC');
+  assert.equal(detectCategory('Kotflügel lackieren'), 'REPAIR');
+});
+
+test('parseVoiceDraft assigns a category per position', () => {
+  const draft = parseVoiceDraft(
+    'Bremsbeläge vorne ersetzen für 200 Franken. Außerdem Ölwechsel für 120 CHF.',
+  );
+  assert.equal(draft.items[0]!.category, 'SAFETY');
+  assert.equal(draft.items[1]!.category, 'MAINTENANCE');
 });
 
 test('parseVoiceDraft: item without a price has no priceBand', () => {
