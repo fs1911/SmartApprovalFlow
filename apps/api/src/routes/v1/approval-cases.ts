@@ -54,6 +54,12 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
             cursor: { type: 'string' },
             limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
             status: { type: 'string' },
+            category: {
+              type: 'string',
+              description:
+                'Only cases with at least one position of this category ' +
+                '(SAFETY|MAINTENANCE|REPAIR|DIAGNOSTIC|OTHER); validated server-side',
+            },
             assignee: { type: 'string', description: '"me" limits to cases assigned to the caller' },
           },
         },
@@ -69,6 +75,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
         where: {
           tenantId: auth.tenantId,
           ...(q.status ? { status: q.status as never } : {}),
+          ...(q.category ? { items: { some: { category: q.category as never } } } : {}),
           ...(assignee === 'me' && auth.userId ? { assigneeUserId: auth.userId } : {}),
           ...(cursor
             ? {

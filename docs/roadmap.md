@@ -30,6 +30,7 @@ riesig".
 | **Block 23** | **Release-Abschluss** — schlankes API-Runtime-Image (+ separates Migrate-Image), tag-getriggerter Release-Workflow mit optionalem Registry-Push | ✅ abgeschlossen |
 | **Block 24** | **Produkt-Feinschliff** — Kategorie & Beschreibung pro Position im Fall-Formular + Kategorie-Label auf der Kundenseite, Voice-Kategorie-Heuristik | ✅ abgeschlossen |
 | **Block 25** | **Reporting nach Kategorie** — `itemsByCategory`-Kennzahl, Kategorie-Verteilung in `GET /reporting/summary` + Web-Auswertung | ✅ abgeschlossen |
+| **Block 26** | **Kategorie-Filter** — `GET /approval-cases?category=` (Relationsfilter) + Kategorie-Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

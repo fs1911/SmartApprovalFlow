@@ -337,6 +337,15 @@
               "type": "string"
             },
             "in": "query",
+            "name": "category",
+            "required": false,
+            "description": "Only cases with at least one position of this category (SAFETY|MAINTENANCE|REPAIR|DIAGNOSTIC|OTHER); validated server-side"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
             "name": "assignee",
             "required": false,
             "description": "\"me\" limits to cases assigned to the caller"

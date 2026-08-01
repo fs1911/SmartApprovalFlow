@@ -1,7 +1,17 @@
 import Link from 'next/link';
+import { ITEM_CATEGORY, ITEM_CATEGORY_LABELS } from '@saf/types';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+
+/** Build an /approvals href preserving the active filters. */
+function filterHref(params: { assignee?: string; category?: string }): string {
+  const sp = new URLSearchParams();
+  if (params.assignee) sp.set('assignee', params.assignee);
+  if (params.category) sp.set('category', params.category);
+  const qs = sp.toString();
+  return qs ? `/approvals?${qs}` : '/approvals';
+}
 
 interface CaseRow {
   id: string;
@@ -18,14 +28,24 @@ interface CaseRow {
 
 export const dynamic = 'force-dynamic';
 
-export default async function ApprovalsPage({ searchParams }: { searchParams: { assignee?: string } }) {
+export default async function ApprovalsPage({
+  searchParams,
+}: {
+  searchParams: { assignee?: string; category?: string };
+}) {
   const me = await getMe();
   const canCreate = can(me, 'cases:create');
   const mine = searchParams.assignee === 'me';
+  const activeCategory = (ITEM_CATEGORY as readonly string[]).includes(searchParams.category ?? '')
+    ? searchParams.category
+    : undefined;
   let cases: CaseRow[] = [];
   let error: string | null = null;
   try {
-    cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?limit=100${mine ? '&assignee=me' : ''}`);
+    const params = new URLSearchParams({ limit: '100' });
+    if (mine) params.set('assignee', 'me');
+    if (activeCategory) params.set('category', activeCategory);
+    cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?${params.toString()}`);
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
@@ -44,13 +64,46 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: { 
         )}
       </div>
 
-      <div className="row" style={{ gap: 6, marginBottom: 12 }} role="group" aria-label="Filter">
-        <Link href="/approvals" className={`btn ${!mine ? 'btn--primary' : 'btn--ghost'}`} aria-current={!mine ? 'true' : undefined}>
+      <div className="row" style={{ gap: 6, marginBottom: 12 }} role="group" aria-label="Filter nach Zuständigkeit">
+        <Link
+          href={filterHref({ category: activeCategory })}
+          className={`btn ${!mine ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={!mine ? 'true' : undefined}
+        >
           Alle Fälle
         </Link>
-        <Link href="/approvals?assignee=me" className={`btn ${mine ? 'btn--primary' : 'btn--ghost'}`} aria-current={mine ? 'true' : undefined}>
+        <Link
+          href={filterHref({ assignee: 'me', category: activeCategory })}
+          className={`btn ${mine ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={mine ? 'true' : undefined}
+        >
           Meine Fälle
         </Link>
+      </div>
+
+      <div
+        className="row"
+        style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}
+        role="group"
+        aria-label="Filter nach Kategorie"
+      >
+        <Link
+          href={filterHref({ assignee: searchParams.assignee })}
+          className={`btn ${!activeCategory ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={!activeCategory ? 'true' : undefined}
+        >
+          Alle Kategorien
+        </Link>
+        {ITEM_CATEGORY.map((cat) => (
+          <Link
+            key={cat}
+            href={filterHref({ assignee: searchParams.assignee, category: cat })}
+            className={`btn ${activeCategory === cat ? 'btn--primary' : 'btn--ghost'}`}
+            aria-current={activeCategory === cat ? 'true' : undefined}
+          >
+            {ITEM_CATEGORY_LABELS[cat]}
+          </Link>
+        ))}
       </div>
 
       {error && (

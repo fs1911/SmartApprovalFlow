@@ -177,6 +177,8 @@ export const listQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: z.string().optional(),
+  /** Filter to cases having at least one position of this category (Block 26). */
+  category: z.enum(ITEM_CATEGORY).optional(),
 });
 export type ListQuery = z.infer<typeof listQuerySchema>;
 
