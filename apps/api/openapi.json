@@ -346,6 +346,24 @@
               "type": "string"
             },
             "in": "query",
+            "name": "urgency",
+            "required": false,
+            "description": "Only cases of this urgency (LOW|MEDIUM|HIGH); validated server-side"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "createdWithin",
+            "required": false,
+            "description": "Only cases created within this window (7d|30d|90d|365d)"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
             "name": "assignee",
             "required": false,
             "description": "\"me\" limits to cases assigned to the caller"

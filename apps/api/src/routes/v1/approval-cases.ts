@@ -34,6 +34,12 @@ import { assertWithinCaseLimit } from '../../lib/usage.js';
 import { withUniqueReference } from '../../lib/reference.js';
 import { notifyForCase, notifyAssignment } from '../../lib/inapp.js';
 
+/** Start of the rolling window for the `createdWithin` list filter (Block 27). */
+function createdWithinCutoff(within: '7d' | '30d' | '90d' | '365d', now = new Date()): Date {
+  const days = { '7d': 7, '30d': 30, '90d': 90, '365d': 365 }[within];
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+}
+
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
@@ -60,6 +66,14 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
                 'Only cases with at least one position of this category ' +
                 '(SAFETY|MAINTENANCE|REPAIR|DIAGNOSTIC|OTHER); validated server-side',
             },
+            urgency: {
+              type: 'string',
+              description: 'Only cases of this urgency (LOW|MEDIUM|HIGH); validated server-side',
+            },
+            createdWithin: {
+              type: 'string',
+              description: 'Only cases created within this window (7d|30d|90d|365d)',
+            },
             assignee: { type: 'string', description: '"me" limits to cases assigned to the caller' },
           },
         },
@@ -76,6 +90,8 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
           tenantId: auth.tenantId,
           ...(q.status ? { status: q.status as never } : {}),
           ...(q.category ? { items: { some: { category: q.category as never } } } : {}),
+          ...(q.urgency ? { urgency: q.urgency as never } : {}),
+          ...(q.createdWithin ? { createdAt: { gte: createdWithinCutoff(q.createdWithin) } } : {}),
           ...(assignee === 'me' && auth.userId ? { assigneeUserId: auth.userId } : {}),
           ...(cursor
             ? {

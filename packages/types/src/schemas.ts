@@ -172,6 +172,10 @@ export const createNoteSchema = z.object({
 });
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 
+/** Preset "created within the last N" windows for list filtering (Block 27). */
+export const CREATED_WITHIN = ['7d', '30d', '90d', '365d'] as const;
+export type CreatedWithin = (typeof CREATED_WITHIN)[number];
+
 /** Common list query params for cursor pagination. */
 export const listQuerySchema = z.object({
   cursor: z.string().optional(),
@@ -179,6 +183,10 @@ export const listQuerySchema = z.object({
   status: z.string().optional(),
   /** Filter to cases having at least one position of this category (Block 26). */
   category: z.enum(ITEM_CATEGORY).optional(),
+  /** Filter to cases of this urgency (Block 27). */
+  urgency: z.enum(URGENCY).optional(),
+  /** Filter to cases created within this rolling window (Block 27). */
+  createdWithin: z.enum(CREATED_WITHIN).optional(),
 });
 export type ListQuery = z.infer<typeof listQuerySchema>;
 

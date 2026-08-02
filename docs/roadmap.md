@@ -31,6 +31,7 @@ riesig".
 | **Block 24** | **Produkt-Feinschliff** — Kategorie & Beschreibung pro Position im Fall-Formular + Kategorie-Label auf der Kundenseite, Voice-Kategorie-Heuristik | ✅ abgeschlossen |
 | **Block 25** | **Reporting nach Kategorie** — `itemsByCategory`-Kennzahl, Kategorie-Verteilung in `GET /reporting/summary` + Web-Auswertung | ✅ abgeschlossen |
 | **Block 26** | **Kategorie-Filter** — `GET /approval-cases?category=` (Relationsfilter) + Kategorie-Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
+| **Block 27** | **Listen-Filter** — `?urgency=` + `?createdWithin=` (Dringlichkeit/Zeitraum), kombinierbare Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 
