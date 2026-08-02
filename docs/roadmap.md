@@ -32,6 +32,7 @@ riesig".
 | **Block 25** | **Reporting nach Kategorie** — `itemsByCategory`-Kennzahl, Kategorie-Verteilung in `GET /reporting/summary` + Web-Auswertung | ✅ abgeschlossen |
 | **Block 26** | **Kategorie-Filter** — `GET /approval-cases?category=` (Relationsfilter) + Kategorie-Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 27** | **Listen-Filter** — `?urgency=` + `?createdWithin=` (Dringlichkeit/Zeitraum), kombinierbare Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
+| **Block 28** | **Gespeicherte Ansichten** — benannte Filterkombinationen (`/saved-views` CRUD, tenant-scoped) als Ein-Klick-Ansichten in der Freigaben-Liste | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

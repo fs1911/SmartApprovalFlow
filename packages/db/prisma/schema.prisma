@@ -175,6 +175,7 @@ model Tenant {
   notifications  Notification[]
   caseNotes      CaseNote[]
   voiceCaptures  VoiceCapture[]
+  savedViews     SavedView[]
 
   @@map("tenants")
 }
@@ -220,6 +221,7 @@ model User {
   notifications Notification[]
   caseNotes    CaseNote[]
   voiceCaptures VoiceCapture[]
+  savedViews   SavedView[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -691,4 +693,27 @@ model VoiceCapture {
 
   @@index([tenantId, createdAt])
   @@map("voice_captures")
+}
+
+/// A named, reusable combination of approval-list filters (Block 28). Stored per
+/// tenant (shared across the workspace); the filter columns mirror the allowed
+/// list query params so applying a view just pre-composes those query params.
+model SavedView {
+  id            String   @id @default(uuid())
+  tenantId      String
+  createdById   String?
+  name          String
+  status        String?
+  category      String?
+  urgency       String?
+  createdWithin String?
+  assignee      String?
+  createdAt     DateTime @default(now())
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, name])
+  @@index([tenantId, createdAt])
+  @@map("saved_views")
 }

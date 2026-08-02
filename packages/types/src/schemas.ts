@@ -5,7 +5,7 @@
  * them for form validation, so client and server never drift.
  */
 import { z } from 'zod';
-import { CUSTOMER_DECISION, ITEM_CATEGORY, ROLES, URGENCY } from './enums.js';
+import { APPROVAL_CASE_STATUS, CUSTOMER_DECISION, ITEM_CATEGORY, ROLES, URGENCY } from './enums.js';
 
 /** Swiss/DACH-friendly, deliberately permissive contact fields. */
 const emailSchema = z.string().email().max(254);
@@ -241,3 +241,23 @@ export const voiceTranscribeResultSchema = z.object({
   draft: voiceDraftSchema,
 });
 export type VoiceTranscribeResult = z.infer<typeof voiceTranscribeResultSchema>;
+
+// --- Saved views (Block 28) ------------------------------------------------
+
+/** The filter combination a saved view stores; mirrors the list query params. */
+export const savedViewFiltersSchema = z.object({
+  status: z.enum(APPROVAL_CASE_STATUS).optional(),
+  category: z.enum(ITEM_CATEGORY).optional(),
+  urgency: z.enum(URGENCY).optional(),
+  createdWithin: z.enum(CREATED_WITHIN).optional(),
+  /** Only "me" is meaningful (assigned to the caller). */
+  assignee: z.literal('me').optional(),
+});
+export type SavedViewFilters = z.infer<typeof savedViewFiltersSchema>;
+
+/** Payload to create a saved view (POST /saved-views). */
+export const createSavedViewSchema = z.object({
+  name: z.string().min(1).max(80),
+  filters: savedViewFiltersSchema.default({}),
+});
+export type CreateSavedViewInput = z.infer<typeof createSavedViewSchema>;

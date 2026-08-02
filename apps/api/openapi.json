@@ -1677,6 +1677,68 @@
         }
       }
     },
+    "/api/v1/saved-views": {
+      "get": {
+        "summary": "List saved filter views for this workspace",
+        "tags": [
+          "saved-views"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a named saved filter view",
+        "tags": [
+          "saved-views"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/saved-views/{id}": {
+      "delete": {
+        "summary": "Delete a saved filter view",
+        "tags": [
+          "saved-views"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/public/approvals/{token}": {
       "get": {
         "summary": "Read an approval request via its secure token (no login)",

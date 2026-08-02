@@ -184,6 +184,9 @@ ist `null` am Ende.
 | `POST` | `/api/v1/webhook-endpoints/:id/test` | `members:manage` | Signierte Testzustellung | 12 |
 | `DELETE` | `/api/v1/webhook-endpoints/:id` | `members:manage` | Endpoint löschen | 12 |
 | `GET` | `/api/v1/webhook-endpoints/:id/deliveries` | `members:manage` | Zustellungen (Cursor-Pagination) | 12 |
+| `GET` | `/api/v1/saved-views` | `cases:read` | Gespeicherte Filter-Ansichten listen | 28 |
+| `POST` | `/api/v1/saved-views` | `cases:create` | Ansicht aus Filterkombination anlegen (Name eindeutig je Tenant) | 28 |
+| `DELETE` | `/api/v1/saved-views/:id` | `cases:create` | Ansicht löschen (tenant-scoped) | 28 |
 | `GET` | `/api/v1/public/approvals/:token` | — | Freigabeanfrage lesen (loginlos) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond` | — | Kundenentscheid, ganzer Fall (idempotent) | 2 |
 | `POST` | `/api/v1/public/approvals/:token/respond-items` | — | Kundenentscheid pro Position (aggregiert) | 8 |

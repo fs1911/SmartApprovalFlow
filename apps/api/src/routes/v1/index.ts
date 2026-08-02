@@ -24,6 +24,7 @@ import { reminderRoutes } from './reminders.js';
 import { maintenanceRoutes } from './maintenance.js';
 import { uploadRoutes } from './uploads.js';
 import { voiceRoutes } from './voice.js';
+import { savedViewRoutes } from './saved-views.js';
 import { publicRoutes } from './public.js';
 
 export async function registerV1Routes(app: FastifyInstance) {
@@ -49,5 +50,6 @@ export async function registerV1Routes(app: FastifyInstance) {
   await app.register(maintenanceRoutes);
   await app.register(uploadRoutes);
   await app.register(voiceRoutes);
+  await app.register(savedViewRoutes);
   await app.register(publicRoutes);
 }

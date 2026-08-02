@@ -4,12 +4,14 @@ import { URGENCY_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+import { SavedViews, type SavedView } from './_saved-views';
 
 interface Filters {
   assignee?: string;
   category?: string;
   urgency?: string;
   createdWithin?: string;
+  status?: string;
 }
 
 /** Build an /approvals href preserving the active filters (overrides merged in). */
@@ -20,6 +22,7 @@ function filterHref(current: Filters, override: Filters = {}): string {
   if (merged.category) sp.set('category', merged.category);
   if (merged.urgency) sp.set('urgency', merged.urgency);
   if (merged.createdWithin) sp.set('createdWithin', merged.createdWithin);
+  if (merged.status) sp.set('status', merged.status);
   const qs = sp.toString();
   return qs ? `/approvals?${qs}` : '/approvals';
 }
@@ -49,7 +52,13 @@ export const dynamic = 'force-dynamic';
 export default async function ApprovalsPage({
   searchParams,
 }: {
-  searchParams: { assignee?: string; category?: string; urgency?: string; createdWithin?: string };
+  searchParams: {
+    assignee?: string;
+    category?: string;
+    urgency?: string;
+    createdWithin?: string;
+    status?: string;
+  };
 }) {
   const me = await getMe();
   const canCreate = can(me, 'cases:create');
@@ -63,25 +72,39 @@ export default async function ApprovalsPage({
   const activeWithin = (CREATED_WITHIN as readonly string[]).includes(searchParams.createdWithin ?? '')
     ? searchParams.createdWithin
     : undefined;
+  const activeStatus = searchParams.status || undefined;
   // Filters we carry across every chip link.
   const active: Filters = {
     assignee: searchParams.assignee,
     category: activeCategory,
     urgency: activeUrgency,
     createdWithin: activeWithin,
+    status: activeStatus,
   };
+  const hasActiveFilters = Boolean(
+    mine || activeCategory || activeUrgency || activeWithin || activeStatus,
+  );
 
   let cases: CaseRow[] = [];
   let error: string | null = null;
+  let views: SavedView[] = [];
   try {
     const params = new URLSearchParams({ limit: '100' });
     if (mine) params.set('assignee', 'me');
     if (activeCategory) params.set('category', activeCategory);
     if (activeUrgency) params.set('urgency', activeUrgency);
     if (activeWithin) params.set('createdWithin', activeWithin);
+    if (activeStatus) params.set('status', activeStatus);
     cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?${params.toString()}`);
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
+  }
+  try {
+    const res = await api.request<{ views: SavedView[] }>('/api/v1/saved-views');
+    views = res.views;
+  } catch {
+    // Saved views are a convenience layer — never block the list on them.
+    views = [];
   }
 
   return (
@@ -189,6 +212,13 @@ export default async function ApprovalsPage({
           </Link>
         ))}
       </div>
+
+      <SavedViews
+        views={views}
+        current={active}
+        canManage={canCreate}
+        hasActiveFilters={hasActiveFilters}
+      />
 
       {error && (
         <div className="alert alert--danger" style={{ marginBottom: 16 }}>
