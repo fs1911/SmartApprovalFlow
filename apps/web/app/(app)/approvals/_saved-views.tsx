@@ -10,6 +10,8 @@ export interface SavedViewFilters {
   category?: string;
   urgency?: string;
   createdWithin?: string;
+  createdFrom?: string;
+  createdTo?: string;
   assignee?: string;
 }
 
@@ -27,6 +29,8 @@ function hrefForFilters(filters: SavedViewFilters): string {
   if (filters.category) sp.set('category', filters.category);
   if (filters.urgency) sp.set('urgency', filters.urgency);
   if (filters.createdWithin) sp.set('createdWithin', filters.createdWithin);
+  if (filters.createdFrom) sp.set('createdFrom', filters.createdFrom);
+  if (filters.createdTo) sp.set('createdTo', filters.createdTo);
   if (filters.status) sp.set('status', filters.status);
   const qs = sp.toString();
   return qs ? `/approvals?${qs}` : '/approvals';
@@ -39,6 +43,8 @@ function isActiveView(current: SavedViewFilters, view: SavedViewFilters): boolea
     'category',
     'urgency',
     'createdWithin',
+    'createdFrom',
+    'createdTo',
     'assignee',
   ];
   return keys.every((k) => (current[k] ?? '') === (view[k] ?? ''));
@@ -162,6 +168,8 @@ export function SavedViews({
             <input type="hidden" name="category" value={current.category ?? ''} />
             <input type="hidden" name="urgency" value={current.urgency ?? ''} />
             <input type="hidden" name="createdWithin" value={current.createdWithin ?? ''} />
+            <input type="hidden" name="createdFrom" value={current.createdFrom ?? ''} />
+            <input type="hidden" name="createdTo" value={current.createdTo ?? ''} />
             <input type="hidden" name="assignee" value={current.assignee ?? ''} />
             <label htmlFor="saved-view-name" className="visually-hidden">
               Name der Ansicht

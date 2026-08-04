@@ -711,6 +711,8 @@ model SavedView {
   category      String?
   urgency       String?
   createdWithin String?
+  createdFrom   String?
+  createdTo     String?
   assignee      String?
   createdAt     DateTime @default(now())
 

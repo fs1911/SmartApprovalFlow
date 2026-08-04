@@ -9,7 +9,15 @@ export interface SavedViewResult {
 }
 
 /** Allowed filter keys a saved view may store (mirrors savedViewFiltersSchema). */
-const FILTER_KEYS = ['status', 'category', 'urgency', 'createdWithin', 'assignee'] as const;
+const FILTER_KEYS = [
+  'status',
+  'category',
+  'urgency',
+  'createdWithin',
+  'createdFrom',
+  'createdTo',
+  'assignee',
+] as const;
 
 /**
  * Create a saved view from the currently active filters. The name comes from the

@@ -129,7 +129,7 @@ ist `null` am Ende.
 | `POST` | `/api/v1/auth/reset-password` | — | Passwort per Token setzen | 10 |
 | `GET` | `/api/v1/me` | ja | Aktueller Principal + Tenant | 2 |
 | `GET` | `/api/v1/tenants/:tenantId` | ja | Workspace lesen (isolationsgeprüft) | 2 |
-| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination; `?assignee=me`, `?status=`, `?category=`, `?urgency=`, `?createdWithin=`) | 2/14/26/27 |
+| `GET` | `/api/v1/approval-cases` | ja | Fälle listen (Cursor-Pagination; `?assignee=me`, `?status=`, `?category=`, `?urgency=`, `?createdWithin=`, `?createdFrom=`/`?createdTo=`) | 2/14/26/27/31 |
 | `POST` | `/api/v1/approval-cases` | ja | Fall erstellen (validiert, idempotent) | 2 |
 | `GET` | `/api/v1/approval-cases/:id` | ja | Fall-Detail inkl. Items/Audit | 2 |
 | `POST` | `/api/v1/approval-cases/:id/generate-public-link` | ja | Kundenlink erzeugen/rotieren | 2 |

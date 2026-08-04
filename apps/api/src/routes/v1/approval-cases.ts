@@ -40,6 +40,26 @@ function createdWithinCutoff(within: '7d' | '30d' | '90d' | '365d', now = new Da
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
+/**
+ * The `createdAt` filter for the list (Block 31). A free `createdFrom`/`createdTo`
+ * range wins over the `createdWithin` preset; both range bounds are inclusive and
+ * interpreted as whole UTC days. Returns undefined when no date filter is set.
+ */
+function createdAtRange(q: {
+  createdFrom?: string;
+  createdTo?: string;
+  createdWithin?: '7d' | '30d' | '90d' | '365d';
+}): { gte?: Date; lte?: Date } | undefined {
+  if (q.createdFrom || q.createdTo) {
+    const range: { gte?: Date; lte?: Date } = {};
+    if (q.createdFrom) range.gte = new Date(`${q.createdFrom}T00:00:00.000Z`);
+    if (q.createdTo) range.lte = new Date(`${q.createdTo}T23:59:59.999Z`);
+    return range;
+  }
+  if (q.createdWithin) return { gte: createdWithinCutoff(q.createdWithin) };
+  return undefined;
+}
+
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
@@ -74,6 +94,15 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
               type: 'string',
               description: 'Only cases created within this window (7d|30d|90d|365d)',
             },
+            createdFrom: {
+              type: 'string',
+              description:
+                'Inclusive lower bound (YYYY-MM-DD); with createdFrom/createdTo overriding createdWithin',
+            },
+            createdTo: {
+              type: 'string',
+              description: 'Inclusive upper bound (YYYY-MM-DD); validated server-side',
+            },
             assignee: { type: 'string', description: '"me" limits to cases assigned to the caller' },
           },
         },
@@ -84,6 +113,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       const q = listQuerySchema.parse(req.query);
       const assignee = (req.query as { assignee?: string }).assignee;
       const cursor = decodeCursor(q.cursor);
+      const createdAt = createdAtRange(q);
 
       const rows = await prisma.approvalCase.findMany({
         where: {
@@ -91,7 +121,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
           ...(q.status ? { status: q.status as never } : {}),
           ...(q.category ? { items: { some: { category: q.category as never } } } : {}),
           ...(q.urgency ? { urgency: q.urgency as never } : {}),
-          ...(q.createdWithin ? { createdAt: { gte: createdWithinCutoff(q.createdWithin) } } : {}),
+          ...(createdAt ? { createdAt } : {}),
           ...(assignee === 'me' && auth.userId ? { assigneeUserId: auth.userId } : {}),
           ...(cursor
             ? {

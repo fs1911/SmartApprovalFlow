@@ -183,6 +183,12 @@ export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export const CREATED_WITHIN = ['7d', '30d', '90d', '365d'] as const;
 export type CreatedWithin = (typeof CREATED_WITHIN)[number];
 
+/** A calendar date `YYYY-MM-DD` (interpreted as UTC by the server). Block 31. */
+export const isoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Datum im Format JJJJ-MM-TT erwartet')
+  .refine((v) => !Number.isNaN(Date.parse(`${v}T00:00:00.000Z`)), 'Ungültiges Datum');
+
 /** Common list query params for cursor pagination. */
 export const listQuerySchema = z.object({
   cursor: z.string().optional(),
@@ -194,6 +200,10 @@ export const listQuerySchema = z.object({
   urgency: z.enum(URGENCY).optional(),
   /** Filter to cases created within this rolling window (Block 27). */
   createdWithin: z.enum(CREATED_WITHIN).optional(),
+  /** Free created-at range (Block 31); when set it takes precedence over
+   *  `createdWithin`. Both bounds are optional and inclusive. */
+  createdFrom: isoDateSchema.optional(),
+  createdTo: isoDateSchema.optional(),
 });
 export type ListQuery = z.infer<typeof listQuerySchema>;
 
@@ -257,6 +267,9 @@ export const savedViewFiltersSchema = z.object({
   category: z.enum(ITEM_CATEGORY).optional(),
   urgency: z.enum(URGENCY).optional(),
   createdWithin: z.enum(CREATED_WITHIN).optional(),
+  /** Free created-at range (Block 31); takes precedence over createdWithin. */
+  createdFrom: isoDateSchema.optional(),
+  createdTo: isoDateSchema.optional(),
   /** Only "me" is meaningful (assigned to the caller). */
   assignee: z.literal('me').optional(),
 });

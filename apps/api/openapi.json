@@ -364,6 +364,24 @@
               "type": "string"
             },
             "in": "query",
+            "name": "createdFrom",
+            "required": false,
+            "description": "Inclusive lower bound (YYYY-MM-DD); with createdFrom/createdTo overriding createdWithin"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "createdTo",
+            "required": false,
+            "description": "Inclusive upper bound (YYYY-MM-DD); validated server-side"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
             "name": "assignee",
             "required": false,
             "description": "\"me\" limits to cases assigned to the caller"

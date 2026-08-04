@@ -29,6 +29,8 @@ function toRow(filters: {
   category?: string;
   urgency?: string;
   createdWithin?: string;
+  createdFrom?: string;
+  createdTo?: string;
   assignee?: string;
 }) {
   return {
@@ -36,6 +38,8 @@ function toRow(filters: {
     category: filters.category ?? null,
     urgency: filters.urgency ?? null,
     createdWithin: filters.createdWithin ?? null,
+    createdFrom: filters.createdFrom ?? null,
+    createdTo: filters.createdTo ?? null,
     assignee: filters.assignee ?? null,
   };
 }
@@ -46,6 +50,8 @@ function toFilters(row: {
   category: string | null;
   urgency: string | null;
   createdWithin: string | null;
+  createdFrom: string | null;
+  createdTo: string | null;
   assignee: string | null;
 }) {
   const filters: Record<string, string> = {};
@@ -53,6 +59,8 @@ function toFilters(row: {
   if (row.category) filters.category = row.category;
   if (row.urgency) filters.urgency = row.urgency;
   if (row.createdWithin) filters.createdWithin = row.createdWithin;
+  if (row.createdFrom) filters.createdFrom = row.createdFrom;
+  if (row.createdTo) filters.createdTo = row.createdTo;
   if (row.assignee) filters.assignee = row.assignee;
   return filters;
 }

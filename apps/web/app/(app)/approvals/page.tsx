@@ -12,8 +12,13 @@ interface Filters {
   category?: string;
   urgency?: string;
   createdWithin?: string;
+  createdFrom?: string;
+  createdTo?: string;
   status?: string;
 }
+
+/** A calendar date the API accepts (YYYY-MM-DD); anything else is ignored. */
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Build an /approvals href preserving the active filters (overrides merged in). */
 function filterHref(current: Filters, override: Filters = {}): string {
@@ -23,6 +28,8 @@ function filterHref(current: Filters, override: Filters = {}): string {
   if (merged.category) sp.set('category', merged.category);
   if (merged.urgency) sp.set('urgency', merged.urgency);
   if (merged.createdWithin) sp.set('createdWithin', merged.createdWithin);
+  if (merged.createdFrom) sp.set('createdFrom', merged.createdFrom);
+  if (merged.createdTo) sp.set('createdTo', merged.createdTo);
   if (merged.status) sp.set('status', merged.status);
   const qs = sp.toString();
   return qs ? `/approvals?${qs}` : '/approvals';
@@ -58,6 +65,8 @@ export default async function ApprovalsPage({
     category?: string;
     urgency?: string;
     createdWithin?: string;
+    createdFrom?: string;
+    createdTo?: string;
     status?: string;
     /** "1" opts out of auto-applying the personal default view (Block 29). */
     all?: string;
@@ -78,16 +87,31 @@ export default async function ApprovalsPage({
     ? searchParams.createdWithin
     : undefined;
   const activeStatus = searchParams.status || undefined;
+  const activeFrom = DATE_RE.test(searchParams.createdFrom ?? '')
+    ? searchParams.createdFrom
+    : undefined;
+  const activeTo = DATE_RE.test(searchParams.createdTo ?? '') ? searchParams.createdTo : undefined;
+  // A free date range takes precedence over the preset window (mirrors the API).
+  const rangeActive = Boolean(activeFrom || activeTo);
+  const effectiveWithin = rangeActive ? undefined : activeWithin;
   // Filters we carry across every chip link.
   const active: Filters = {
     assignee: searchParams.assignee,
     category: activeCategory,
     urgency: activeUrgency,
-    createdWithin: activeWithin,
+    createdWithin: effectiveWithin,
+    createdFrom: activeFrom,
+    createdTo: activeTo,
     status: activeStatus,
   };
   const hasActiveFilters = Boolean(
-    mine || activeCategory || activeUrgency || activeWithin || activeStatus,
+    mine ||
+    activeCategory ||
+    activeUrgency ||
+    effectiveWithin ||
+    activeFrom ||
+    activeTo ||
+    activeStatus,
   );
   const optedOutOfDefault = searchParams.all === '1';
 
@@ -126,7 +150,9 @@ export default async function ApprovalsPage({
     if (mine) params.set('assignee', 'me');
     if (activeCategory) params.set('category', activeCategory);
     if (activeUrgency) params.set('urgency', activeUrgency);
-    if (activeWithin) params.set('createdWithin', activeWithin);
+    if (effectiveWithin) params.set('createdWithin', effectiveWithin);
+    if (activeFrom) params.set('createdFrom', activeFrom);
+    if (activeTo) params.set('createdTo', activeTo);
     if (activeStatus) params.set('status', activeStatus);
     cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?${params.toString()}`);
   } catch (e) {
@@ -226,23 +252,76 @@ export default async function ApprovalsPage({
         aria-label="Filter nach Zeitraum"
       >
         <Link
-          href={filterHref(active, { createdWithin: undefined })}
-          className={`btn ${!activeWithin ? 'btn--primary' : 'btn--ghost'}`}
-          aria-current={!activeWithin ? 'true' : undefined}
+          href={filterHref(active, {
+            createdWithin: undefined,
+            createdFrom: undefined,
+            createdTo: undefined,
+          })}
+          className={`btn ${!effectiveWithin && !rangeActive ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={!effectiveWithin && !rangeActive ? 'true' : undefined}
         >
           Gesamter Zeitraum
         </Link>
         {CREATED_WITHIN.map((w) => (
           <Link
             key={w}
-            href={filterHref(active, { createdWithin: w })}
-            className={`btn ${activeWithin === w ? 'btn--primary' : 'btn--ghost'}`}
-            aria-current={activeWithin === w ? 'true' : undefined}
+            href={filterHref(active, {
+              createdWithin: w,
+              createdFrom: undefined,
+              createdTo: undefined,
+            })}
+            className={`btn ${effectiveWithin === w ? 'btn--primary' : 'btn--ghost'}`}
+            aria-current={effectiveWithin === w ? 'true' : undefined}
           >
             {WITHIN_LABELS[w]}
           </Link>
         ))}
       </div>
+
+      {/* Free date range (Block 31) — a GET form so it works without client JS.
+          Applying a range overrides the preset window above (mirrors the API). */}
+      <form
+        action="/approvals"
+        method="get"
+        className="row"
+        style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}
+        aria-label="Filter nach freiem Datumsbereich"
+      >
+        {/* Preserve the other active filters across the range submit. */}
+        {mine && <input type="hidden" name="assignee" value="me" />}
+        {activeCategory && <input type="hidden" name="category" value={activeCategory} />}
+        {activeUrgency && <input type="hidden" name="urgency" value={activeUrgency} />}
+        {activeStatus && <input type="hidden" name="status" value={activeStatus} />}
+        <label style={{ display: 'grid', gap: 2, fontSize: 'var(--text-xs)' }}>
+          Von
+          <input
+            type="date"
+            name="createdFrom"
+            defaultValue={activeFrom ?? ''}
+            max={activeTo ?? undefined}
+          />
+        </label>
+        <label style={{ display: 'grid', gap: 2, fontSize: 'var(--text-xs)' }}>
+          Bis
+          <input
+            type="date"
+            name="createdTo"
+            defaultValue={activeTo ?? ''}
+            min={activeFrom ?? undefined}
+          />
+        </label>
+        <button type="submit" className="btn btn--secondary">
+          Zeitraum anwenden
+        </button>
+        {rangeActive && (
+          <Link
+            href={filterHref(active, { createdFrom: undefined, createdTo: undefined })}
+            className="btn btn--ghost"
+          >
+            Zeitraum zurücksetzen
+          </Link>
+        )}
+      </form>
 
       <SavedViews
         views={views}
