@@ -167,8 +167,13 @@ function productionConfigErrors(c: typeof config): string[] {
   return problems;
 }
 
+/** True for base URLs still pointing at a local host (a go-live mistake). */
+export function isLocalUrl(url: string): boolean {
+  return /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(url);
+}
+
 /** Non-fatal production warnings (safe fallbacks that are usually a mistake). */
-function productionConfigWarnings(c: typeof config): string[] {
+export function productionConfigWarnings(c: typeof config): string[] {
   const warnings: string[] = [];
   if (c.EMAIL_PROVIDER === 'console') {
     warnings.push('EMAIL_PROVIDER=console: e-mails are only logged, never delivered.');
@@ -178,6 +183,16 @@ function productionConfigWarnings(c: typeof config): string[] {
   }
   if (c.BILLING_WEBHOOK_SECRET === 'whsec_dev_billing') {
     warnings.push('BILLING_WEBHOOK_SECRET is still the development default.');
+  }
+  // Customer approval links are built from WEB_BASE_URL; a localhost base URL in
+  // production silently produces links nobody outside the box can open.
+  if (isLocalUrl(c.WEB_BASE_URL)) {
+    warnings.push('WEB_BASE_URL points at a local host — customer links will be unreachable.');
+  }
+  if (isLocalUrl(c.API_BASE_URL)) {
+    warnings.push(
+      'API_BASE_URL points at a local host — signed upload/callback URLs will be unreachable.',
+    );
   }
   return warnings;
 }

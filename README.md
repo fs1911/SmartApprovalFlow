@@ -32,7 +32,8 @@ Block 25 (Reporting nach Kategorie) ✅ ·
 Block 26 (Kategorie-Filter) ✅ ·
 Block 27 (Listen-Filter) ✅ ·
 Block 28 (Gespeicherte Ansichten) ✅ ·
-Block 29 (Private Ansichten & Standard) ✅
+Block 29 (Private Ansichten & Standard) ✅ ·
+Block 30 (Release-Abschluss & Härtung) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
@@ -195,7 +196,7 @@ npm run format                      # Prettier
 | Offene Entscheidungen | [`docs/open-questions.md`](docs/open-questions.md) |
 | Marketing / GTM | [`website-ia.md`](docs/website-ia.md) · [`messaging-architecture.md`](docs/messaging-architecture.md) · [`conversion-strategy.md`](docs/conversion-strategy.md) · [`go-to-market-launch-plan.md`](docs/go-to-market-launch-plan.md) |
 | Billing (Vorbereitung) | [`billing-strategy.md`](docs/billing-strategy.md) · [`pricing-rationale.md`](docs/pricing-rationale.md) · [`payment-provider-evaluation.md`](docs/payment-provider-evaluation.md) |
-| Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
+| Infrastruktur / Betrieb | [`infrastructure.md`](docs/infrastructure.md) · [`deployment.md`](docs/deployment.md) · [`go-live-checklist.md`](docs/go-live-checklist.md) · [`storage-strategy.md`](docs/storage-strategy.md) · [`link-and-domain-strategy.md`](docs/link-and-domain-strategy.md) · [`env-and-secrets.md`](docs/env-and-secrets.md) |
 | Auth / Sicherheit | [`api-design.md`](docs/api-design.md) · [`security.md`](docs/security.md) · [`webhooks.md`](docs/webhooks.md) |
 | Portal / Delivery (Block 8) | [`storage-strategy.md`](docs/storage-strategy.md) · [`reminders.md`](docs/reminders.md) |
 | Betrieb / Qualität (Block 9) | [`testing-and-ci.md`](docs/testing-and-ci.md) · [`observability.md`](docs/observability.md) · [`retention-and-cleanup.md`](docs/retention-and-cleanup.md) |
@@ -210,7 +211,7 @@ npm run format                      # Prettier
 | Release & Deployment (Block 18) | [`release-and-deployment-runbook.md`](docs/release-and-deployment-runbook.md) · [`deployment.md`](docs/deployment.md) |
 | Containerisierung (Block 19–20) | [`containerization.md`](docs/containerization.md) |
 | Voice-Erfassung (Block 21–22) | [`voice-and-capture.md`](docs/voice-and-capture.md) |
-| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) · [14](docs/block-14-summary.md) · [15](docs/block-15-summary.md) · [16](docs/block-16-summary.md) · [17](docs/block-17-summary.md) · [18](docs/block-18-summary.md) · [19](docs/block-19-summary.md) · [20](docs/block-20-summary.md) · [21](docs/block-21-summary.md) · [22](docs/block-22-summary.md) · [23](docs/block-23-summary.md) · [24](docs/block-24-summary.md) · [25](docs/block-25-summary.md) · [26](docs/block-26-summary.md) · [27](docs/block-27-summary.md) · [28](docs/block-28-summary.md) · [29](docs/block-29-summary.md) |
+| Block-Summaries | [1](docs/block-1-summary.md) · [2](docs/block-2-summary.md) · [3](docs/block-3-summary.md) · [4](docs/block-4-summary.md) · [5](docs/block-5-summary.md) · [6](docs/block-6-summary.md) · [7](docs/block-7-summary.md) · [8](docs/block-8-summary.md) · [9](docs/block-9-summary.md) · [10](docs/block-10-summary.md) · [11](docs/block-11-summary.md) · [12](docs/block-12-summary.md) · [13](docs/block-13-summary.md) · [14](docs/block-14-summary.md) · [15](docs/block-15-summary.md) · [16](docs/block-16-summary.md) · [17](docs/block-17-summary.md) · [18](docs/block-18-summary.md) · [19](docs/block-19-summary.md) · [20](docs/block-20-summary.md) · [21](docs/block-21-summary.md) · [22](docs/block-22-summary.md) · [23](docs/block-23-summary.md) · [24](docs/block-24-summary.md) · [25](docs/block-25-summary.md) · [26](docs/block-26-summary.md) · [27](docs/block-27-summary.md) · [28](docs/block-28-summary.md) · [29](docs/block-29-summary.md) · [30](docs/block-30-summary.md) |
 
 ## Rollen ausprobieren
 

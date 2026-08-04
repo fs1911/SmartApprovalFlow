@@ -61,6 +61,33 @@ Kurzfassung des Bedrohungsmodells und der sicheren Defaults. Ergänzt die
   beide Endpoints sind login-rate-limited. Reset verbraucht den Token einmalig
   und widerruft übrige offene Reset-Tokens des Nutzers.
 
+## Review-Ergebnis (Block 30)
+
+Leichtgewichtiger Release-Review vor Go-Live:
+
+- **RBAC-Abdeckung:** Alle 75 API-Routen auditiert. Jede geschützte Route trägt
+  `requirePermission(...)` oder `requireAuth`. Die ungeschützten Routen sind
+  **bewusst** offen und jeweils anders abgesichert:
+  - `/auth/login|logout|forgot-password|reset-password`, `/invitations/accept`,
+    `/public/approvals/**` — loginlose Flows (Token/uniforme Antworten);
+  - `/billing/webhook` — HMAC-signaturgeprüft (kein RBAC);
+  - `/uploads/local/**` — Capability-Key (Pre-Signed-URL-Äquivalent, nur
+    `local`-Treiber);
+  - `/health`, `/health/ready` — Liveness/Readiness;
+  - `/dev/webhook-sink` — **nur** ausserhalb Produktion registriert.
+- **Tenant-Isolation:** Handler scopen konsequent über `tenantId` aus dem
+  Auth-Kontext; Ressourcen-Lookups `{ id, tenantId }` → Cross-Tenant = 404
+  (integrationstestlich abgesichert, u. a. Saved Views Block 28/29).
+- **Input-Validierung:** durchgängig Zod-owned → ungültige Eingaben `422`
+  (Swagger-Querystrings tragen bewusst kein `enum`, damit Zod validiert).
+- **Secrets & Prod-Guard:** `config.ts` bricht in Produktion ab, wenn ein
+  gewählter Provider seinen Key/Endpoint nicht hat oder das JWT-Secret der
+  Dev-Default ist; **neu** (Block 30) warnt der Guard zusätzlich, wenn
+  `WEB_BASE_URL`/`API_BASE_URL` noch auf `localhost` zeigen (sonst unerreichbare
+  Kundenlinks). Keine echten Secrets im Repo — siehe `docs/go-live-checklist.md`.
+- **Ergebnis:** keine offene Rechte-Lücke gefunden; ein Härtungs-Fix (Base-URL-
+  Warnung) ergänzt. Offene Punkte bleiben im Backlog unten.
+
 ## Bewusst offen / Deferred (Backlog)
 
 - **Refresh-Token-Rotation** und **JWT-Revocation-Liste** (heute: kurze TTL).

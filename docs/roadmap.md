@@ -34,6 +34,7 @@ riesig".
 | **Block 27** | **Listen-Filter** — `?urgency=` + `?createdWithin=` (Dringlichkeit/Zeitraum), kombinierbare Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 28** | **Gespeicherte Ansichten** — benannte Filterkombinationen (`/saved-views` CRUD, tenant-scoped) als Ein-Klick-Ansichten in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 29** | **Private Ansichten & Standard-Ansicht** — SHARED/PRIVATE-Sichtbarkeit je Ansicht + persönliche Standard-Ansicht (pro Nutzer), die die Freigaben-Liste ohne Filter automatisch anwendet | ✅ abgeschlossen |
+| **Block 30** | **Release-Abschluss & Härtung** — Go-Live-Checkliste (alle `TODO PROVIDER SETUP` gebündelt), leichter Security-/RBAC-Review, Config-Guard-Warnung für `localhost`-Base-URLs | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 
