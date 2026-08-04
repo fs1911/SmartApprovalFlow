@@ -1679,7 +1679,7 @@
     },
     "/api/v1/saved-views": {
       "get": {
-        "summary": "List saved filter views for this workspace",
+        "summary": "List saved filter views visible to the caller (with default)",
         "tags": [
           "saved-views"
         ],
@@ -1695,7 +1695,41 @@
         }
       },
       "post": {
-        "summary": "Create a named saved filter view",
+        "summary": "Create a named saved filter view (SHARED or PRIVATE)",
+        "tags": [
+          "saved-views"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/v1/saved-views/default": {
+      "post": {
+        "summary": "Set the caller's personal default view",
+        "tags": [
+          "saved-views"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Clear the caller's personal default view",
         "tags": [
           "saved-views"
         ],
@@ -1713,7 +1747,7 @@
     },
     "/api/v1/saved-views/{id}": {
       "delete": {
-        "summary": "Delete a saved filter view",
+        "summary": "Delete a saved filter view (own private, or any shared)",
         "tags": [
           "saved-views"
         ],

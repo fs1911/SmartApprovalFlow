@@ -78,6 +78,13 @@ export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
   OTHER: 'Sonstiges',
 };
 
+/**
+ * Visibility of a saved filter view (Block 29). SHARED views belong to the whole
+ * workspace; PRIVATE views are visible only to the user who created them.
+ */
+export const SAVED_VIEW_VISIBILITY = ['SHARED', 'PRIVATE'] as const;
+export type SavedViewVisibility = (typeof SAVED_VIEW_VISIBILITY)[number];
+
 /** Delivery channel of an outbound message to the customer. */
 export const MESSAGE_CHANNEL = ['EMAIL', 'SMS'] as const;
 export type MessageChannel = (typeof MESSAGE_CHANNEL)[number];

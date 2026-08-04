@@ -176,6 +176,7 @@ model Tenant {
   caseNotes      CaseNote[]
   voiceCaptures  VoiceCapture[]
   savedViews     SavedView[]
+  savedViewDefaults SavedViewDefault[]
 
   @@map("tenants")
 }
@@ -222,6 +223,7 @@ model User {
   caseNotes    CaseNote[]
   voiceCaptures VoiceCapture[]
   savedViews   SavedView[]
+  savedViewDefault SavedViewDefault?
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -703,6 +705,8 @@ model SavedView {
   tenantId      String
   createdById   String?
   name          String
+  /// SHARED (workspace-wide) or PRIVATE (only the creator). Block 29.
+  visibility    String   @default("SHARED")
   status        String?
   category      String?
   urgency       String?
@@ -712,8 +716,27 @@ model SavedView {
 
   tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdBy User?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  defaults  SavedViewDefault[]
 
   @@unique([tenantId, name])
   @@index([tenantId, createdAt])
   @@map("saved_views")
+}
+
+/// A user's personal default saved view (Block 29). One row per user; the
+/// approvals list applies it when opened without explicit filters. Cascades away
+/// when the referenced view (or the user/tenant) is removed.
+model SavedViewDefault {
+  id          String @id @default(uuid())
+  tenantId    String
+  userId      String
+  savedViewId String
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedView SavedView @relation(fields: [savedViewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@index([tenantId])
+  @@map("saved_view_defaults")
 }

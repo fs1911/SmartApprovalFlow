@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createSavedView, deleteSavedView } from './actions';
+import { createSavedView, deleteSavedView, setDefaultView, clearDefaultView } from './actions';
 
 export interface SavedViewFilters {
   status?: string;
@@ -16,6 +16,7 @@ export interface SavedViewFilters {
 export interface SavedView {
   id: string;
   name: string;
+  visibility: 'SHARED' | 'PRIVATE';
   filters: SavedViewFilters;
 }
 
@@ -48,11 +49,13 @@ export function SavedViews({
   current,
   canManage,
   hasActiveFilters,
+  defaultViewId,
 }: {
   views: SavedView[];
   current: SavedViewFilters;
   canManage: boolean;
   hasActiveFilters: boolean;
+  defaultViewId: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -60,13 +63,12 @@ export function SavedViews({
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  function onSave(formData: FormData) {
+  function run(action: () => Promise<{ ok: boolean; error?: string }>, onOk?: () => void) {
     setError(null);
     startTransition(async () => {
-      const res = await createSavedView(formData);
+      const res = await action();
       if (res.ok) {
-        setName('');
-        setShowForm(false);
+        onOk?.();
         router.refresh();
       } else {
         setError(res.error ?? 'Fehler');
@@ -74,13 +76,14 @@ export function SavedViews({
     });
   }
 
-  function onDelete(id: string) {
-    setError(null);
-    startTransition(async () => {
-      const res = await deleteSavedView(id);
-      if (res.ok) router.refresh();
-      else setError(res.error ?? 'Fehler');
-    });
+  function onSave(formData: FormData) {
+    run(
+      () => createSavedView(formData),
+      () => {
+        setName('');
+        setShowForm(false);
+      },
+    );
   }
 
   return (
@@ -102,6 +105,7 @@ export function SavedViews({
 
       {views.map((view) => {
         const active = isActiveView(current, view.filters);
+        const isDefault = view.id === defaultViewId;
         return (
           <span key={view.id} className="row" style={{ gap: 2, alignItems: 'center' }}>
             <Link
@@ -109,8 +113,31 @@ export function SavedViews({
               className={`btn ${active ? 'btn--primary' : 'btn--ghost'}`}
               aria-current={active ? 'true' : undefined}
             >
+              {view.visibility === 'PRIVATE' && (
+                <span aria-label="privat" title="Nur für Sie sichtbar" style={{ marginRight: 4 }}>
+                  🔒
+                </span>
+              )}
               {view.name}
             </Link>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              style={{ fontSize: 'var(--text-xs)', padding: '2px 6px' }}
+              aria-pressed={isDefault}
+              aria-label={
+                isDefault
+                  ? `„${view.name}" ist Ihre Standard-Ansicht — als Standard entfernen`
+                  : `„${view.name}" als Standard-Ansicht festlegen`
+              }
+              title={
+                isDefault ? 'Standard-Ansicht (klicken zum Entfernen)' : 'Als Standard festlegen'
+              }
+              disabled={pending}
+              onClick={() => run(isDefault ? clearDefaultView : () => setDefaultView(view.id))}
+            >
+              {isDefault ? '★' : '☆'}
+            </button>
             {canManage && (
               <button
                 type="button"
@@ -118,7 +145,7 @@ export function SavedViews({
                 style={{ fontSize: 'var(--text-xs)', padding: '2px 6px' }}
                 aria-label={`Ansicht „${view.name}" löschen`}
                 disabled={pending}
-                onClick={() => onDelete(view.id)}
+                onClick={() => run(() => deleteSavedView(view.id))}
               >
                 ✕
               </button>
@@ -149,6 +176,13 @@ export function SavedViews({
               maxLength={80}
               required
             />
+            <label
+              className="row"
+              style={{ gap: 4, alignItems: 'center', fontSize: 'var(--text-xs)' }}
+            >
+              <input type="checkbox" name="private" value="1" style={{ width: 'auto' }} />
+              Nur für mich
+            </label>
             <button type="submit" className="btn btn--secondary" disabled={pending || !name.trim()}>
               Speichern
             </button>

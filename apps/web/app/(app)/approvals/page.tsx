@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ITEM_CATEGORY, ITEM_CATEGORY_LABELS, URGENCY, CREATED_WITHIN } from '@saf/types';
 import { URGENCY_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
@@ -58,6 +59,8 @@ export default async function ApprovalsPage({
     urgency?: string;
     createdWithin?: string;
     status?: string;
+    /** "1" opts out of auto-applying the personal default view (Block 29). */
+    all?: string;
   };
 }) {
   const me = await getMe();
@@ -69,7 +72,9 @@ export default async function ApprovalsPage({
   const activeUrgency = (URGENCY as readonly string[]).includes(searchParams.urgency ?? '')
     ? searchParams.urgency
     : undefined;
-  const activeWithin = (CREATED_WITHIN as readonly string[]).includes(searchParams.createdWithin ?? '')
+  const activeWithin = (CREATED_WITHIN as readonly string[]).includes(
+    searchParams.createdWithin ?? '',
+  )
     ? searchParams.createdWithin
     : undefined;
   const activeStatus = searchParams.status || undefined;
@@ -84,10 +89,38 @@ export default async function ApprovalsPage({
   const hasActiveFilters = Boolean(
     mine || activeCategory || activeUrgency || activeWithin || activeStatus,
   );
+  const optedOutOfDefault = searchParams.all === '1';
+
+  // Saved views + personal default. Fetched first so a bare list can auto-apply
+  // the caller's default before we query cases. Never block the list on this.
+  let views: SavedView[] = [];
+  let defaultViewId: string | null = null;
+  try {
+    const res = await api.request<{ views: SavedView[]; defaultViewId: string | null }>(
+      '/api/v1/saved-views',
+    );
+    views = res.views;
+    defaultViewId = res.defaultViewId;
+  } catch {
+    views = [];
+    defaultViewId = null;
+  }
+
+  // Auto-apply the personal default on a bare list (unless explicitly opted out).
+  // Only redirect when the default actually carries filters, to avoid a loop.
+  const defaultView = defaultViewId ? views.find((v) => v.id === defaultViewId) : undefined;
+  if (!hasActiveFilters && !optedOutOfDefault && defaultView) {
+    const defHref = filterHref({}, defaultView.filters as Filters);
+    if (defHref !== '/approvals') redirect(defHref);
+  }
+  // The default view is "active" when the current filters equal its filters.
+  const defaultApplied =
+    !!defaultView &&
+    !optedOutOfDefault &&
+    filterHref({}, defaultView.filters as Filters) === filterHref({}, active);
 
   let cases: CaseRow[] = [];
   let error: string | null = null;
-  let views: SavedView[] = [];
   try {
     const params = new URLSearchParams({ limit: '100' });
     if (mine) params.set('assignee', 'me');
@@ -98,13 +131,6 @@ export default async function ApprovalsPage({
     cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?${params.toString()}`);
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
-  }
-  try {
-    const res = await api.request<{ views: SavedView[] }>('/api/v1/saved-views');
-    views = res.views;
-  } catch {
-    // Saved views are a convenience layer — never block the list on them.
-    views = [];
   }
 
   return (
@@ -121,7 +147,12 @@ export default async function ApprovalsPage({
         )}
       </div>
 
-      <div className="row" style={{ gap: 6, marginBottom: 12 }} role="group" aria-label="Filter nach Zuständigkeit">
+      <div
+        className="row"
+        style={{ gap: 6, marginBottom: 12 }}
+        role="group"
+        aria-label="Filter nach Zuständigkeit"
+      >
         <Link
           href={filterHref(active, { assignee: undefined })}
           className={`btn ${!mine ? 'btn--primary' : 'btn--ghost'}`}
@@ -218,7 +249,20 @@ export default async function ApprovalsPage({
         current={active}
         canManage={canCreate}
         hasActiveFilters={hasActiveFilters}
+        defaultViewId={defaultViewId}
       />
+
+      {defaultApplied && (
+        <div
+          className="row"
+          style={{ gap: 8, marginBottom: 12, alignItems: 'center', fontSize: 'var(--text-xs)' }}
+        >
+          <span className="subtle">Standard-Ansicht „{defaultView!.name}" aktiv.</span>
+          <Link href="/approvals?all=1" className="btn btn--ghost">
+            Alle anzeigen
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="alert alert--danger" style={{ marginBottom: 16 }}>

@@ -5,7 +5,14 @@
  * them for form validation, so client and server never drift.
  */
 import { z } from 'zod';
-import { APPROVAL_CASE_STATUS, CUSTOMER_DECISION, ITEM_CATEGORY, ROLES, URGENCY } from './enums.js';
+import {
+  APPROVAL_CASE_STATUS,
+  CUSTOMER_DECISION,
+  ITEM_CATEGORY,
+  ROLES,
+  SAVED_VIEW_VISIBILITY,
+  URGENCY,
+} from './enums.js';
 
 /** Swiss/DACH-friendly, deliberately permissive contact fields. */
 const emailSchema = z.string().email().max(254);
@@ -259,5 +266,13 @@ export type SavedViewFilters = z.infer<typeof savedViewFiltersSchema>;
 export const createSavedViewSchema = z.object({
   name: z.string().min(1).max(80),
   filters: savedViewFiltersSchema.default({}),
+  /** SHARED (workspace-wide) or PRIVATE (only the creator). Block 29. */
+  visibility: z.enum(SAVED_VIEW_VISIBILITY).default('SHARED'),
 });
 export type CreateSavedViewInput = z.infer<typeof createSavedViewSchema>;
+
+/** Payload to set the caller's personal default view (POST /saved-views/default). */
+export const setDefaultViewSchema = z.object({
+  savedViewId: z.string().uuid(),
+});
+export type SetDefaultViewInput = z.infer<typeof setDefaultViewSchema>;

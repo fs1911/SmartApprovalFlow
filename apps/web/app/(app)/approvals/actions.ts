@@ -25,15 +25,49 @@ export async function createSavedView(formData: FormData): Promise<SavedViewResu
     const value = formData.get(key);
     if (typeof value === 'string' && value) filters[key] = value;
   }
+  // Checkbox "Nur für mich" → PRIVATE, otherwise the workspace-wide default.
+  const visibility = formData.get('private') ? 'PRIVATE' : 'SHARED';
 
   try {
-    await api.request('/api/v1/saved-views', { method: 'POST', body: { name, filters } });
+    await api.request('/api/v1/saved-views', {
+      method: 'POST',
+      body: { name, filters, visibility },
+    });
     revalidatePath('/approvals');
     return { ok: true };
   } catch (e) {
     return {
       ok: false,
       error: e instanceof ApiClientError ? e.message : 'Ansicht konnte nicht gespeichert werden.',
+    };
+  }
+}
+
+export async function setDefaultView(id: string): Promise<SavedViewResult> {
+  try {
+    await api.request('/api/v1/saved-views/default', {
+      method: 'POST',
+      body: { savedViewId: id },
+    });
+    revalidatePath('/approvals');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Standard konnte nicht gesetzt werden.',
+    };
+  }
+}
+
+export async function clearDefaultView(): Promise<SavedViewResult> {
+  try {
+    await api.request('/api/v1/saved-views/default', { method: 'DELETE' });
+    revalidatePath('/approvals');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Standard konnte nicht entfernt werden.',
     };
   }
 }

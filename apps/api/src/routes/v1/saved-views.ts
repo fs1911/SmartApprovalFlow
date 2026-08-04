@@ -1,18 +1,23 @@
 /**
- * Saved filter views (Block 28).
+ * Saved filter views (Block 28) with private views + personal default (Block 29).
  *
- *   GET    /api/v1/saved-views       list this workspace's saved views
- *   POST   /api/v1/saved-views       create a named view from a filter combination
- *   DELETE /api/v1/saved-views/:id   delete a saved view
+ *   GET    /api/v1/saved-views          list views visible to the caller (+ default)
+ *   POST   /api/v1/saved-views          create a named view (SHARED or PRIVATE)
+ *   DELETE /api/v1/saved-views/:id       delete a view (own private, or any shared)
+ *   POST   /api/v1/saved-views/default   set the caller's personal default view
+ *   DELETE /api/v1/saved-views/default   clear the caller's personal default view
  *
- * A saved view is just a named bundle of the approval-list filters
+ * A saved view is a named bundle of the approval-list filters
  * (status/category/urgency/createdWithin/assignee). Reading needs `cases:read`;
- * creating/deleting needs `cases:create` (advisors curate the shared list).
- * Everything is tenant-scoped; names are unique per tenant. Nothing about the
- * existing list/filter flow changes — views only pre-compose query params.
+ * creating/deleting needs `cases:create`. SHARED views belong to the workspace;
+ * PRIVATE views are visible only to their creator. The personal default is per
+ * user and drives the approvals list when opened without explicit filters.
+ * Everything is tenant-scoped; nothing about the existing list/filter flow
+ * changes — views only pre-compose query params.
  */
 import type { FastifyInstance } from 'fastify';
-import { createSavedViewSchema } from '@saf/types';
+import type { Prisma } from '@saf/db';
+import { createSavedViewSchema, setDefaultViewSchema } from '@saf/types';
 import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
@@ -52,6 +57,17 @@ function toFilters(row: {
   return filters;
 }
 
+/**
+ * Which views the caller may see: all SHARED views of the tenant, plus their own
+ * PRIVATE views. Without a user context (dev header / API key) only SHARED views
+ * are visible — private views are always attributed to a concrete user.
+ */
+function visibilityWhere(tenantId: string, userId?: string): Prisma.SavedViewWhereInput {
+  const or: Prisma.SavedViewWhereInput[] = [{ visibility: 'SHARED' }];
+  if (userId) or.push({ visibility: 'PRIVATE', createdById: userId });
+  return { tenantId, OR: or };
+}
+
 export async function savedViewRoutes(app: FastifyInstance) {
   // --- List ----------------------------------------------------------------
   app.get(
@@ -60,23 +76,30 @@ export async function savedViewRoutes(app: FastifyInstance) {
       preHandler: app.requirePermission('cases:read'),
       schema: {
         tags: ['saved-views'],
-        summary: 'List saved filter views for this workspace',
+        summary: 'List saved filter views visible to the caller (with default)',
         security: [{ bearerAuth: [] }],
       },
     },
     async (req) => {
       const auth = req.auth!;
-      const rows = await prisma.savedView.findMany({
-        where: { tenantId: auth.tenantId },
-        orderBy: [{ createdAt: 'asc' }],
-      });
+      const [rows, def] = await Promise.all([
+        prisma.savedView.findMany({
+          where: visibilityWhere(auth.tenantId, auth.userId),
+          orderBy: [{ createdAt: 'asc' }],
+        }),
+        auth.userId
+          ? prisma.savedViewDefault.findUnique({ where: { userId: auth.userId } })
+          : Promise.resolve(null),
+      ]);
       return ok({
         views: rows.map((row) => ({
           id: row.id,
           name: row.name,
+          visibility: row.visibility,
           filters: toFilters(row),
           createdAt: row.createdAt,
         })),
+        defaultViewId: def?.savedViewId ?? null,
       });
     },
   );
@@ -88,19 +111,23 @@ export async function savedViewRoutes(app: FastifyInstance) {
       preHandler: app.requirePermission('cases:create'),
       schema: {
         tags: ['saved-views'],
-        summary: 'Create a named saved filter view',
+        summary: 'Create a named saved filter view (SHARED or PRIVATE)',
         security: [{ bearerAuth: [] }],
       },
     },
     async (req, reply) => {
       const auth = req.auth!;
       const input = createSavedViewSchema.parse(req.body);
+      if (input.visibility === 'PRIVATE' && !auth.userId) {
+        throw errors.validation('Private Ansichten benötigen eine angemeldete Nutzer-Sitzung.');
+      }
       try {
         const row = await prisma.savedView.create({
           data: {
             tenantId: auth.tenantId,
             createdById: auth.userId ?? null,
             name: input.name,
+            visibility: input.visibility,
             ...toRow(input.filters),
           },
         });
@@ -108,6 +135,7 @@ export async function savedViewRoutes(app: FastifyInstance) {
           ok({
             id: row.id,
             name: row.name,
+            visibility: row.visibility,
             filters: toFilters(row),
             createdAt: row.createdAt,
           }),
@@ -121,6 +149,59 @@ export async function savedViewRoutes(app: FastifyInstance) {
     },
   );
 
+  // --- Set personal default ------------------------------------------------
+  // Registered before the ":id" routes so the literal path always wins.
+  app.post(
+    '/saved-views/default',
+    {
+      preHandler: app.requirePermission('cases:read'),
+      schema: {
+        tags: ['saved-views'],
+        summary: "Set the caller's personal default view",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      if (!auth.userId) {
+        throw errors.validation('Eine Standard-Ansicht benötigt eine angemeldete Nutzer-Sitzung.');
+      }
+      const { savedViewId } = setDefaultViewSchema.parse(req.body);
+      // The view must exist and be visible to the caller.
+      const view = await prisma.savedView.findFirst({
+        where: { id: savedViewId, ...visibilityWhere(auth.tenantId, auth.userId) },
+        select: { id: true },
+      });
+      if (!view) throw errors.notFound('Ansicht nicht gefunden');
+      await prisma.savedViewDefault.upsert({
+        where: { userId: auth.userId },
+        create: { tenantId: auth.tenantId, userId: auth.userId, savedViewId },
+        update: { savedViewId },
+      });
+      return ok({ defaultViewId: savedViewId });
+    },
+  );
+
+  // --- Clear personal default ----------------------------------------------
+  app.delete(
+    '/saved-views/default',
+    {
+      preHandler: app.requirePermission('cases:read'),
+      schema: {
+        tags: ['saved-views'],
+        summary: "Clear the caller's personal default view",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      if (!auth.userId) return ok({ defaultViewId: null });
+      // Idempotent: deleteMany never throws when there is no row.
+      await prisma.savedViewDefault.deleteMany({ where: { userId: auth.userId } });
+      return ok({ defaultViewId: null });
+    },
+  );
+
   // --- Delete --------------------------------------------------------------
   app.delete(
     '/saved-views/:id',
@@ -128,7 +209,7 @@ export async function savedViewRoutes(app: FastifyInstance) {
       preHandler: app.requirePermission('cases:create'),
       schema: {
         tags: ['saved-views'],
-        summary: 'Delete a saved filter view',
+        summary: 'Delete a saved filter view (own private, or any shared)',
         security: [{ bearerAuth: [] }],
         params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
       },
@@ -136,8 +217,11 @@ export async function savedViewRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const auth = req.auth!;
       const { id } = req.params as { id: string };
+      // Only a visible view can be deleted — another user's private view is
+      // invisible here and therefore reports 404, not 403 (no existence leak).
       const existing = await prisma.savedView.findFirst({
-        where: { id, tenantId: auth.tenantId },
+        where: { id, ...visibilityWhere(auth.tenantId, auth.userId) },
+        select: { id: true },
       });
       if (!existing) throw errors.notFound('Ansicht nicht gefunden');
       await prisma.savedView.delete({ where: { id } });

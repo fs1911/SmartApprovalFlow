@@ -33,6 +33,7 @@ riesig".
 | **Block 26** | **Kategorie-Filter** — `GET /approval-cases?category=` (Relationsfilter) + Kategorie-Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 27** | **Listen-Filter** — `?urgency=` + `?createdWithin=` (Dringlichkeit/Zeitraum), kombinierbare Filterchips in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 28** | **Gespeicherte Ansichten** — benannte Filterkombinationen (`/saved-views` CRUD, tenant-scoped) als Ein-Klick-Ansichten in der Freigaben-Liste | ✅ abgeschlossen |
+| **Block 29** | **Private Ansichten & Standard-Ansicht** — SHARED/PRIVATE-Sichtbarkeit je Ansicht + persönliche Standard-Ansicht (pro Nutzer), die die Freigaben-Liste ohne Filter automatisch anwendet | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 
