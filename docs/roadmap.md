@@ -42,6 +42,7 @@ riesig".
 | **Block 35** | **„Keine Treffer"-Zustand** — eigener Empty-State bei aktiven Filtern/Ansichten mit 0 Fällen (Name der aktiven Ansicht + „Filter zurücksetzen"); leere Ansichts-Chips abgeschwächt | ✅ abgeschlossen |
 | **Block 36** | **Aktive-Filter-Leiste** — kompakte Zusammenfassung der wirkenden Filter über der Liste, jeder Filter einzeln per ✕ entfernbar (Datumsbereich als ein Chip) + „Alle zurücksetzen" | ✅ abgeschlossen |
 | **Block 37** | **Reporting-Drilldown** — Kennzahlen der Auswertung verlinken in die gefilterte Freigaben-Liste (Kategorie- und Status-Zeilen → `?category=`/`?status=` + `createdWithin`); aggregiertes „Wartet auf Kunde" bleibt Nicht-Link | ✅ abgeschlossen |
+| **Block 38** | **Dashboard-Drilldown** — Kennzahl-Kacheln der Übersicht verlinken in die gefilterte Liste (Freigegeben/Abgelehnt → `?status=`); Aggregat-Kacheln (Wartet auf Kunde, Heute beantwortet) bleiben Nicht-Link | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

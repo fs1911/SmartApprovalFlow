@@ -40,11 +40,15 @@ export default async function DashboardPage() {
   const answeredToday = cases.filter(
     (c) => c.respondedAt && c.respondedAt.slice(0, 10) === today,
   ).length;
-  const stats = [
+  // `status` links a card to the approvals list filtered to that status (Block
+  // 38). "Wartet auf Kunde" aggregates SENT+VIEWED+CALLBACK and "Heute
+  // beantwortet" is a responded-today count — neither maps to a single list
+  // filter, so they stay plain (no `status`).
+  const stats: { label: string; value: number; tone: string; status?: string }[] = [
     { label: 'Wartet auf Kunde', value: pending, tone: 'info' },
     { label: 'Heute beantwortet', value: answeredToday, tone: 'success' },
-    { label: 'Freigegeben', value: count('APPROVED'), tone: 'success' },
-    { label: 'Abgelehnt', value: count('DECLINED'), tone: 'danger' },
+    { label: 'Freigegeben', value: count('APPROVED'), tone: 'success', status: 'APPROVED' },
+    { label: 'Abgelehnt', value: count('DECLINED'), tone: 'danger', status: 'DECLINED' },
   ];
 
   return (
@@ -70,14 +74,29 @@ export default async function DashboardPage() {
       {onboarding && <OnboardingWidget data={onboarding} />}
 
       <div className="row" style={{ marginBottom: 24 }}>
-        {stats.map((s) => (
-          <div key={s.label} className="card" style={{ flex: '1 1 160px' }}>
+        {stats.map((s) => {
+          const body = (
             <div className="card__body">
               <div className={`badge badge--${s.tone}`}>{s.label}</div>
               <div style={{ fontSize: '2rem', fontWeight: 700, marginTop: 8 }}>{s.value}</div>
             </div>
-          </div>
-        ))}
+          );
+          return s.status ? (
+            <Link
+              key={s.label}
+              href={`/approvals?status=${s.status}`}
+              className="card"
+              style={{ flex: '1 1 160px', color: 'inherit', textDecoration: 'none' }}
+              aria-label={`${s.value} ${s.label} in der Liste anzeigen`}
+            >
+              {body}
+            </Link>
+          ) : (
+            <div key={s.label} className="card" style={{ flex: '1 1 160px' }}>
+              {body}
+            </div>
+          );
+        })}
       </div>
 
       <div className="card">
