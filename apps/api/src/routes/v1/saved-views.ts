@@ -3,6 +3,7 @@
  *
  *   GET    /api/v1/saved-views          list views visible to the caller (+ default)
  *   POST   /api/v1/saved-views          create a named view (SHARED or PRIVATE)
+ *   POST   /api/v1/saved-views/:id/duplicate  copy a view's filters + visibility
  *   PATCH  /api/v1/saved-views/:id       rename a view (own private, or any shared)
  *   DELETE /api/v1/saved-views/:id       delete a view (own private, or any shared)
  *   POST   /api/v1/saved-views/default   set the caller's personal default view
@@ -161,6 +162,77 @@ export async function savedViewRoutes(app: FastifyInstance) {
         }
         throw err;
       }
+    },
+  );
+
+  // --- Duplicate -----------------------------------------------------------
+  // Copies a visible view's filters + visibility into a new view named
+  // "<name> (Kopie)" (auto-incrementing on collision), placed at the end.
+  app.post(
+    '/saved-views/:id/duplicate',
+    {
+      preHandler: app.requirePermission('cases:create'),
+      schema: {
+        tags: ['saved-views'],
+        summary: 'Duplicate a saved filter view (copies its filters + visibility)',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      // Only a visible view can be duplicated — a foreign private view is
+      // invisible here and therefore reports 404 (no existence leak).
+      const source = await prisma.savedView.findFirst({
+        where: { id, ...visibilityWhere(auth.tenantId, auth.userId) },
+      });
+      if (!source) throw errors.notFound('Ansicht nicht gefunden');
+
+      // The copy lands at the end of the caller's visible list.
+      const agg = await prisma.savedView.aggregate({
+        where: visibilityWhere(auth.tenantId, auth.userId),
+        _max: { sortOrder: true },
+      });
+      const nextOrder = (agg._max.sortOrder ?? -1) + 1;
+
+      // "<name> (Kopie)", then "(Kopie 2)", "(Kopie 3)" … until unique per tenant.
+      // The base is truncated so the suffixed name never exceeds 80 chars.
+      for (let i = 1; i <= 100; i++) {
+        const suffix = i === 1 ? ' (Kopie)' : ` (Kopie ${i})`;
+        const name = `${source.name.slice(0, 80 - suffix.length)}${suffix}`;
+        try {
+          const row = await prisma.savedView.create({
+            data: {
+              tenantId: auth.tenantId,
+              createdById: auth.userId ?? null,
+              name,
+              visibility: source.visibility,
+              status: source.status,
+              category: source.category,
+              urgency: source.urgency,
+              createdWithin: source.createdWithin,
+              createdFrom: source.createdFrom,
+              createdTo: source.createdTo,
+              assignee: source.assignee,
+              sortOrder: nextOrder,
+            },
+          });
+          return reply.status(201).send(
+            ok({
+              id: row.id,
+              name: row.name,
+              visibility: row.visibility,
+              filters: toFilters(row),
+              createdAt: row.createdAt,
+            }),
+          );
+        } catch (err) {
+          if (isUniqueViolation(err)) continue; // name taken → try next suffix
+          throw err;
+        }
+      }
+      throw errors.conflict('Es gibt bereits zu viele Kopien dieser Ansicht.');
     },
   );
 

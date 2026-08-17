@@ -10,6 +10,7 @@ import {
   clearDefaultView,
   renameSavedView,
   reorderSavedViews,
+  duplicateSavedView,
 } from './actions';
 
 export interface SavedViewFilters {
@@ -256,6 +257,19 @@ export function SavedViews({
                 onClick={() => startRename(view)}
               >
                 ✎
+              </button>
+            )}
+            {canManage && (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                style={ctrl}
+                aria-label={`Ansicht „${view.name}" duplizieren`}
+                title="Duplizieren"
+                disabled={pending}
+                onClick={() => run(() => duplicateSavedView(view.id))}
+              >
+                ⧉
               </button>
             )}
             {canManage && (

@@ -1729,6 +1729,34 @@
         }
       }
     },
+    "/api/v1/saved-views/{id}/duplicate": {
+      "post": {
+        "summary": "Duplicate a saved filter view (copies its filters + visibility)",
+        "tags": [
+          "saved-views"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/v1/saved-views/default": {
       "post": {
         "summary": "Set the caller's personal default view",

@@ -129,3 +129,18 @@ export async function reorderSavedViews(orderedIds: string[]): Promise<SavedView
     };
   }
 }
+
+/** Duplicate a saved view (Block 33). The API copies filters + visibility and
+ *  names the copy "<name> (Kopie)". */
+export async function duplicateSavedView(id: string): Promise<SavedViewResult> {
+  try {
+    await api.request(`/api/v1/saved-views/${id}/duplicate`, { method: 'POST' });
+    revalidatePath('/approvals');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Ansicht konnte nicht dupliziert werden.',
+    };
+  }
+}

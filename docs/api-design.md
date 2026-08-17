@@ -186,6 +186,7 @@ ist `null` am Ende.
 | `GET` | `/api/v1/webhook-endpoints/:id/deliveries` | `members:manage` | Zustellungen (Cursor-Pagination) | 12 |
 | `GET` | `/api/v1/saved-views` | `cases:read` | Sichtbare Ansichten listen (geteilt + eigene private) inkl. `defaultViewId` | 28/29 |
 | `POST` | `/api/v1/saved-views` | `cases:create` | Ansicht anlegen (`visibility` SHARED/PRIVATE; Name eindeutig je Tenant) | 28/29 |
+| `POST` | `/api/v1/saved-views/:id/duplicate` | `cases:create` | Ansicht duplizieren (übernimmt Filter + `visibility`; Name „… (Kopie[ N])"); Quelle nicht sichtbar ⇒ 404 | 33 |
 | `PATCH` | `/api/v1/saved-views/:id` | `cases:create` | Ansicht umbenennen (eigene private oder geteilte; 409 bei Namenskollision, sonst 404) | 32 |
 | `DELETE` | `/api/v1/saved-views/:id` | `cases:create` | Ansicht löschen (eigene private oder geteilte; sonst 404) | 28/29 |
 | `POST` | `/api/v1/saved-views/default` | `cases:read` | Persönliche Standard-Ansicht setzen (pro Nutzer) | 29 |
