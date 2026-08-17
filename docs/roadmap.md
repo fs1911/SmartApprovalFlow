@@ -40,6 +40,7 @@ riesig".
 | **Block 33** | **Ansichten duplizieren** — gespeicherte Ansicht als Kopie anlegen (`POST /saved-views/:id/duplicate`, übernimmt Filter + Sichtbarkeit, Name „… (Kopie)" mit Auto-Suffix); ⧉-Button in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 34** | **Fall-Anzahl je Ansicht** — `GET /saved-views` liefert je Ansicht `matchCount` (passende Fälle) über die geteilte Fall-Filterlogik; Zähler-Badge am Ansichts-Chip in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 35** | **„Keine Treffer"-Zustand** — eigener Empty-State bei aktiven Filtern/Ansichten mit 0 Fällen (Name der aktiven Ansicht + „Filter zurücksetzen"); leere Ansichts-Chips abgeschwächt | ✅ abgeschlossen |
+| **Block 36** | **Aktive-Filter-Leiste** — kompakte Zusammenfassung der wirkenden Filter über der Liste, jeder Filter einzeln per ✕ entfernbar (Datumsbereich als ein Chip) + „Alle zurücksetzen" | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ITEM_CATEGORY, ITEM_CATEGORY_LABELS, URGENCY, CREATED_WITHIN } from '@saf/types';
-import { URGENCY_PRESENTATION } from '@saf/ui';
+import { URGENCY_PRESENTATION, STATUS_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
@@ -149,6 +149,38 @@ export default async function ApprovalsPage({
   const activeSavedView = hasActiveFilters
     ? views.find((v) => filterHref({}, v.filters as Filters) === activeHref)
     : undefined;
+
+  // Human-readable summary of the currently active filters (Block 36). Each chip
+  // links to the same list with just that one filter removed. The date range is
+  // a single chip that clears both bounds; preset window and range are mutually
+  // exclusive (rangeActive drops effectiveWithin), so at most one time chip shows.
+  const activeFilterChips: { label: string; remove: Filters }[] = [];
+  if (mine) activeFilterChips.push({ label: 'Meine Fälle', remove: { assignee: undefined } });
+  if (activeCategory)
+    activeFilterChips.push({
+      label: `Kategorie: ${ITEM_CATEGORY_LABELS[activeCategory as keyof typeof ITEM_CATEGORY_LABELS]}`,
+      remove: { category: undefined },
+    });
+  if (activeUrgency)
+    activeFilterChips.push({
+      label: `Dringlichkeit: ${URGENCY_PRESENTATION[activeUrgency]?.label ?? activeUrgency}`,
+      remove: { urgency: undefined },
+    });
+  if (effectiveWithin)
+    activeFilterChips.push({
+      label: `Zeitraum: ${WITHIN_LABELS[effectiveWithin] ?? effectiveWithin}`,
+      remove: { createdWithin: undefined },
+    });
+  if (rangeActive)
+    activeFilterChips.push({
+      label: `Zeitraum: ${activeFrom ?? '…'} – ${activeTo ?? '…'}`,
+      remove: { createdFrom: undefined, createdTo: undefined },
+    });
+  if (activeStatus)
+    activeFilterChips.push({
+      label: `Status: ${STATUS_PRESENTATION[activeStatus]?.label ?? activeStatus}`,
+      remove: { status: undefined },
+    });
 
   let cases: CaseRow[] = [];
   let error: string | null = null;
@@ -346,6 +378,37 @@ export default async function ApprovalsPage({
           <span className="subtle">Standard-Ansicht „{defaultView!.name}" aktiv.</span>
           <Link href="/approvals?all=1" className="btn btn--ghost">
             Alle anzeigen
+          </Link>
+        </div>
+      )}
+
+      {activeFilterChips.length > 0 && (
+        <div
+          className="row"
+          style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}
+          role="group"
+          aria-label="Aktive Filter"
+        >
+          <span className="subtle" style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+            Aktive Filter:
+          </span>
+          {activeFilterChips.map((chip) => (
+            <Link
+              key={chip.label}
+              href={filterHref(active, chip.remove)}
+              className="btn btn--ghost"
+              style={{ fontSize: 'var(--text-xs)' }}
+              aria-label={`Filter „${chip.label}" entfernen`}
+            >
+              {chip.label} <span aria-hidden>✕</span>
+            </Link>
+          ))}
+          <Link
+            href="/approvals?all=1"
+            className="btn btn--ghost"
+            style={{ fontSize: 'var(--text-xs)' }}
+          >
+            Alle zurücksetzen
           </Link>
         </div>
       )}
