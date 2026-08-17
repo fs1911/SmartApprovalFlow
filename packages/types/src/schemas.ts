@@ -289,3 +289,19 @@ export const setDefaultViewSchema = z.object({
   savedViewId: z.string().uuid(),
 });
 export type SetDefaultViewInput = z.infer<typeof setDefaultViewSchema>;
+
+/** Payload to rename a saved view (PATCH /saved-views/:id). Block 32. */
+export const renameSavedViewSchema = z.object({
+  name: z.string().min(1).max(80),
+});
+export type RenameSavedViewInput = z.infer<typeof renameSavedViewSchema>;
+
+/**
+ * Payload to reorder saved views (POST /saved-views/reorder). Block 32. The
+ * client sends the desired order of the ids it currently sees; the server writes
+ * each visible view's `sortOrder` from its position and ignores unknown ids.
+ */
+export const reorderSavedViewsSchema = z.object({
+  orderedIds: z.array(z.string().uuid()).min(1).max(200),
+});
+export type ReorderSavedViewsInput = z.infer<typeof reorderSavedViewsSchema>;

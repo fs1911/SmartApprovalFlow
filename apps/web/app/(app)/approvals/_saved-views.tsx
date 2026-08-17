@@ -3,7 +3,14 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createSavedView, deleteSavedView, setDefaultView, clearDefaultView } from './actions';
+import {
+  createSavedView,
+  deleteSavedView,
+  setDefaultView,
+  clearDefaultView,
+  renameSavedView,
+  reorderSavedViews,
+} from './actions';
 
 export interface SavedViewFilters {
   status?: string;
@@ -68,6 +75,8 @@ export function SavedViews({
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   function run(action: () => Promise<{ ok: boolean; error?: string }>, onOk?: () => void) {
     setError(null);
@@ -80,6 +89,23 @@ export function SavedViews({
         setError(res.error ?? 'Fehler');
       }
     });
+  }
+
+  /** Move the view at `index` by `delta` (−1 left, +1 right) and persist. */
+  function moveView(index: number, delta: number) {
+    const target = index + delta;
+    if (target < 0 || target >= views.length) return;
+    const order = views.map((v) => v.id);
+    const moved = order[index]!;
+    order[index] = order[target]!;
+    order[target] = moved;
+    run(() => reorderSavedViews(order));
+  }
+
+  function startRename(view: SavedView) {
+    setError(null);
+    setEditingId(view.id);
+    setEditName(view.name);
   }
 
   function onSave(formData: FormData) {
@@ -109,9 +135,58 @@ export function SavedViews({
         </span>
       )}
 
-      {views.map((view) => {
+      {views.map((view, index) => {
         const active = isActiveView(current, view.filters);
         const isDefault = view.id === defaultViewId;
+        const ctrl = { fontSize: 'var(--text-xs)', padding: '2px 6px' } as const;
+
+        // Inline rename form for the view currently being edited.
+        if (editingId === view.id) {
+          return (
+            <form
+              key={view.id}
+              className="row"
+              style={{ gap: 4, alignItems: 'center' }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                run(
+                  () => renameSavedView(view.id, editName),
+                  () => setEditingId(null),
+                );
+              }}
+            >
+              <label htmlFor={`rename-${view.id}`} className="visually-hidden">
+                Neuer Name für „{view.name}"
+              </label>
+              <input
+                id={`rename-${view.id}`}
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                style={{ width: 160 }}
+                maxLength={80}
+                autoFocus
+                required
+              />
+              <button
+                type="submit"
+                className="btn btn--secondary"
+                style={ctrl}
+                disabled={pending || !editName.trim()}
+              >
+                Speichern
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                style={ctrl}
+                onClick={() => setEditingId(null)}
+              >
+                Abbrechen
+              </button>
+            </form>
+          );
+        }
+
         return (
           <span key={view.id} className="row" style={{ gap: 2, alignItems: 'center' }}>
             <Link
@@ -129,7 +204,7 @@ export function SavedViews({
             <button
               type="button"
               className="btn btn--ghost"
-              style={{ fontSize: 'var(--text-xs)', padding: '2px 6px' }}
+              style={ctrl}
               aria-pressed={isDefault}
               aria-label={
                 isDefault
@@ -144,11 +219,50 @@ export function SavedViews({
             >
               {isDefault ? '★' : '☆'}
             </button>
+            {canManage && views.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={ctrl}
+                  aria-label={`Ansicht „${view.name}" nach vorne verschieben`}
+                  title="Nach vorne"
+                  disabled={pending || index === 0}
+                  onClick={() => moveView(index, -1)}
+                >
+                  ◀
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  style={ctrl}
+                  aria-label={`Ansicht „${view.name}" nach hinten verschieben`}
+                  title="Nach hinten"
+                  disabled={pending || index === views.length - 1}
+                  onClick={() => moveView(index, 1)}
+                >
+                  ▶
+                </button>
+              </>
+            )}
             {canManage && (
               <button
                 type="button"
                 className="btn btn--ghost"
-                style={{ fontSize: 'var(--text-xs)', padding: '2px 6px' }}
+                style={ctrl}
+                aria-label={`Ansicht „${view.name}" umbenennen`}
+                title="Umbenennen"
+                disabled={pending}
+                onClick={() => startRename(view)}
+              >
+                ✎
+              </button>
+            )}
+            {canManage && (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                style={ctrl}
                 aria-label={`Ansicht „${view.name}" löschen`}
                 disabled={pending}
                 onClick={() => run(() => deleteSavedView(view.id))}

@@ -92,3 +92,40 @@ export async function deleteSavedView(id: string): Promise<SavedViewResult> {
     };
   }
 }
+
+/** Rename a saved view (Block 32). The API owns the 1..80 length + unique name. */
+export async function renameSavedView(id: string, name: string): Promise<SavedViewResult> {
+  const trimmed = name.trim();
+  if (!trimmed) return { ok: false, error: 'Bitte einen Namen für die Ansicht angeben.' };
+  try {
+    await api.request(`/api/v1/saved-views/${id}`, {
+      method: 'PATCH',
+      body: { name: trimmed },
+    });
+    revalidatePath('/approvals');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof ApiClientError ? e.message : 'Ansicht konnte nicht umbenannt werden.',
+    };
+  }
+}
+
+/** Persist the manual display order of saved views (Block 32). */
+export async function reorderSavedViews(orderedIds: string[]): Promise<SavedViewResult> {
+  try {
+    await api.request('/api/v1/saved-views/reorder', {
+      method: 'POST',
+      body: { orderedIds },
+    });
+    revalidatePath('/approvals');
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error:
+        e instanceof ApiClientError ? e.message : 'Reihenfolge konnte nicht gespeichert werden.',
+    };
+  }
+}

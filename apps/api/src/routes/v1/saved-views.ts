@@ -3,9 +3,11 @@
  *
  *   GET    /api/v1/saved-views          list views visible to the caller (+ default)
  *   POST   /api/v1/saved-views          create a named view (SHARED or PRIVATE)
+ *   PATCH  /api/v1/saved-views/:id       rename a view (own private, or any shared)
  *   DELETE /api/v1/saved-views/:id       delete a view (own private, or any shared)
  *   POST   /api/v1/saved-views/default   set the caller's personal default view
  *   DELETE /api/v1/saved-views/default   clear the caller's personal default view
+ *   POST   /api/v1/saved-views/reorder   set the manual display order (Block 32)
  *
  * A saved view is a named bundle of the approval-list filters
  * (status/category/urgency/createdWithin/assignee). Reading needs `cases:read`;
@@ -17,7 +19,12 @@
  */
 import type { FastifyInstance } from 'fastify';
 import type { Prisma } from '@saf/db';
-import { createSavedViewSchema, setDefaultViewSchema } from '@saf/types';
+import {
+  createSavedViewSchema,
+  renameSavedViewSchema,
+  reorderSavedViewsSchema,
+  setDefaultViewSchema,
+} from '@saf/types';
 import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
@@ -93,7 +100,7 @@ export async function savedViewRoutes(app: FastifyInstance) {
       const [rows, def] = await Promise.all([
         prisma.savedView.findMany({
           where: visibilityWhere(auth.tenantId, auth.userId),
-          orderBy: [{ createdAt: 'asc' }],
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
         }),
         auth.userId
           ? prisma.savedViewDefault.findUnique({ where: { userId: auth.userId } })
@@ -207,6 +214,83 @@ export async function savedViewRoutes(app: FastifyInstance) {
       // Idempotent: deleteMany never throws when there is no row.
       await prisma.savedViewDefault.deleteMany({ where: { userId: auth.userId } });
       return ok({ defaultViewId: null });
+    },
+  );
+
+  // --- Reorder -------------------------------------------------------------
+  // Registered before the ":id" routes so the literal path always wins. The
+  // client sends the desired order of the ids it currently sees; we write each
+  // visible view's sortOrder from its position. Ids the caller may not see are
+  // ignored (never touched), so one user cannot reorder another's private views.
+  app.post(
+    '/saved-views/reorder',
+    {
+      preHandler: app.requirePermission('cases:create'),
+      schema: {
+        tags: ['saved-views'],
+        summary: 'Set the manual display order of saved views',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      const { orderedIds } = reorderSavedViewsSchema.parse(req.body);
+      const visible = await prisma.savedView.findMany({
+        where: visibilityWhere(auth.tenantId, auth.userId),
+        select: { id: true },
+      });
+      const visibleIds = new Set(visible.map((v) => v.id));
+      const effective = orderedIds.filter((id) => visibleIds.has(id));
+      await prisma.$transaction(
+        effective.map((id, index) =>
+          prisma.savedView.updateMany({
+            where: { id, ...visibilityWhere(auth.tenantId, auth.userId) },
+            data: { sortOrder: index },
+          }),
+        ),
+      );
+      return ok({ orderedIds: effective });
+    },
+  );
+
+  // --- Rename --------------------------------------------------------------
+  app.patch(
+    '/saved-views/:id',
+    {
+      preHandler: app.requirePermission('cases:create'),
+      schema: {
+        tags: ['saved-views'],
+        summary: 'Rename a saved filter view (own private, or any shared)',
+        security: [{ bearerAuth: [] }],
+        params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      },
+    },
+    async (req) => {
+      const auth = req.auth!;
+      const { id } = req.params as { id: string };
+      const { name } = renameSavedViewSchema.parse(req.body);
+      // Only a visible view can be renamed — another user's private view is
+      // invisible here and therefore reports 404, not 403 (no existence leak).
+      const existing = await prisma.savedView.findFirst({
+        where: { id, ...visibilityWhere(auth.tenantId, auth.userId) },
+        select: { id: true },
+      });
+      if (!existing) throw errors.notFound('Ansicht nicht gefunden');
+      try {
+        const row = await prisma.savedView.update({ where: { id }, data: { name } });
+        return ok({
+          id: row.id,
+          name: row.name,
+          visibility: row.visibility,
+          filters: toFilters(row),
+          createdAt: row.createdAt,
+        });
+      } catch (err) {
+        if (isUniqueViolation(err)) {
+          throw errors.conflict('Es gibt bereits eine Ansicht mit diesem Namen.');
+        }
+        throw err;
+      }
     },
   );
 

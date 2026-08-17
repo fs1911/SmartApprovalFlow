@@ -714,6 +714,10 @@ model SavedView {
   createdFrom   String?
   createdTo     String?
   assignee      String?
+  /// Manual display order in the approvals list (Block 32). Lower comes first;
+  /// ties fall back to createdAt. Shared views order the workspace list, private
+  /// views the owner's own list.
+  sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
 
   tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -721,6 +725,7 @@ model SavedView {
   defaults  SavedViewDefault[]
 
   @@unique([tenantId, name])
+  @@index([tenantId, sortOrder])
   @@index([tenantId, createdAt])
   @@map("saved_views")
 }
