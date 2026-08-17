@@ -143,6 +143,13 @@ export default async function ApprovalsPage({
     !optedOutOfDefault &&
     filterHref({}, defaultView.filters as Filters) === filterHref({}, active);
 
+  // The saved view (if any) whose filters exactly match the active filters —
+  // used to name the "no matches" empty state (Block 35).
+  const activeHref = filterHref({}, active);
+  const activeSavedView = hasActiveFilters
+    ? views.find((v) => filterHref({}, v.filters as Filters) === activeHref)
+    : undefined;
+
   let cases: CaseRow[] = [];
   let error: string | null = null;
   try {
@@ -349,7 +356,22 @@ export default async function ApprovalsPage({
         </div>
       )}
 
-      {!error && cases.length === 0 ? (
+      {!error && cases.length === 0 && hasActiveFilters ? (
+        // Filters (or a saved view) are active but match nothing — offer a reset
+        // instead of the onboarding call-to-action (Block 35).
+        <div className="empty">
+          <div className="empty__icon">🔍</div>
+          <h2>Keine Treffer</h2>
+          <p className="subtle" style={{ maxWidth: 380, margin: '0 auto 20px' }}>
+            {activeSavedView
+              ? `Die Ansicht „${activeSavedView.name}" enthält aktuell keine Fälle.`
+              : 'Für die aktuellen Filter gibt es keine Freigaben.'}
+          </p>
+          <Link href="/approvals?all=1" className="btn btn--secondary">
+            Alle Filter zurücksetzen
+          </Link>
+        </div>
+      ) : !error && cases.length === 0 ? (
         <div className="empty">
           <div className="empty__icon">📋</div>
           <h2>Noch keine Freigaben</h2>

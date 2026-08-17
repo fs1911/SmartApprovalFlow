@@ -197,6 +197,9 @@ export function SavedViews({
               className={`btn ${active ? 'btn--primary' : 'btn--ghost'}`}
               aria-current={active ? 'true' : undefined}
               aria-label={`${view.name} — ${view.matchCount} Fälle`}
+              // Dim views that currently match no cases (Block 35).
+              style={view.matchCount === 0 ? { opacity: 0.5 } : undefined}
+              title={view.matchCount === 0 ? 'Keine passenden Fälle' : undefined}
             >
               {view.visibility === 'PRIVATE' && (
                 <span aria-hidden title="Nur für Sie sichtbar" style={{ marginRight: 4 }}>
