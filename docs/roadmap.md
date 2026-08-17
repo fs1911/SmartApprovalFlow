@@ -41,6 +41,7 @@ riesig".
 | **Block 34** | **Fall-Anzahl je Ansicht** — `GET /saved-views` liefert je Ansicht `matchCount` (passende Fälle) über die geteilte Fall-Filterlogik; Zähler-Badge am Ansichts-Chip in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 35** | **„Keine Treffer"-Zustand** — eigener Empty-State bei aktiven Filtern/Ansichten mit 0 Fällen (Name der aktiven Ansicht + „Filter zurücksetzen"); leere Ansichts-Chips abgeschwächt | ✅ abgeschlossen |
 | **Block 36** | **Aktive-Filter-Leiste** — kompakte Zusammenfassung der wirkenden Filter über der Liste, jeder Filter einzeln per ✕ entfernbar (Datumsbereich als ein Chip) + „Alle zurücksetzen" | ✅ abgeschlossen |
+| **Block 37** | **Reporting-Drilldown** — Kennzahlen der Auswertung verlinken in die gefilterte Freigaben-Liste (Kategorie- und Status-Zeilen → `?category=`/`?status=` + `createdWithin`); aggregiertes „Wartet auf Kunde" bleibt Nicht-Link | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

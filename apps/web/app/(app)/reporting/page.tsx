@@ -35,6 +35,21 @@ const PRESETS: { key: string; label: string }[] = [
   { key: '365d', label: '1 Jahr' },
 ];
 
+/**
+ * Link from a reporting metric to the approvals list filtered the same way
+ * (Block 37). The reporting period maps 1:1 to the list's `createdWithin` window,
+ * so the filtered list roughly reflects the metric. Status/category are the
+ * list's own filter keys; `pending` is an aggregate with no single-status filter,
+ * so its rows stay plain text.
+ */
+function listHref(preset: string, opts: { status?: string; category?: string } = {}): string {
+  const sp = new URLSearchParams();
+  sp.set('createdWithin', preset);
+  if (opts.status) sp.set('status', opts.status);
+  if (opts.category) sp.set('category', opts.category);
+  return `/approvals?${sp.toString()}`;
+}
+
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="card" style={{ flex: '1 1 180px' }}>
@@ -162,7 +177,12 @@ export default async function ReportingPage({
                         c.category;
                       const tone = ITEM_CATEGORY_PRESENTATION[c.category]?.tone ?? 'neutral';
                       return (
-                        <div key={c.category}>
+                        <Link
+                          key={c.category}
+                          href={listHref(preset, { category: c.category })}
+                          aria-label={`${c.count} Fälle der Kategorie ${label} in der Liste anzeigen`}
+                          style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
+                        >
                           <div
                             style={{
                               display: 'flex',
@@ -194,7 +214,7 @@ export default async function ReportingPage({
                               }}
                             />
                           </div>
-                        </div>
+                        </Link>
                       );
                     });
                   })()}
@@ -209,24 +229,41 @@ export default async function ReportingPage({
             <div className="card__body">
               <h2>Fälle nach Status ({PRESETS.find((p) => p.key === preset)?.label})</h2>
               <dl className="dl">
-                <dt>Gesamt</dt>
-                <dd>{s.totals.all}</dd>
-                <dt>Entwurf</dt>
-                <dd>{s.totals.draft}</dd>
-                <dt>Wartet auf Kunde</dt>
-                <dd>{s.totals.pending}</dd>
-                <dt>Freigegeben</dt>
-                <dd>{s.totals.approved}</dd>
-                <dt>Teilweise freigegeben</dt>
-                <dd>{s.totals.partiallyApproved}</dd>
-                <dt>Abgelehnt</dt>
-                <dd>{s.totals.declined}</dd>
-                <dt>Rückruf</dt>
-                <dd>{s.totals.callback}</dd>
-                <dt>Abgelaufen</dt>
-                <dd>{s.totals.expired}</dd>
-                <dt>Storniert</dt>
-                <dd>{s.totals.cancelled}</dd>
+                {(
+                  [
+                    { label: 'Gesamt', value: s.totals.all, status: '' },
+                    { label: 'Entwurf', value: s.totals.draft, status: 'DRAFT' },
+                    // "Wartet auf Kunde" aggregates SENT+VIEWED+CALLBACK — no
+                    // single-status list filter, so it stays plain text.
+                    { label: 'Wartet auf Kunde', value: s.totals.pending, status: null },
+                    { label: 'Freigegeben', value: s.totals.approved, status: 'APPROVED' },
+                    {
+                      label: 'Teilweise freigegeben',
+                      value: s.totals.partiallyApproved,
+                      status: 'PARTIALLY_APPROVED',
+                    },
+                    { label: 'Abgelehnt', value: s.totals.declined, status: 'DECLINED' },
+                    { label: 'Rückruf', value: s.totals.callback, status: 'CALLBACK' },
+                    { label: 'Abgelaufen', value: s.totals.expired, status: 'EXPIRED' },
+                    { label: 'Storniert', value: s.totals.cancelled, status: 'CANCELLED' },
+                  ] as { label: string; value: number; status: string | null }[]
+                ).map((row) => (
+                  <div key={row.label} style={{ display: 'contents' }}>
+                    <dt>{row.label}</dt>
+                    <dd>
+                      {row.status === null ? (
+                        row.value
+                      ) : (
+                        <Link
+                          href={listHref(preset, row.status ? { status: row.status } : {})}
+                          aria-label={`${row.value} Fälle${row.status ? ` mit Status ${row.label}` : ''} in der Liste anzeigen`}
+                        >
+                          {row.value}
+                        </Link>
+                      )}
+                    </dd>
+                  </div>
+                ))}
               </dl>
             </div>
           </div>
