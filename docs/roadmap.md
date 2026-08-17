@@ -38,6 +38,7 @@ riesig".
 | **Block 31** | **Freier Datumsbereich** — `?createdFrom=`/`?createdTo=` (ISO-Datum) auf der Freigaben-Liste, hat Vorrang vor `?createdWithin=`; Datumsfelder in der Liste, in gespeicherten Ansichten mitspeicherbar | ✅ abgeschlossen |
 | **Block 32** | **Ansichten umbenennen & sortieren** — gespeicherte Ansichten inline umbenennen (`PATCH /saved-views/:id`) und per manueller Reihenfolge sortieren (`POST /saved-views/reorder`, `sortOrder`); ◀▶/✎-Bedienelemente in der Freigaben-Liste | ✅ abgeschlossen |
 | **Block 33** | **Ansichten duplizieren** — gespeicherte Ansicht als Kopie anlegen (`POST /saved-views/:id/duplicate`, übernimmt Filter + Sichtbarkeit, Name „… (Kopie)" mit Auto-Suffix); ⧉-Button in der Freigaben-Liste | ✅ abgeschlossen |
+| **Block 34** | **Fall-Anzahl je Ansicht** — `GET /saved-views` liefert je Ansicht `matchCount` (passende Fälle) über die geteilte Fall-Filterlogik; Zähler-Badge am Ansichts-Chip in der Freigaben-Liste | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

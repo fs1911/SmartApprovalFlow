@@ -33,32 +33,7 @@ import { loadCaseForMessaging, issueLink, renderCaseTemplate, sendReminder } fro
 import { assertWithinCaseLimit } from '../../lib/usage.js';
 import { withUniqueReference } from '../../lib/reference.js';
 import { notifyForCase, notifyAssignment } from '../../lib/inapp.js';
-
-/** Start of the rolling window for the `createdWithin` list filter (Block 27). */
-function createdWithinCutoff(within: '7d' | '30d' | '90d' | '365d', now = new Date()): Date {
-  const days = { '7d': 7, '30d': 30, '90d': 90, '365d': 365 }[within];
-  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-}
-
-/**
- * The `createdAt` filter for the list (Block 31). A free `createdFrom`/`createdTo`
- * range wins over the `createdWithin` preset; both range bounds are inclusive and
- * interpreted as whole UTC days. Returns undefined when no date filter is set.
- */
-function createdAtRange(q: {
-  createdFrom?: string;
-  createdTo?: string;
-  createdWithin?: '7d' | '30d' | '90d' | '365d';
-}): { gte?: Date; lte?: Date } | undefined {
-  if (q.createdFrom || q.createdTo) {
-    const range: { gte?: Date; lte?: Date } = {};
-    if (q.createdFrom) range.gte = new Date(`${q.createdFrom}T00:00:00.000Z`);
-    if (q.createdTo) range.lte = new Date(`${q.createdTo}T23:59:59.999Z`);
-    return range;
-  }
-  if (q.createdWithin) return { gte: createdWithinCutoff(q.createdWithin) };
-  return undefined;
-}
+import { caseFilterWhere } from '../../lib/case-filters.js';
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -113,16 +88,10 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       const q = listQuerySchema.parse(req.query);
       const assignee = (req.query as { assignee?: string }).assignee;
       const cursor = decodeCursor(q.cursor);
-      const createdAt = createdAtRange(q);
 
       const rows = await prisma.approvalCase.findMany({
         where: {
-          tenantId: auth.tenantId,
-          ...(q.status ? { status: q.status as never } : {}),
-          ...(q.category ? { items: { some: { category: q.category as never } } } : {}),
-          ...(q.urgency ? { urgency: q.urgency as never } : {}),
-          ...(createdAt ? { createdAt } : {}),
-          ...(assignee === 'me' && auth.userId ? { assigneeUserId: auth.userId } : {}),
+          ...caseFilterWhere(auth.tenantId, { ...q, assignee }, auth.userId),
           ...(cursor
             ? {
                 OR: [

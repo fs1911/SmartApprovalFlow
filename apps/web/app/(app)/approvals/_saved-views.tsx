@@ -28,6 +28,8 @@ export interface SavedView {
   name: string;
   visibility: 'SHARED' | 'PRIVATE';
   filters: SavedViewFilters;
+  /** How many cases currently match this view's filters (Block 34). */
+  matchCount: number;
 }
 
 /** Build an /approvals href from a stored filter set. */
@@ -194,13 +196,20 @@ export function SavedViews({
               href={hrefForFilters(view.filters)}
               className={`btn ${active ? 'btn--primary' : 'btn--ghost'}`}
               aria-current={active ? 'true' : undefined}
+              aria-label={`${view.name} — ${view.matchCount} Fälle`}
             >
               {view.visibility === 'PRIVATE' && (
-                <span aria-label="privat" title="Nur für Sie sichtbar" style={{ marginRight: 4 }}>
+                <span aria-hidden title="Nur für Sie sichtbar" style={{ marginRight: 4 }}>
                   🔒
                 </span>
               )}
               {view.name}
+              <span
+                aria-hidden
+                style={{ marginLeft: 6, opacity: 0.75, fontSize: 'var(--text-xs)' }}
+              >
+                {view.matchCount}
+              </span>
             </Link>
             <button
               type="button"

@@ -30,6 +30,7 @@ import { prisma } from '@saf/db';
 import { ok } from '../../lib/envelope.js';
 import { errors } from '../../lib/errors.js';
 import { isUniqueViolation } from '../../lib/reference.js';
+import { caseFilterWhere } from '../../lib/case-filters.js';
 
 /** Flatten the nested filters object into the stored columns. */
 function toRow(filters: {
@@ -107,12 +108,23 @@ export async function savedViewRoutes(app: FastifyInstance) {
           ? prisma.savedViewDefault.findUnique({ where: { userId: auth.userId } })
           : Promise.resolve(null),
       ]);
+      // How many cases currently match each view's filters (Block 34). Saved
+      // views are few per tenant, so parallel counts are fine (no groupBy fits
+      // because category is a relation filter and date ranges differ per view).
+      const counts = await Promise.all(
+        rows.map((row) =>
+          prisma.approvalCase.count({
+            where: caseFilterWhere(auth.tenantId, toFilters(row), auth.userId),
+          }),
+        ),
+      );
       return ok({
-        views: rows.map((row) => ({
+        views: rows.map((row, i) => ({
           id: row.id,
           name: row.name,
           visibility: row.visibility,
           filters: toFilters(row),
+          matchCount: counts[i] ?? 0,
           createdAt: row.createdAt,
         })),
         defaultViewId: def?.savedViewId ?? null,
