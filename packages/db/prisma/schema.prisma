@@ -1,5 +1,5 @@
 // =============================================================================
-// Smart Approval Flow — Prisma schema (Block 1 foundation)
+// Klarwerk — Prisma schema (Block 1 foundation)
 //
 // Design notes:
 //  * Multi-tenant by row: almost every business row carries `tenantId`, and all

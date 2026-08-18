@@ -1,7 +1,7 @@
 # Block 12 — Summary (Integrations- & API-Ökosystem)
 
 Baut auf Block 1–11 auf, ohne Kernflows umzubauen. Ziel: Partner/Garagensoftware
-binden Smart Approval Flow ohne manuelle Hilfe an — Fälle per API-Key erstellen,
+binden Klarwerk ohne manuelle Hilfe an — Fälle per API-Key erstellen,
 Events per selbst verwalteten Webhooks empfangen. Kein Schemaänderung nötig.
 
 ## 1. Was gebaut wurde

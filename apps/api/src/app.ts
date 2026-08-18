@@ -92,9 +92,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: 'Smart Approval Flow API',
+        title: 'Klarwerk API',
         description:
-          'Public REST API for Smart Approval Flow. All responses use a consistent envelope. See docs/api-design.md.',
+          'Public REST API for Klarwerk. All responses use a consistent envelope. See docs/api-design.md.',
         version: '1.0.0-block1',
       },
       servers: [{ url: config.API_BASE_URL, description: 'Local development' }],

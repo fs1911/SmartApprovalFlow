@@ -3,7 +3,7 @@ import { BRAND } from '../../_content';
 
 export const metadata: Metadata = {
   title: `Datenschutzerklärung — ${BRAND.name}`,
-  description: 'Wie Smart Approval Flow personenbezogene Daten bearbeitet (Entwurf).',
+  description: 'Wie Klarwerk personenbezogene Daten bearbeitet (Entwurf).',
   alternates: { canonical: '/legal/privacy' },
 };
 

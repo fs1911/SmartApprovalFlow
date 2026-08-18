@@ -5,7 +5,7 @@ import { Section, Eyebrow, FinalCta } from '../_components';
 export const metadata: Metadata = {
   title: `Sicherheit & Datenschutz — ${BRAND.name}`,
   description:
-    'Wie Smart Approval Flow mit Sicherheit und Datenschutz umgeht: sichere Links, ' +
+    'Wie Klarwerk mit Sicherheit und Datenschutz umgeht: sichere Links, ' +
     'Datenminimierung auf der Kundenseite, revisionssicherer Audit-Trail, tenant-getrennte Daten.',
   alternates: { canonical: '/security' },
 };
@@ -18,7 +18,7 @@ export default function SecurityPage() {
           <Eyebrow>Sicherheit &amp; Vertrauen</Eyebrow>
           <h1>Vertrauen ist das Produkt – nicht nur ein Feature.</h1>
           <p className="mk-hero__sub">
-            Smart Approval Flow ist so gebaut, dass Kundendaten sparsam behandelt und Entscheidungen
+            Klarwerk ist so gebaut, dass Kundendaten sparsam behandelt und Entscheidungen
             belegbar dokumentiert werden.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function SecurityPage() {
         <Eyebrow>Transparenz</Eyebrow>
         <h2>Was noch in Arbeit ist.</h2>
         <p className="mk-lead">
-          Smart Approval Flow ist in der Pilotphase. Formale Zusicherungen wie
+          Klarwerk ist in der Pilotphase. Formale Zusicherungen wie
           Auftragsbearbeitungsvertrag (DPA), Hosting-Standort-Garantien und externe Zertifizierungen
           werden mit dem produktiven Betrieb finalisiert.{' '}
           <span className="mk-todo">TODO LEGAL REVIEW</span>

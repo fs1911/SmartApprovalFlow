@@ -1,6 +1,6 @@
 # Website Information Architecture
 
-Öffentlicher Marketing-Auftritt von Smart Approval Flow.
+Öffentlicher Marketing-Auftritt von Klarwerk.
 
 ## Platzierungsentscheidung
 

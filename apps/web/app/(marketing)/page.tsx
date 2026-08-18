@@ -40,7 +40,7 @@ export default function HomePage() {
         <h2>Freigaben per Telefon sind langsam, unklar und schlecht belegbar.</h2>
         <p className="mk-lead">
           Zusatzarbeiten gehen verloren, Fahrzeuge stehen, und bei der Rechnung entstehen
-          Diskussionen. Smart Approval Flow macht aus der Freigabe einen klaren, dokumentierten
+          Diskussionen. Klarwerk macht aus der Freigabe einen klaren, dokumentierten
           Schritt – den Ihre Kundschaft in Sekunden versteht.
         </p>
       </Section>

@@ -6,7 +6,7 @@ konsistent bleiben. Dieses Dokument erklärt das Gerüst.
 
 ## Positionierungsformel
 
-> Smart Approval Flow ist der schnellste Weg für Garagen, Zusatzarbeiten
+> Klarwerk ist der schnellste Weg für Garagen, Zusatzarbeiten
 > digital, verständlich und belegbar vom Kunden freigeben zu lassen – mobil,
 > ohne App, ohne Login.
 
@@ -50,7 +50,7 @@ schnell startklar? · Was kostet es? · Datenschutz?
 
 ## Kurzbeschreibung (LinkedIn / E-Mail / Demo)
 
-> Smart Approval Flow hilft Garagen, Zusatzarbeiten digital und belegbar
+> Klarwerk hilft Garagen, Zusatzarbeiten digital und belegbar
 > freigeben zu lassen: Der Serviceberater sendet Befund, Foto und Preisband als
 > sicheren Link, die Kundschaft gibt mobil frei – ohne App, ohne Login.
 > Schneller, professioneller, nachvollziehbar.

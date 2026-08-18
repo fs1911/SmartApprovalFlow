@@ -3,7 +3,7 @@ import { BRAND } from '../../_content';
 
 export const metadata: Metadata = {
   title: `Impressum — ${BRAND.name}`,
-  description: 'Impressum und Anbieterkennzeichnung von Smart Approval Flow.',
+  description: 'Impressum und Anbieterkennzeichnung von Klarwerk.',
   alternates: { canonical: '/legal/imprint' },
   robots: { index: true, follow: true },
 };

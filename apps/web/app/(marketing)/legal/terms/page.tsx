@@ -3,7 +3,7 @@ import { BRAND } from '../../_content';
 
 export const metadata: Metadata = {
   title: `Nutzungsbedingungen — ${BRAND.name}`,
-  description: 'Nutzungsbedingungen / Terms of Service für Smart Approval Flow (Entwurf).',
+  description: 'Nutzungsbedingungen / Terms of Service für Klarwerk (Entwurf).',
   alternates: { canonical: '/legal/terms' },
 };
 

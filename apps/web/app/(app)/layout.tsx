@@ -30,8 +30,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </a>
       <aside className="sidebar">
         <div className="sidebar__brand">
-          <span className="sidebar__logo">S</span>
-          <span>Smart Approval</span>
+          <span className="sidebar__logo">K</span>
+          <span>Klarwerk</span>
         </div>
         <nav className="sidebar__nav">
           <NavLink href="/dashboard">Übersicht</NavLink>

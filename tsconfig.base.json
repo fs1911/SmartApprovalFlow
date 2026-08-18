@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "display": "Smart Approval Flow — base TypeScript config",
+  "display": "Klarwerk — base TypeScript config",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022"],

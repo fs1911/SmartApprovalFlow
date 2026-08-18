@@ -9,7 +9,7 @@
 
 ## Positionierung
 
-> **Smart Approval Flow** ist der schnellste Weg, Zusatzarbeiten digital,
+> **Klarwerk** ist der schnellste Weg, Zusatzarbeiten digital,
 > verständlich und belegbar vom Kunden freigeben zu lassen — mobil, ohne App,
 > ohne Login. Kein neues System, das alles ersetzt, sondern ein Layer, der
 > Umsatz und Vertrauen erhöht.

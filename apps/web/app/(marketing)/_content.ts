@@ -7,15 +7,15 @@
  */
 
 export const BRAND = {
-  name: 'Smart Approval Flow',
-  short: 'Smart Approval',
+  name: 'Klarwerk',
+  short: 'Klarwerk',
   domain: 'smartapprovalflow.ch',
   tagline: 'Digitale Freigaben für Werkstätten',
 };
 
 /** One-sentence positioning formula. */
 export const POSITIONING =
-  'Smart Approval Flow ist der schnellste Weg für Garagen, Zusatzarbeiten digital, ' +
+  'Klarwerk ist der schnellste Weg für Garagen, Zusatzarbeiten digital, ' +
   'verständlich und belegbar vom Kunden freigeben zu lassen – mobil, ohne App, ohne Login.';
 
 export const HERO = {
@@ -51,7 +51,7 @@ export const BENEFITS: Benefit[] = [
   },
   {
     title: 'Läuft neben Ihrer Software',
-    body: 'Kein Systemwechsel. Smart Approval Flow legt einen wertvollen Layer über Ihren bestehenden Ablauf.',
+    body: 'Kein Systemwechsel. Klarwerk legt einen wertvollen Layer über Ihren bestehenden Ablauf.',
   },
 ];
 
@@ -96,7 +96,7 @@ export const FAQS: Faq[] = [
   },
   {
     q: 'Ersetzt das meine bestehende Werkstattsoftware?',
-    a: 'Nein. Smart Approval Flow ist bewusst ein Layer obendrauf. Sie behalten Ihre Abläufe und ergänzen digitale Freigaben.',
+    a: 'Nein. Klarwerk ist bewusst ein Layer obendrauf. Sie behalten Ihre Abläufe und ergänzen digitale Freigaben.',
   },
   {
     q: 'Ist das rechtlich belegbar?',
@@ -118,7 +118,7 @@ export const FAQS: Faq[] = [
 
 /** Short blurb for LinkedIn / e-mail / demo contexts. */
 export const SHORT_PITCH =
-  'Smart Approval Flow hilft Garagen, Zusatzarbeiten digital und belegbar freigeben zu lassen: ' +
+  'Klarwerk hilft Garagen, Zusatzarbeiten digital und belegbar freigeben zu lassen: ' +
   'Der Serviceberater sendet Befund, Foto und Preisband als sicheren Link, die Kundschaft gibt ' +
   'mobil frei – ohne App, ohne Login. Schneller, professioneller, nachvollziehbar.';
 

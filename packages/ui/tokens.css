@@ -1,5 +1,5 @@
 /* =============================================================================
-   Smart Approval Flow — Design Tokens
+   Klarwerk — Design Tokens
    The single source of truth for colour, type, spacing, radius and elevation.
    Consumed by apps/web via a plain CSS import (no build step required).
    See docs/design-system.md for the rationale behind these values.

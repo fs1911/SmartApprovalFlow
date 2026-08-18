@@ -2,7 +2,7 @@
   "name": "@saf/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Smart Approval Flow — public REST API (Fastify, OpenAPI-first).",
+  "description": "Klarwerk — public REST API (Fastify, OpenAPI-first).",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",

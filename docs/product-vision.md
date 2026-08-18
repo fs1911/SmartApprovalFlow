@@ -1,4 +1,4 @@
-# Produktvision — Smart Approval Flow für Garagen
+# Produktvision — Klarwerk für Garagen
 
 ## Problem
 

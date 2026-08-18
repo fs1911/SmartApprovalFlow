@@ -4,7 +4,7 @@ import { AuthShell } from '../../_auth-shell';
 import { ResetForm } from './_reset-form';
 
 export const metadata: Metadata = {
-  title: 'Neues Passwort setzen — Smart Approval Flow',
+  title: 'Neues Passwort setzen — Klarwerk',
   robots: { index: false, follow: false },
 };
 

@@ -4,7 +4,7 @@ import { AuthShell } from '../_auth-shell';
 import { ForgotForm } from './_forgot-form';
 
 export const metadata: Metadata = {
-  title: 'Passwort vergessen — Smart Approval Flow',
+  title: 'Passwort vergessen — Klarwerk',
   robots: { index: false, follow: false },
 };
 

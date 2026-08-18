@@ -5,7 +5,7 @@ import { Section, Eyebrow, FinalCta } from '../_components';
 export const metadata: Metadata = {
   title: `FAQ — ${BRAND.name}`,
   description:
-    'Häufige Fragen zu Smart Approval Flow: App/Login, Integration mit bestehender Software, ' +
+    'Häufige Fragen zu Klarwerk: App/Login, Integration mit bestehender Software, ' +
     'Belegbarkeit, Startzeit, Preise und Datenschutz.',
   alternates: { canonical: '/faq' },
 };

@@ -192,7 +192,7 @@ export async function webhookEndpointRoutes(app: FastifyInstance) {
           eventType: 'webhook.test',
           payload: {
             type: 'webhook.test',
-            data: { message: 'Testzustellung von Smart Approval Flow' },
+            data: { message: 'Testzustellung von Klarwerk' },
             occurredAt: new Date().toISOString(),
           } as Prisma.InputJsonValue,
           status: 'QUEUED',
