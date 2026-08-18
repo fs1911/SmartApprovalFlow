@@ -161,6 +161,35 @@ export function itemsByCategory(items: CategoryItem[]): CategoryStat[] {
   return CATEGORY_ORDER.filter((c) => acc.has(c)).map((c) => acc.get(c)!);
 }
 
+// --- Urgency distribution --------------------------------------------------
+
+const URGENCY_ORDER = ['HIGH', 'MEDIUM', 'LOW'] as const;
+
+export interface UrgencyCase {
+  urgency?: string | null;
+}
+export interface UrgencyStat {
+  urgency: string;
+  count: number;
+}
+
+/**
+ * Count cases per urgency, most urgent first. Returns only urgencies that
+ * actually occur; unknown values fall back to MEDIUM. Pure → unit-tested.
+ */
+export function casesByUrgency(cases: UrgencyCase[]): UrgencyStat[] {
+  const acc = new Map<string, UrgencyStat>();
+  for (const c of cases) {
+    const key = (URGENCY_ORDER as readonly string[]).includes(c.urgency ?? '')
+      ? (c.urgency as string)
+      : 'MEDIUM';
+    const stat = acc.get(key) ?? { urgency: key, count: 0 };
+    stat.count += 1;
+    acc.set(key, stat);
+  }
+  return URGENCY_ORDER.filter((u) => acc.has(u)).map((u) => acc.get(u)!);
+}
+
 // --- Time-series bucketing -------------------------------------------------
 
 export interface Bucket {

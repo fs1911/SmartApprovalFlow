@@ -28,6 +28,19 @@ test('reporting summary honours the period filter and returns insights', async (
     assert.equal(typeof c.count, 'number');
     assert.equal(typeof c.display, 'string');
   }
+  // Block 43: cases-by-urgency distribution.
+  assert.ok(Array.isArray(res.body.data.urgencies));
+  const urgencyKeys = res.body.data.urgencies.map((u: { urgency: string }) => u.urgency);
+  for (const u of res.body.data.urgencies) {
+    assert.ok(['LOW', 'MEDIUM', 'HIGH'].includes(u.urgency));
+    assert.equal(typeof u.count, 'number');
+    assert.ok(u.count > 0); // occurring-only
+  }
+  // Most-urgent-first ordering (subsequence of HIGH, MEDIUM, LOW).
+  const order = ['HIGH', 'MEDIUM', 'LOW'];
+  const positions = urgencyKeys.map((k: string) => order.indexOf(k));
+  const sorted = [...positions].sort((a: number, b: number) => a - b);
+  assert.deepEqual(positions, sorted, 'urgencies are in canonical order');
 });
 
 test('reporting summary accepts an explicit from/to range', async (t) => {

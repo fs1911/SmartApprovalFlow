@@ -6,6 +6,7 @@ import {
   approvalBreakdown,
   revenueRange,
   itemsByCategory,
+  casesByUrgency,
   resolvePeriod,
   makeBuckets,
   pickGranularity,
@@ -111,4 +112,23 @@ test('itemsByCategory: counts + price sums per category, canonical order', () =>
 
 test('itemsByCategory: empty input yields no rows', () => {
   assert.deepEqual(itemsByCategory([]), []);
+});
+
+test('casesByUrgency: counts per urgency, most-urgent-first, occurring only', () => {
+  const stats = casesByUrgency([
+    { urgency: 'LOW' },
+    { urgency: 'HIGH' },
+    { urgency: 'LOW' },
+    { urgency: null }, // → MEDIUM
+    { urgency: 'BOGUS' }, // unknown → MEDIUM
+  ]);
+  // Canonical order HIGH → MEDIUM → LOW; MEDIUM absorbs null + unknown.
+  assert.deepEqual(
+    stats.map((s) => [s.urgency, s.count]),
+    [['HIGH', 1], ['MEDIUM', 2], ['LOW', 2]],
+  );
+});
+
+test('casesByUrgency: empty input yields no rows', () => {
+  assert.deepEqual(casesByUrgency([]), []);
 });

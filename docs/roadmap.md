@@ -47,6 +47,7 @@ riesig".
 | **Block 40** | **CSV-Export der Freigaben-Liste** — `GET /approval-cases/export.csv` exportiert die gefilterte Fall-Liste (geteilte `caseFilterWhere`-Logik, gedeckelt) als CSV; „CSV-Export"-Button im Listenkopf über eine Same-Origin-Proxy-Route | ✅ abgeschlossen |
 | **Block 41** | **Einheitliche Datums-/Zeitformatierung** — geteilter `formatDateTime`/`formatDate`-Helper (`de-CH`) im internen UI ersetzt drei kopierte Formatierer + zwei Inline-Aufrufe; Ablaufdaten im mittleren Datumsstil, Kundenseite (i18n) unverändert | ✅ abgeschlossen |
 | **Block 42** | **Konsistente Leerzustände** — wiederverwendbare `EmptyState`-Komponente (Varianten `page`/`card`) ersetzt drei handgebaute Leerzustände (Freigaben-Liste, Dashboard, Benachrichtigungen); einheitliches Icon-/A11y-Handling | ✅ abgeschlossen |
+| **Block 43** | **Reporting nach Dringlichkeit** — `casesByUrgency`-Kennzahl + `urgencies` in `GET /reporting/summary`, Web-Karte „Fälle nach Dringlichkeit" mit Drilldown (`?urgency=`) | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

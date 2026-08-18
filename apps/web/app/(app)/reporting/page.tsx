@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ITEM_CATEGORY_LABELS } from '@saf/types';
-import { ITEM_CATEGORY_PRESENTATION } from '@saf/ui';
+import { ITEM_CATEGORY_PRESENTATION, URGENCY_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 
@@ -23,6 +23,7 @@ interface Summary {
   responseHours: { avg: number | null; median: number | null; count: number };
   revenue: { minMinor: number; maxMinor: number; approvedItems: number; display: string };
   categories: { category: string; count: number; display: string }[];
+  urgencies: { urgency: string; count: number }[];
   trend: { granularity: string; buckets: { label: string; created: number; sent: number }[] };
 }
 
@@ -42,11 +43,15 @@ const PRESETS: { key: string; label: string }[] = [
  * list's own filter keys; `pending` is an aggregate with no single-status filter,
  * so its rows stay plain text.
  */
-function listHref(preset: string, opts: { status?: string; category?: string } = {}): string {
+function listHref(
+  preset: string,
+  opts: { status?: string; category?: string; urgency?: string } = {},
+): string {
   const sp = new URLSearchParams();
   sp.set('createdWithin', preset);
   if (opts.status) sp.set('status', opts.status);
   if (opts.category) sp.set('category', opts.category);
+  if (opts.urgency) sp.set('urgency', opts.urgency);
   return `/approvals?${sp.toString()}`;
 }
 
@@ -221,6 +226,62 @@ export default async function ReportingPage({
                 </div>
               ) : (
                 <p className="subtle">Keine Positionen im gewählten Zeitraum.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card__body">
+              <h2>Fälle nach Dringlichkeit ({PRESETS.find((p) => p.key === preset)?.label})</h2>
+              {s.urgencies.length > 0 ? (
+                <div className="stack">
+                  {(() => {
+                    const max = Math.max(1, ...s.urgencies.map((u) => u.count));
+                    return s.urgencies.map((u) => {
+                      const label = URGENCY_PRESENTATION[u.urgency]?.label ?? u.urgency;
+                      const tone = URGENCY_PRESENTATION[u.urgency]?.tone ?? 'neutral';
+                      return (
+                        <Link
+                          key={u.urgency}
+                          href={listHref(preset, { urgency: u.urgency })}
+                          aria-label={`${u.count} Fälle der Dringlichkeit ${label} in der Liste anzeigen`}
+                          style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span className={`badge badge--${tone}`}>{label}</span>
+                            <strong>{u.count}</strong>
+                          </div>
+                          <div
+                            aria-hidden
+                            style={{
+                              height: 8,
+                              borderRadius: 4,
+                              background: 'var(--color-surface-subtle)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${Math.round((u.count / max) * 100)}%`,
+                                height: '100%',
+                                borderRadius: 4,
+                                background: 'var(--color-brand-500)',
+                              }}
+                            />
+                          </div>
+                        </Link>
+                      );
+                    });
+                  })()}
+                </div>
+              ) : (
+                <p className="subtle">Keine Fälle im gewählten Zeitraum.</p>
               )}
             </div>
           </div>
