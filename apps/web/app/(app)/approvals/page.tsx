@@ -16,6 +16,7 @@ interface Filters {
   createdFrom?: string;
   createdTo?: string;
   status?: string;
+  sort?: string;
 }
 
 /** A calendar date the API accepts (YYYY-MM-DD); anything else is ignored. */
@@ -32,6 +33,8 @@ function filterHref(current: Filters, override: Filters = {}): string {
   if (merged.createdFrom) sp.set('createdFrom', merged.createdFrom);
   if (merged.createdTo) sp.set('createdTo', merged.createdTo);
   if (merged.status) sp.set('status', merged.status);
+  // 'newest' is the default, so only the explicit 'oldest' is carried in the URL.
+  if (merged.sort && merged.sort !== 'newest') sp.set('sort', merged.sort);
   const qs = sp.toString();
   return qs ? `/approvals?${qs}` : '/approvals';
 }
@@ -69,6 +72,7 @@ export default async function ApprovalsPage({
     createdFrom?: string;
     createdTo?: string;
     status?: string;
+    sort?: string;
     /** "1" opts out of auto-applying the personal default view (Block 29). */
     all?: string;
   };
@@ -95,7 +99,10 @@ export default async function ApprovalsPage({
   // A free date range takes precedence over the preset window (mirrors the API).
   const rangeActive = Boolean(activeFrom || activeTo);
   const effectiveWithin = rangeActive ? undefined : activeWithin;
-  // Filters we carry across every chip link.
+  const activeSort = searchParams.sort === 'oldest' ? 'oldest' : 'newest';
+  // Filters we carry across every chip link. `sort` rides along so it survives
+  // filter changes, but it is not a filter (excluded from the equality checks
+  // and hasActiveFilters below).
   const active: Filters = {
     assignee: searchParams.assignee,
     category: activeCategory,
@@ -104,7 +111,10 @@ export default async function ApprovalsPage({
     createdFrom: activeFrom,
     createdTo: activeTo,
     status: activeStatus,
+    sort: activeSort === 'oldest' ? 'oldest' : undefined,
   };
+  /** The active filters without `sort`, for saved-view/default equality checks. */
+  const activeFilters: Filters = { ...active, sort: undefined };
   const hasActiveFilters = Boolean(
     mine ||
     activeCategory ||
@@ -142,11 +152,11 @@ export default async function ApprovalsPage({
   const defaultApplied =
     !!defaultView &&
     !optedOutOfDefault &&
-    filterHref({}, defaultView.filters as Filters) === filterHref({}, active);
+    filterHref({}, defaultView.filters as Filters) === filterHref({}, activeFilters);
 
   // The saved view (if any) whose filters exactly match the active filters —
   // used to name the "no matches" empty state (Block 35).
-  const activeHref = filterHref({}, active);
+  const activeHref = filterHref({}, activeFilters);
   const activeSavedView = hasActiveFilters
     ? views.find((v) => filterHref({}, v.filters as Filters) === activeHref)
     : undefined;
@@ -194,6 +204,7 @@ export default async function ApprovalsPage({
     if (activeFrom) params.set('createdFrom', activeFrom);
     if (activeTo) params.set('createdTo', activeTo);
     if (activeStatus) params.set('status', activeStatus);
+    if (activeSort === 'oldest') params.set('sort', 'oldest');
     cases = await api.request<CaseRow[]>(`/api/v1/approval-cases?${params.toString()}`);
   } catch (e) {
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
@@ -209,6 +220,7 @@ export default async function ApprovalsPage({
   if (activeFrom) exportParams.set('createdFrom', activeFrom);
   if (activeTo) exportParams.set('createdTo', activeTo);
   if (activeStatus) exportParams.set('status', activeStatus);
+  if (activeSort === 'oldest') exportParams.set('sort', 'oldest');
   const exportQs = exportParams.toString();
   const exportHref = exportQs ? `/approvals/export?${exportQs}` : '/approvals/export';
 
@@ -386,6 +398,28 @@ export default async function ApprovalsPage({
           </Link>
         )}
       </form>
+
+      <div
+        className="row"
+        style={{ gap: 6, marginBottom: 12, flexWrap: 'wrap' }}
+        role="group"
+        aria-label="Sortierung"
+      >
+        <Link
+          href={filterHref(active, { sort: 'newest' })}
+          className={`btn ${activeSort === 'newest' ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={activeSort === 'newest' ? 'true' : undefined}
+        >
+          Neueste zuerst
+        </Link>
+        <Link
+          href={filterHref(active, { sort: 'oldest' })}
+          className={`btn ${activeSort === 'oldest' ? 'btn--primary' : 'btn--ghost'}`}
+          aria-current={activeSort === 'oldest' ? 'true' : undefined}
+        >
+          Älteste zuerst
+        </Link>
+      </div>
 
       <SavedViews
         views={views}

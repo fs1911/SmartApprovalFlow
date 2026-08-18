@@ -385,6 +385,15 @@
             "name": "assignee",
             "required": false,
             "description": "\"me\" limits to cases assigned to the caller"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "description": "Order by creation date: newest (default) | oldest; validated server-side"
           }
         ],
         "security": [

@@ -48,6 +48,7 @@ riesig".
 | **Block 41** | **Einheitliche Datums-/Zeitformatierung** — geteilter `formatDateTime`/`formatDate`-Helper (`de-CH`) im internen UI ersetzt drei kopierte Formatierer + zwei Inline-Aufrufe; Ablaufdaten im mittleren Datumsstil, Kundenseite (i18n) unverändert | ✅ abgeschlossen |
 | **Block 42** | **Konsistente Leerzustände** — wiederverwendbare `EmptyState`-Komponente (Varianten `page`/`card`) ersetzt drei handgebaute Leerzustände (Freigaben-Liste, Dashboard, Benachrichtigungen); einheitliches Icon-/A11y-Handling | ✅ abgeschlossen |
 | **Block 43** | **Reporting nach Dringlichkeit** — `casesByUrgency`-Kennzahl + `urgencies` in `GET /reporting/summary`, Web-Karte „Fälle nach Dringlichkeit" mit Drilldown (`?urgency=`) | ✅ abgeschlossen |
+| **Block 44** | **Sortierung der Freigaben-Liste** — `?sort=newest\|oldest` auf `GET /approval-cases` (spiegelt Order + Keyset-Cursor korrekt), CSV-Export folgt der Sortierung; JS-freie „Neueste/Älteste zuerst"-Steuerung, `sort` überlebt Filterwechsel, ist aber kein Filter | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

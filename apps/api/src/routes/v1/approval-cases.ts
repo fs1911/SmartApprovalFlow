@@ -83,6 +83,10 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
               description: 'Inclusive upper bound (YYYY-MM-DD); validated server-side',
             },
             assignee: { type: 'string', description: '"me" limits to cases assigned to the caller' },
+            sort: {
+              type: 'string',
+              description: 'Order by creation date: newest (default) | oldest; validated server-side',
+            },
           },
         },
       },
@@ -92,20 +96,30 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       const q = listQuerySchema.parse(req.query);
       const assignee = (req.query as { assignee?: string }).assignee;
       const cursor = decodeCursor(q.cursor);
+      // Oldest-first flips both the order and the keyset comparison so cursor
+      // pagination keeps walking in the same direction as the sort (Block 44).
+      const asc = q.sort === 'oldest';
 
       const rows = await prisma.approvalCase.findMany({
         where: {
           ...caseFilterWhere(auth.tenantId, { ...q, assignee }, auth.userId),
           ...(cursor
-            ? {
-                OR: [
-                  { createdAt: { lt: new Date(cursor.createdAt) } },
-                  { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
-                ],
-              }
+            ? asc
+              ? {
+                  OR: [
+                    { createdAt: { gt: new Date(cursor.createdAt) } },
+                    { createdAt: new Date(cursor.createdAt), id: { gt: cursor.id } },
+                  ],
+                }
+              : {
+                  OR: [
+                    { createdAt: { lt: new Date(cursor.createdAt) } },
+                    { createdAt: new Date(cursor.createdAt), id: { lt: cursor.id } },
+                  ],
+                }
             : {}),
         },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy: asc ? [{ createdAt: 'asc' }, { id: 'asc' }] : [{ createdAt: 'desc' }, { id: 'desc' }],
         take: q.limit + 1,
         include: {
           customer: { select: { id: true, name: true } },
@@ -160,7 +174,10 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
 
       const rows = await prisma.approvalCase.findMany({
         where: caseFilterWhere(auth.tenantId, { ...q, assignee }, auth.userId),
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        orderBy:
+          q.sort === 'oldest'
+            ? [{ createdAt: 'asc' }, { id: 'asc' }]
+            : [{ createdAt: 'desc' }, { id: 'desc' }],
         take: EXPORT_ROW_CAP,
         include: {
           customer: { select: { name: true } },

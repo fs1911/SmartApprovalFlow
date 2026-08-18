@@ -204,6 +204,8 @@ export const listQuerySchema = z.object({
    *  `createdWithin`. Both bounds are optional and inclusive. */
   createdFrom: isoDateSchema.optional(),
   createdTo: isoDateSchema.optional(),
+  /** Result order by creation date (Block 44); defaults to newest first. */
+  sort: z.enum(['newest', 'oldest']).default('newest'),
 });
 export type ListQuery = z.infer<typeof listQuerySchema>;
 
