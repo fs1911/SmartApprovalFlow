@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { generatePublicLink, type LinkState } from './actions';
+import { formatDate } from '@/lib/format';
 
 /**
  * The raw token is only returned once at generation time (only its hash is
@@ -50,7 +51,7 @@ export function LinkPanel({ caseId, hasLink }: { caseId: string; hasLink: boolea
           </div>
           {state.expiresAt && (
             <p className="subtle">
-              Gültig bis {new Date(state.expiresAt).toLocaleDateString('de-CH')}.
+              Gültig bis {formatDate(state.expiresAt)}.
             </p>
           )}
         </>

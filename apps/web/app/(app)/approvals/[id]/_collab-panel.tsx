@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { assignCase, addNote } from './actions';
+import { formatDateTime } from '@/lib/format';
 
 export interface Member {
   id: string;
@@ -13,10 +14,6 @@ export interface Note {
   body: string;
   author: { id: string; name: string } | null;
   createdAt: string;
-}
-
-function fmt(d: string) {
-  return new Date(d).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function CollabPanel({
@@ -85,7 +82,7 @@ export function CollabPanel({
               <div key={n.id} style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 6 }}>
                 <div style={{ whiteSpace: 'pre-wrap' }}>{n.body}</div>
                 <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
-                  {n.author?.name ?? 'System'} · {fmt(n.createdAt)}
+                  {n.author?.name ?? 'System'} · {formatDateTime(n.createdAt)}
                 </div>
               </div>
             ))}

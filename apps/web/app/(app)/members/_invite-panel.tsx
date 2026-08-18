@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { inviteMember, revokeInvite } from './actions';
+import { formatDate } from '@/lib/format';
 
 const ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'ADMIN', label: 'Administrator:in' },
@@ -112,7 +113,7 @@ export function InvitePanel({ invites }: { invites: PendingInvite[] }) {
                     <div style={{ fontWeight: 600 }}>{inv.email}</div>
                     <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
                       {inv.roleLabel ?? '—'}
-                      {inv.expired ? ' · abgelaufen' : ` · gültig bis ${new Date(inv.expiresAt).toLocaleDateString('de-CH')}`}
+                      {inv.expired ? ' · abgelaufen' : ` · gültig bis ${formatDate(inv.expiresAt)}`}
                     </div>
                   </div>
                   <button className="btn btn--ghost" disabled={busy} onClick={() => void onRevoke(inv.id)}>

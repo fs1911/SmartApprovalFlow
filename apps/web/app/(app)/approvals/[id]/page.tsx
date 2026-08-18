@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { formatPriceBand, AUDIT_LABELS } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
+import { formatDateTime } from '@/lib/format';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
@@ -61,13 +62,6 @@ interface CaseDetail {
 }
 
 export const dynamic = 'force-dynamic';
-
-function fmtDate(d: string) {
-  return new Date(d).toLocaleString('de-CH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
-}
 
 export default async function ApprovalDetailPage({
   params,
@@ -221,7 +215,7 @@ export default async function ApprovalDetailPage({
                     <div>
                       <div className="timeline__label">{AUDIT_LABELS[ev.type] ?? ev.type}</div>
                       <div className="timeline__time">
-                        {fmtDate(ev.createdAt)} · {ev.actorLabel ?? ev.actorType}
+                        {formatDateTime(ev.createdAt)} · {ev.actorLabel ?? ev.actorType}
                       </div>
                     </div>
                   </div>
@@ -315,18 +309,18 @@ export default async function ApprovalDetailPage({
                 <dt>Referenz</dt>
                 <dd>{c.reference}</dd>
                 <dt>Erstellt</dt>
-                <dd>{fmtDate(c.createdAt)}</dd>
+                <dd>{formatDateTime(c.createdAt)}</dd>
                 <dt>Gesendet</dt>
-                <dd>{c.sentAt ? fmtDate(c.sentAt) : '—'}</dd>
+                <dd>{c.sentAt ? formatDateTime(c.sentAt) : '—'}</dd>
                 <dt>Geöffnet</dt>
-                <dd>{c.openedAt ? fmtDate(c.openedAt) : 'noch nicht'}</dd>
+                <dd>{c.openedAt ? formatDateTime(c.openedAt) : 'noch nicht'}</dd>
                 <dt>Erinnerungen</dt>
                 <dd>
                   {c.reminderCount ? `${c.reminderCount}×` : '—'}
-                  {c.lastReminderAt ? ` (zuletzt ${fmtDate(c.lastReminderAt)})` : ''}
+                  {c.lastReminderAt ? ` (zuletzt ${formatDateTime(c.lastReminderAt)})` : ''}
                 </dd>
                 <dt>Beantwortet</dt>
-                <dd>{c.respondedAt ? fmtDate(c.respondedAt) : '—'}</dd>
+                <dd>{c.respondedAt ? formatDateTime(c.respondedAt) : '—'}</dd>
               </dl>
             </div>
           </div>

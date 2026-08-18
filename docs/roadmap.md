@@ -45,6 +45,7 @@ riesig".
 | **Block 38** | **Dashboard-Drilldown** — Kennzahl-Kacheln der Übersicht verlinken in die gefilterte Liste (Freigegeben/Abgelehnt → `?status=`); Aggregat-Kacheln (Wartet auf Kunde, Heute beantwortet) bleiben Nicht-Link | ✅ abgeschlossen |
 | **Block 39** | **Rebrand → Klarwerk** — Produktname „Smart Approval Flow" → **Klarwerk** in allen user-sichtbaren Flächen (App, Marketing, Rechtstexte, Kundenseite, E-Mails, Metadaten, Logo K); technische Bezeichner (`@saf/*`, Header, Env) unverändert | ✅ abgeschlossen |
 | **Block 40** | **CSV-Export der Freigaben-Liste** — `GET /approval-cases/export.csv` exportiert die gefilterte Fall-Liste (geteilte `caseFilterWhere`-Logik, gedeckelt) als CSV; „CSV-Export"-Button im Listenkopf über eine Same-Origin-Proxy-Route | ✅ abgeschlossen |
+| **Block 41** | **Einheitliche Datums-/Zeitformatierung** — geteilter `formatDateTime`/`formatDate`-Helper (`de-CH`) im internen UI ersetzt drei kopierte Formatierer + zwei Inline-Aufrufe; Ablaufdaten im mittleren Datumsstil, Kundenseite (i18n) unverändert | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

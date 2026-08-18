@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { markRead, markAllRead } from './actions';
+import { formatDateTime } from '@/lib/format';
 
 export interface NotificationRow {
   id: string;
@@ -12,10 +13,6 @@ export interface NotificationRow {
   data: { reference?: string; subject?: string } | null;
   readAt: string | null;
   createdAt: string;
-}
-
-function fmt(d: string) {
-  return new Date(d).toLocaleString('de-CH', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function NotificationList({ items }: { items: NotificationRow[] }) {
@@ -73,7 +70,7 @@ export function NotificationList({ items }: { items: NotificationRow[] }) {
                     <div style={{ fontWeight: n.readAt ? 400 : 600 }}>{n.label}</div>
                     <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
                       {n.data?.reference ? `${n.data.reference} · ` : ''}
-                      {n.data?.subject ?? ''} · {fmt(n.createdAt)}
+                      {n.data?.subject ?? ''} · {formatDateTime(n.createdAt)}
                     </div>
                   </div>
                 </div>
