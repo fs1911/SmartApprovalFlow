@@ -7,6 +7,7 @@ import {
   revenueRange,
   itemsByCategory,
   casesByUrgency,
+  responseTimeBuckets,
   resolvePeriod,
   makeBuckets,
   pickGranularity,
@@ -131,4 +132,27 @@ test('casesByUrgency: counts per urgency, most-urgent-first, occurring only', ()
 
 test('casesByUrgency: empty input yields no rows', () => {
   assert.deepEqual(casesByUrgency([]), []);
+});
+
+test('responseTimeBuckets: bins hours into <1h / 1-24h / 1-3d / >3d with edges', () => {
+  // Boundaries land in the higher bin (h < max): 1h → 1-24h, 24h → 1-3d, 72h → >3d.
+  const stats = responseTimeBuckets([0, 0.5, 1, 23.9, 24, 71, 72, 200, -5, NaN]);
+  assert.deepEqual(
+    stats.map((b) => [b.bucket, b.count]),
+    [
+      ['under1h', 2], // 0, 0.5
+      ['under1d', 2], // 1, 23.9
+      ['under3d', 2], // 24, 71
+      ['over3d', 2], // 72, 200
+    ],
+  );
+});
+
+test('responseTimeBuckets: empty input still returns all four zeroed bins in order', () => {
+  assert.deepEqual(responseTimeBuckets([]), [
+    { bucket: 'under1h', count: 0 },
+    { bucket: 'under1d', count: 0 },
+    { bucket: 'under3d', count: 0 },
+    { bucket: 'over3d', count: 0 },
+  ]);
 });

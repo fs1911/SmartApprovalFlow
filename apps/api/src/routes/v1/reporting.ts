@@ -18,6 +18,7 @@ import {
   revenueRange,
   itemsByCategory,
   casesByUrgency,
+  responseTimeBuckets,
   mean,
   median,
   round1,
@@ -87,6 +88,7 @@ export async function reportingRoutes(app: FastifyInstance) {
         .filter((c) => c.sentAt && c.respondedAt)
         .map((c) => (c.respondedAt!.getTime() - c.sentAt!.getTime()) / 3_600_000)
         .filter((h) => h >= 0);
+      const responseBuckets = responseTimeBuckets(responseHours);
 
       // Trend: cases created + sent per bucket.
       const granularity = pickGranularity(period.from, period.to);
@@ -122,6 +124,7 @@ export async function reportingRoutes(app: FastifyInstance) {
           median: round1(median(responseHours)),
           count: responseHours.length,
         },
+        responseBuckets,
         revenue: {
           minMinor: revenue.minMinor,
           maxMinor: revenue.maxMinor,

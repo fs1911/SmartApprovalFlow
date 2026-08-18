@@ -41,6 +41,16 @@ test('reporting summary honours the period filter and returns insights', async (
   const positions = urgencyKeys.map((k: string) => order.indexOf(k));
   const sorted = [...positions].sort((a: number, b: number) => a - b);
   assert.deepEqual(positions, sorted, 'urgencies are in canonical order');
+  // Block 45: response-time distribution — always four fixed bins in order,
+  // summing to the responded-cases count.
+  const buckets = res.body.data.responseBuckets;
+  assert.ok(Array.isArray(buckets));
+  assert.deepEqual(
+    buckets.map((b: { bucket: string }) => b.bucket),
+    ['under1h', 'under1d', 'under3d', 'over3d'],
+  );
+  const bucketSum = buckets.reduce((n: number, b: { count: number }) => n + b.count, 0);
+  assert.equal(bucketSum, res.body.data.responseHours.count);
 });
 
 test('reporting summary accepts an explicit from/to range', async (t) => {

@@ -190,6 +190,36 @@ export function casesByUrgency(cases: UrgencyCase[]): UrgencyStat[] {
   return URGENCY_ORDER.filter((u) => acc.has(u)).map((u) => acc.get(u)!);
 }
 
+// --- Response-time distribution --------------------------------------------
+
+export interface ResponseBucket {
+  bucket: string;
+  count: number;
+}
+
+/** Fixed histogram edges (in hours) for the response-time distribution. */
+const RESPONSE_BUCKETS = [
+  { bucket: 'under1h', max: 1 },
+  { bucket: 'under1d', max: 24 },
+  { bucket: 'under3d', max: 72 },
+  { bucket: 'over3d', max: Infinity },
+] as const;
+
+/**
+ * Bucket response times (hours from sent → responded) into a fixed 4-bin
+ * histogram: <1h, 1–24h, 1–3d, >3d. Always returns all four bins in order
+ * (count may be 0). Negative/NaN inputs are ignored. Pure → unit-tested.
+ */
+export function responseTimeBuckets(hours: number[]): ResponseBucket[] {
+  const counts = RESPONSE_BUCKETS.map((b) => ({ bucket: b.bucket, count: 0 }));
+  for (const h of hours) {
+    if (!Number.isFinite(h) || h < 0) continue;
+    const idx = RESPONSE_BUCKETS.findIndex((b) => h < b.max);
+    counts[idx]!.count += 1;
+  }
+  return counts;
+}
+
 // --- Time-series bucketing -------------------------------------------------
 
 export interface Bucket {

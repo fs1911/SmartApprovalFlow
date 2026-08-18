@@ -165,7 +165,7 @@ ist `null` am Ende.
 | `POST` | `/api/v1/billing/webhook` | — (signiert) | Billing-Provider-Event (idempotent) | 11 |
 | `GET` | `/api/v1/workspace` | `workspace:read` | Workspace/Branding lesen | 4 |
 | `PATCH` | `/api/v1/workspace` | `workspace:manage` | Workspace/Branding ändern | 4 |
-| `GET` | `/api/v1/reporting/summary` | `reporting:read` | Kennzahlen + Umsatz + Trend + Verteilung nach Kategorie/Dringlichkeit (Zeitraum-Filter) | 4/13/25/43 |
+| `GET` | `/api/v1/reporting/summary` | `reporting:read` | Kennzahlen + Umsatz + Trend + Verteilung nach Kategorie/Dringlichkeit + Antwortzeit-Verteilung (Zeitraum-Filter) | 4/13/25/43/45 |
 | `GET` | `/api/v1/reporting/export.csv` | `reporting:read` | Fälle des Zeitraums als CSV | 13 |
 | `GET` | `/api/v1/admin/overview` | `members:manage` | Admin-Kennzahlen (Mitglieder/Fälle/Speicher/Plan/Retention) | 15 |
 | `GET` | `/api/v1/workspaces` | ja | Workspaces des Nutzers (Mitgliedschaften) | 15 |

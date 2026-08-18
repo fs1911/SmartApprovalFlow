@@ -21,6 +21,7 @@ interface Summary {
   };
   approvalRate: number | null;
   responseHours: { avg: number | null; median: number | null; count: number };
+  responseBuckets: { bucket: string; count: number }[];
   revenue: { minMinor: number; maxMinor: number; approvedItems: number; display: string };
   categories: { category: string; count: number; display: string }[];
   urgencies: { urgency: string; count: number }[];
@@ -35,6 +36,14 @@ const PRESETS: { key: string; label: string }[] = [
   { key: '90d', label: '90 Tage' },
   { key: '365d', label: '1 Jahr' },
 ];
+
+/** Human labels for the response-time histogram bins (Block 45). */
+const RESPONSE_BUCKET_LABELS: Record<string, string> = {
+  under1h: '< 1 Std.',
+  under1d: '1–24 Std.',
+  under3d: '1–3 Tage',
+  over3d: '> 3 Tage',
+};
 
 /**
  * Link from a reporting metric to the approvals list filtered the same way
@@ -282,6 +291,66 @@ export default async function ReportingPage({
                 </div>
               ) : (
                 <p className="subtle">Keine Fälle im gewählten Zeitraum.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card__body">
+              <h2>Antwortzeit-Verteilung ({PRESETS.find((p) => p.key === preset)?.label})</h2>
+              {s.responseHours.count > 0 ? (
+                <div className="stack">
+                  {(() => {
+                    const max = Math.max(1, ...s.responseBuckets.map((b) => b.count));
+                    return s.responseBuckets.map((b) => {
+                      const label = RESPONSE_BUCKET_LABELS[b.bucket] ?? b.bucket;
+                      const share = Math.round((b.count / s.responseHours.count) * 100);
+                      return (
+                        <div key={b.bucket}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              gap: 12,
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span>{label}</span>
+                            <strong>
+                              {b.count}
+                              <span className="subtle" style={{ fontWeight: 400 }}>
+                                {' '}
+                                · {share}%
+                              </span>
+                            </strong>
+                          </div>
+                          <div
+                            aria-hidden
+                            style={{
+                              height: 8,
+                              borderRadius: 4,
+                              background: 'var(--color-surface-subtle)',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${Math.round((b.count / max) * 100)}%`,
+                                height: '100%',
+                                borderRadius: 4,
+                                background: 'var(--color-brand-500)',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                  <p className="subtle" style={{ fontSize: 'var(--text-xs)', marginTop: 4 }}>
+                    Basis: {s.responseHours.count} beantwortete Fälle (Senden bis Entscheid).
+                  </p>
+                </div>
+              ) : (
+                <p className="subtle">Noch keine beantworteten Fälle im gewählten Zeitraum.</p>
               )}
             </div>
           </div>
