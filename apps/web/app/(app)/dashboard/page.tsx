@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+import { EmptyState } from '@/app/_components/empty-state';
 import { OnboardingWidget, type OnboardingData } from './_onboarding-widget';
 
 interface CaseRow {
@@ -108,17 +109,18 @@ export default async function DashboardPage() {
             <Link href="/approvals">Alle ansehen →</Link>
           </div>
           {cases.length === 0 ? (
-            <div style={{ marginTop: 12, textAlign: 'center', padding: '24px 0' }}>
-              <div className="empty__icon" aria-hidden>📋</div>
-              <p className="subtle" style={{ margin: '8px 0 12px' }}>
-                Noch keine Freigaben. Legen Sie Ihre erste digitale Kundenfreigabe an.
-              </p>
-              {canCreate && (
-                <Link href="/approvals/new" className="btn btn--primary">
-                  + Erste Freigabe erstellen
-                </Link>
-              )}
-            </div>
+            <EmptyState
+              variant="card"
+              icon="📋"
+              description="Noch keine Freigaben. Legen Sie Ihre erste digitale Kundenfreigabe an."
+              action={
+                canCreate ? (
+                  <Link href="/approvals/new" className="btn btn--primary">
+                    + Erste Freigabe erstellen
+                  </Link>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="case-list" style={{ marginTop: 16 }}>
               {cases.slice(0, 6).map((c) => (

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { markRead, markAllRead } from './actions';
 import { formatDateTime } from '@/lib/format';
+import { EmptyState } from '@/app/_components/empty-state';
 
 export interface NotificationRow {
   id: string;
@@ -31,9 +32,12 @@ export function NotificationList({ items }: { items: NotificationRow[] }) {
   if (items.length === 0) {
     return (
       <div className="card">
-        <div className="card__body" style={{ textAlign: 'center', padding: '32px 0' }}>
-          <div className="empty__icon" aria-hidden>🔔</div>
-          <p className="subtle">Keine Benachrichtigungen. Sie sind auf dem Laufenden.</p>
+        <div className="card__body">
+          <EmptyState
+            variant="card"
+            icon="🔔"
+            description="Keine Benachrichtigungen. Sie sind auf dem Laufenden."
+          />
         </div>
       </div>
     );

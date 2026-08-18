@@ -5,6 +5,7 @@ import { URGENCY_PRESENTATION, STATUS_PRESENTATION } from '@saf/ui';
 import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+import { EmptyState } from '@/app/_components/empty-state';
 import { SavedViews, type SavedView } from './_saved-views';
 
 interface Filters {
@@ -446,32 +447,33 @@ export default async function ApprovalsPage({
       {!error && cases.length === 0 && hasActiveFilters ? (
         // Filters (or a saved view) are active but match nothing — offer a reset
         // instead of the onboarding call-to-action (Block 35).
-        <div className="empty">
-          <div className="empty__icon">🔍</div>
-          <h2>Keine Treffer</h2>
-          <p className="subtle" style={{ maxWidth: 380, margin: '0 auto 20px' }}>
-            {activeSavedView
+        <EmptyState
+          icon="🔍"
+          title="Keine Treffer"
+          description={
+            activeSavedView
               ? `Die Ansicht „${activeSavedView.name}" enthält aktuell keine Fälle.`
-              : 'Für die aktuellen Filter gibt es keine Freigaben.'}
-          </p>
-          <Link href="/approvals?all=1" className="btn btn--secondary">
-            Alle Filter zurücksetzen
-          </Link>
-        </div>
-      ) : !error && cases.length === 0 ? (
-        <div className="empty">
-          <div className="empty__icon">📋</div>
-          <h2>Noch keine Freigaben</h2>
-          <p className="subtle" style={{ maxWidth: 380, margin: '0 auto 20px' }}>
-            Legen Sie Ihre erste Freigabeanfrage an. Der Kunde erhält einen sicheren Link und kann
-            direkt freigeben, ablehnen oder einen Rückruf wünschen.
-          </p>
-          {canCreate && (
-            <Link href="/approvals/new" className="btn btn--primary">
-              Erste Freigabe erstellen
+              : 'Für die aktuellen Filter gibt es keine Freigaben.'
+          }
+          action={
+            <Link href="/approvals?all=1" className="btn btn--secondary">
+              Alle Filter zurücksetzen
             </Link>
-          )}
-        </div>
+          }
+        />
+      ) : !error && cases.length === 0 ? (
+        <EmptyState
+          icon="📋"
+          title="Noch keine Freigaben"
+          description="Legen Sie Ihre erste Freigabeanfrage an. Der Kunde erhält einen sicheren Link und kann direkt freigeben, ablehnen oder einen Rückruf wünschen."
+          action={
+            canCreate ? (
+              <Link href="/approvals/new" className="btn btn--primary">
+                Erste Freigabe erstellen
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="case-list">
           {cases.map((c) => (
