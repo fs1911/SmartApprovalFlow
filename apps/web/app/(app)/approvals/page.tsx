@@ -198,6 +198,19 @@ export default async function ApprovalsPage({
     error = e instanceof ApiClientError ? e.message : 'API nicht erreichbar';
   }
 
+  // CSV export of exactly the filtered list (Block 40): reuse the active filters,
+  // drop the list-only `limit`, and download via the same-origin proxy route.
+  const exportParams = new URLSearchParams();
+  if (mine) exportParams.set('assignee', 'me');
+  if (activeCategory) exportParams.set('category', activeCategory);
+  if (activeUrgency) exportParams.set('urgency', activeUrgency);
+  if (effectiveWithin) exportParams.set('createdWithin', effectiveWithin);
+  if (activeFrom) exportParams.set('createdFrom', activeFrom);
+  if (activeTo) exportParams.set('createdTo', activeTo);
+  if (activeStatus) exportParams.set('status', activeStatus);
+  const exportQs = exportParams.toString();
+  const exportHref = exportQs ? `/approvals/export?${exportQs}` : '/approvals/export';
+
   return (
     <>
       <div className="page-header">
@@ -205,11 +218,22 @@ export default async function ApprovalsPage({
           <h1>Freigaben</h1>
           <p className="subtle">Alle Freigabeanfragen und ihr aktueller Status.</p>
         </div>
-        {canCreate && (
-          <Link href="/approvals/new" className="btn btn--primary">
-            + Neue Freigabe
-          </Link>
-        )}
+        <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+          {!error && cases.length > 0 && (
+            <a
+              className="btn btn--ghost"
+              href={exportHref}
+              aria-label="Gefilterte Freigaben als CSV exportieren"
+            >
+              ⭳ CSV-Export
+            </a>
+          )}
+          {canCreate && (
+            <Link href="/approvals/new" className="btn btn--primary">
+              + Neue Freigabe
+            </Link>
+          )}
+        </div>
       </div>
 
       <div

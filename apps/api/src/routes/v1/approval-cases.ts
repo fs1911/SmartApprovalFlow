@@ -34,6 +34,10 @@ import { assertWithinCaseLimit } from '../../lib/usage.js';
 import { withUniqueReference } from '../../lib/reference.js';
 import { notifyForCase, notifyAssignment } from '../../lib/inapp.js';
 import { caseFilterWhere } from '../../lib/case-filters.js';
+import { toCsv } from '../../lib/reporting.js';
+
+/** Hard cap on rows in a single CSV export — keeps the response bounded. */
+const EXPORT_ROW_CAP = 5000;
 
 function fingerprint(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -118,6 +122,94 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
         hasMore && last ? encodeCursor({ createdAt: last.createdAt.toISOString(), id: last.id }) : null;
 
       return paginated(page, { nextCursor, limit: q.limit });
+    },
+  );
+
+  // --- CSV export ----------------------------------------------------------
+  // Same filters as the list, but no pagination: exports every matching case
+  // (capped) so a shop can pull "all declined cases this month" into a sheet.
+  app.get(
+    '/approval-cases/export.csv',
+    {
+      preHandler: app.requirePermission('cases:read'),
+      schema: {
+        tags: ['approval-cases'],
+        summary: 'Export the filtered approval cases as CSV',
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: 'object',
+          properties: {
+            status: { type: 'string' },
+            category: { type: 'string' },
+            urgency: { type: 'string' },
+            createdWithin: { type: 'string' },
+            createdFrom: { type: 'string' },
+            createdTo: { type: 'string' },
+            assignee: {
+              type: 'string',
+              description: '"me" limits to cases assigned to the caller',
+            },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      const auth = req.auth!;
+      const q = listQuerySchema.parse(req.query);
+      const assignee = (req.query as { assignee?: string }).assignee;
+
+      const rows = await prisma.approvalCase.findMany({
+        where: caseFilterWhere(auth.tenantId, { ...q, assignee }, auth.userId),
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: EXPORT_ROW_CAP,
+        include: {
+          customer: { select: { name: true } },
+          vehicle: { select: { plate: true, make: true, model: true } },
+          assignee: { select: { name: true } },
+          _count: { select: { items: true } },
+        },
+      });
+
+      const header = [
+        'reference',
+        'subject',
+        'customer',
+        'vehicle',
+        'status',
+        'urgency',
+        'assignee',
+        'items',
+        'createdAt',
+        'sentAt',
+        'respondedAt',
+        'expiresAt',
+      ];
+      const csvRows = rows.map((c) => {
+        const vehicle = c.vehicle
+          ? [c.vehicle.plate, c.vehicle.make, c.vehicle.model].filter(Boolean).join(' ')
+          : '';
+        return [
+          c.reference,
+          c.subject,
+          c.customer?.name ?? '',
+          vehicle,
+          c.status,
+          c.urgency,
+          c.assignee?.name ?? '',
+          c._count.items,
+          c.createdAt.toISOString(),
+          c.sentAt?.toISOString() ?? '',
+          c.respondedAt?.toISOString() ?? '',
+          c.expiresAt?.toISOString() ?? '',
+        ];
+      });
+
+      const csv = toCsv(header, csvRows);
+      const fname = `klarwerk-cases-${new Date().toISOString().slice(0, 10)}.csv`;
+      return reply
+        .header('content-type', 'text/csv; charset=utf-8')
+        .header('content-disposition', `attachment; filename="${fname}"`)
+        .send(csv);
     },
   );
 
