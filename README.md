@@ -54,8 +54,9 @@ Block 47 (Marketing-Redesign — „Wow"-Pass Teil 1) ✅ ·
 Block 48 (App-Redesign — „Wow"-Pass Teil 2) ✅ ·
 Block 49 (App-Screens: geteilte Stat-Tile-Sprache) ✅ ·
 Block 50 (Rücklaufquote im Reporting) ✅ ·
-Block 51 (Rebrand → Nicka, Slogan „Ein Nicken genügt.") ✅
-— siehe [`docs/roadmap.md`](docs/roadmap.md).
+Block 51 (Rebrand → Nicka, Slogan „Ein Nicken genügt.") ✅ ·
+Block 52 (Deploy-Reife für Railway — Phase 1 Go-Live) ✅
+— siehe [`docs/roadmap.md`](docs/roadmap.md) · Live-Anleitung: [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
 ---
 

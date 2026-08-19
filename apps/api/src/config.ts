@@ -8,7 +8,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   // Optional explicit log level; otherwise derived from NODE_ENV.
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
-  API_PORT: z.coerce.number().int().default(4000),
+  // Railway (and most PaaS hosts) inject the port to listen on as $PORT; prefer
+  // it, falling back to an explicit API_PORT or 4000 for local/compose/dev.
+  API_PORT: z.coerce.number().int().default(Number(process.env.PORT) || 4000),
   API_HOST: z.string().default('0.0.0.0'),
   API_BASE_URL: z.string().url().default('http://localhost:4000'),
   WEB_BASE_URL: z.string().url().default('http://localhost:3000'),
