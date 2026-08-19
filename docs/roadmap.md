@@ -50,6 +50,7 @@ riesig".
 | **Block 43** | **Reporting nach Dringlichkeit** — `casesByUrgency`-Kennzahl + `urgencies` in `GET /reporting/summary`, Web-Karte „Fälle nach Dringlichkeit" mit Drilldown (`?urgency=`) | ✅ abgeschlossen |
 | **Block 44** | **Sortierung der Freigaben-Liste** — `?sort=newest\|oldest` auf `GET /approval-cases` (spiegelt Order + Keyset-Cursor korrekt), CSV-Export folgt der Sortierung; JS-freie „Neueste/Älteste zuerst"-Steuerung, `sort` überlebt Filterwechsel, ist aber kein Filter | ✅ abgeschlossen |
 | **Block 45** | **Antwortzeit-Verteilung im Reporting** — `responseTimeBuckets` (4 Bins: <1h/1–24h/1–3d/>3d) + `responseBuckets` in `GET /reporting/summary`, Web-Balkenkarte „Antwortzeit-Verteilung" (Anteil je Bin, kein Drilldown) | ✅ abgeschlossen |
+| **Block 46** | **Detailseiten-Politur** — Kontextzeile (Kunde · Fahrzeug · Kennzeichen) unter dem Titel, `EmptyState` für den leeren Verlauf, A11y-Rollen der Timeline (`list`/`listitem`); reine Präsentation | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

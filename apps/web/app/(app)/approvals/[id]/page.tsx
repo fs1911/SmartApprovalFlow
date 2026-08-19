@@ -5,6 +5,7 @@ import { api, ApiClientError } from '@/lib/api';
 import { getMe, can } from '@/lib/session';
 import { formatDateTime } from '@/lib/format';
 import { StatusBadge, UrgencyBadge } from '@/app/_components/badges';
+import { EmptyState } from '@/app/_components/empty-state';
 import { LinkPanel } from './_link-panel';
 import { CaseActions } from './_case-actions';
 import { AttachmentsPanel, type AttachmentView } from './_attachments-panel';
@@ -108,6 +109,16 @@ export default async function ApprovalDetailPage({
   const totalMin = c.items.reduce((s, it) => s + (it.priceMinMinor ?? 0), 0);
   const totalMax = c.items.reduce((s, it) => s + (it.priceMaxMinor ?? 0), 0);
 
+  // At-a-glance context under the title: customer, vehicle, plate (Block 46).
+  const vehicleLabel = [c.vehicle?.make, c.vehicle?.model, c.vehicle?.year]
+    .filter(Boolean)
+    .join(' ');
+  const headerMeta = [
+    c.customer?.name,
+    vehicleLabel || undefined,
+    c.vehicle?.plate ?? undefined,
+  ].filter((v): v is string => Boolean(v));
+
   return (
     <>
       <div className="page-header">
@@ -120,6 +131,11 @@ export default async function ApprovalDetailPage({
             <StatusBadge status={c.status} />
             <UrgencyBadge urgency={c.urgency} />
           </div>
+          {headerMeta.length > 0 && (
+            <p className="subtle" style={{ marginTop: 6, fontSize: 'var(--text-sm)' }}>
+              {headerMeta.join(' · ')}
+            </p>
+          )}
         </div>
       </div>
 
@@ -208,19 +224,27 @@ export default async function ApprovalDetailPage({
           <div className="card">
             <div className="card__body">
               <h2>Verlauf (Audit Trail)</h2>
-              <div className="timeline">
-                {c.auditEvents.map((ev) => (
-                  <div key={ev.id} className="timeline__item">
-                    <div className="timeline__dot" />
-                    <div>
-                      <div className="timeline__label">{AUDIT_LABELS[ev.type] ?? ev.type}</div>
-                      <div className="timeline__time">
-                        {formatDateTime(ev.createdAt)} · {ev.actorLabel ?? ev.actorType}
+              {c.auditEvents.length > 0 ? (
+                <div className="timeline" role="list" aria-label="Verlauf des Falls">
+                  {c.auditEvents.map((ev) => (
+                    <div key={ev.id} className="timeline__item" role="listitem">
+                      <div className="timeline__dot" aria-hidden />
+                      <div>
+                        <div className="timeline__label">{AUDIT_LABELS[ev.type] ?? ev.type}</div>
+                        <div className="timeline__time">
+                          {formatDateTime(ev.createdAt)} · {ev.actorLabel ?? ev.actorType}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  variant="card"
+                  icon="🕓"
+                  description="Noch keine Ereignisse. Sobald der Fall versendet und geöffnet wird, erscheint hier der Verlauf."
+                />
+              )}
             </div>
           </div>
         </div>
