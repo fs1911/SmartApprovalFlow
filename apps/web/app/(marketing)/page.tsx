@@ -21,15 +21,81 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="mk-hero">
-        <div className="mk-container">
-          <Eyebrow>Für unabhängige Garagen &amp; Werkstätten</Eyebrow>
-          <h1>{HERO.headline}</h1>
-          <p className="mk-hero__sub">{HERO.subline}</p>
-          <CtaRow primary={HERO.primaryCta} secondary={HERO.secondaryCta} />
-          <div className="mk-hero__trust">
-            <span>🔒 Ohne App &amp; ohne Login</span>
-            <span>📄 Revisionssicher dokumentiert</span>
-            <span>⚡ In einem Tag startklar</span>
+        <div className="mk-container mk-hero__inner">
+          <div className="mk-hero__copy">
+            <Eyebrow>Für unabhängige Garagen &amp; Werkstätten</Eyebrow>
+            <h1>
+              {HERO.headline.split('in Minuten').flatMap((part, i) =>
+                i === 0
+                  ? [part]
+                  : [
+                      <span key="acc" className="mk-accent">
+                        in Minuten
+                      </span>,
+                      part,
+                    ],
+              )}
+            </h1>
+            <p className="mk-hero__sub">{HERO.subline}</p>
+            <CtaRow primary={HERO.primaryCta} secondary={HERO.secondaryCta} />
+            <div className="mk-hero__trust">
+              <span>🔒 Ohne App &amp; ohne Login</span>
+              <span>📄 Revisionssicher dokumentiert</span>
+              <span>⚡ In einem Tag startklar</span>
+            </div>
+          </div>
+
+          {/* Product mockup: the customer's loginless approval view. */}
+          <div className="mk-hero__visual">
+            <div
+              className="mk-device"
+              role="img"
+              aria-label="Vorschau der Kunden-Freigabeseite auf dem Smartphone"
+            >
+              <div className="mk-device__screen">
+                <div className="mk-device__bar">
+                  <div className="mk-device__brand">Klarwerk</div>
+                  <div className="mk-device__title">Muster-Garage · Freigabe AC-2026-0142</div>
+                </div>
+                <div className="mk-device__body">
+                  <div className="mk-line">
+                    <span>
+                      <span className="mk-line__label">Bremsbeläge vorne ersetzen</span>
+                      <br />
+                      <span className="mk-line__hint">Sicherheit · empfohlen</span>
+                    </span>
+                    <span className="mk-line__price">180–220.–</span>
+                  </div>
+                  <div className="mk-line">
+                    <span>
+                      <span className="mk-line__label">Ölservice inkl. Filter</span>
+                      <br />
+                      <span className="mk-line__hint">Wartung</span>
+                    </span>
+                    <span className="mk-line__price">140–160.–</span>
+                  </div>
+                  <div className="mk-line">
+                    <span>
+                      <span className="mk-line__label">Zündkerzen (4×)</span>
+                      <br />
+                      <span className="mk-line__hint">Wartung</span>
+                    </span>
+                    <span className="mk-line__price">95–120.–</span>
+                  </div>
+                  <div className="mk-device__total">
+                    <span>Geschätzt gesamt</span>
+                    <span>415–500.–</span>
+                  </div>
+                  <div className="mk-device__actions">
+                    <span className="mk-btn-approve">✓ Freigeben</span>
+                    <span className="mk-btn-decline">Ablehnen</span>
+                  </div>
+                  <div className="mk-device__foot">
+                    Bereitgestellt über Klarwerk · sicher &amp; belegbar
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
