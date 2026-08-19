@@ -52,7 +52,8 @@ Block 45 (Antwortzeit-Verteilung im Reporting) ✅ ·
 Block 46 (Detailseiten-Politur) ✅ ·
 Block 47 (Marketing-Redesign — „Wow"-Pass Teil 1) ✅ ·
 Block 48 (App-Redesign — „Wow"-Pass Teil 2) ✅ ·
-Block 49 (App-Screens: geteilte Stat-Tile-Sprache) ✅
+Block 49 (App-Screens: geteilte Stat-Tile-Sprache) ✅ ·
+Block 50 (Rücklaufquote im Reporting) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---

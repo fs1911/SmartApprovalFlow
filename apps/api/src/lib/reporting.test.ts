@@ -4,6 +4,7 @@ import {
   mean,
   median,
   approvalBreakdown,
+  responseRate,
   revenueRange,
   itemsByCategory,
   casesByUrgency,
@@ -36,6 +37,31 @@ test('approvalBreakdown counts outcomes and computes rate over decided', () => {
 
 test('approvalBreakdown rate is null with no decided cases', () => {
   assert.equal(approvalBreakdown(['SENT', 'CALLBACK']).approvalRate, null);
+});
+
+test('responseRate counts responses over reached cases', () => {
+  // reached = all except DRAFT + CANCELLED = 6 (SENT, VIEWED, EXPIRED,
+  // APPROVED, DECLINED, CALLBACK). responded = APPROVED + DECLINED + CALLBACK = 3.
+  const r = responseRate([
+    'DRAFT',
+    'CANCELLED',
+    'SENT',
+    'VIEWED',
+    'EXPIRED',
+    'APPROVED',
+    'DECLINED',
+    'CALLBACK',
+  ]);
+  assert.equal(r.reached, 6);
+  assert.equal(r.responded, 3);
+  assert.equal(r.rate, 50);
+});
+
+test('responseRate is null when nothing reached a customer', () => {
+  const r = responseRate(['DRAFT', 'DRAFT', 'CANCELLED']);
+  assert.equal(r.reached, 0);
+  assert.equal(r.responded, 0);
+  assert.equal(r.rate, null);
 });
 
 test('revenueRange sums approved positions only', () => {

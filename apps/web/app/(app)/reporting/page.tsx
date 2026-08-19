@@ -20,6 +20,7 @@ interface Summary {
     cancelled: number;
   };
   approvalRate: number | null;
+  engagement: { rate: number | null; responded: number; reached: number };
   responseHours: { avg: number | null; median: number | null; count: number };
   responseBuckets: { bucket: string; count: number }[];
   revenue: { minMinor: number; maxMinor: number; approvedItems: number; display: string };
@@ -157,6 +158,11 @@ export default async function ReportingPage({
         <>
           <div className="row" style={{ marginBottom: 16 }}>
             <Kpi label="Freigabequote" value={s.approvalRate != null ? `${s.approvalRate}%` : '—'} hint="freigegeben von entschieden" />
+            <Kpi
+              label="Rücklaufquote"
+              value={s.engagement.rate != null ? `${s.engagement.rate}%` : '—'}
+              hint={`${s.engagement.responded} von ${s.engagement.reached} zugestellt`}
+            />
             <Kpi
               label="Umsatz (freigegeben)"
               value={s.revenue.approvedItems > 0 ? s.revenue.display : '—'}

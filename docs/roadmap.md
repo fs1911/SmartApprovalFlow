@@ -54,7 +54,7 @@ riesig".
 | **Block 47** | **Marketing-Redesign („Wow"-Pass, Teil 1)** — eigenständige Typografie via `next/font` (Inter · Space Grotesk · Newsreader-Serif), committete Mint/Salbei-Markenpalette, überarbeiteter Hero (Serif-Subline, Akzent-Unterstreichung, Geräte-Mockup), scroll-getriebenes Storytelling (`ScrollStory`: gepinntes Phone + IntersectionObserver + Fortschritts-Punkte, `reduced-motion`/No-JS-Fallback), veredelte Feature-Karten; provider-frei, rein visuell | ✅ abgeschlossen |
 | **Block 48** | **App-Redesign („Wow"-Pass, Teil 2)** — Display-Schrift auf App-Headings (verbindet Produkt + Marketing), Sidebar-Aktiv-Akzent, sticky Topbar mit Frosted-Backdrop, zurückhaltende Micro-Interactions (Button-Press, Card/Row-Hover), `reduced-motion`-Fallback; App behält bewusst ihre blaue Identität | ✅ abgeschlossen |
 | **Block 49** | **App-Screens in der gehobenen Sprache** — geteilte „Stat-Tile"-Sprache (`.stat__value` in Display-Schrift) auf Dashboard + Reporting, farbige Ton-Streifen auf den Dashboard-Kacheln (`.stat-card--{tone}`); Inline-Styles entfernt, rein präsentativ | ✅ abgeschlossen |
-| **Block 50** | **Annahmequote im Reporting** — reine, test-gedeckte Kennzahl (`approvalRate` = freigegeben / entschieden) in `GET /reporting/summary` + Web-Karte; provider-frei | ⏳ geplant |
+| **Block 50** | **Rücklaufquote im Reporting** — neue, unit-getestete Pure-Function `responseRate` (beantwortet ÷ zugestellt; `EXPIRED` zählt als erreicht, `CALLBACK` als Reaktion) in `GET /reporting/summary` (`engagement`) + Web-KPI „Rücklaufquote"; komplementär zur bereits vorhandenen `approvalRate`; provider-frei | ✅ abgeschlossen |
 
 ## Leitplanken über alle Blöcke
 

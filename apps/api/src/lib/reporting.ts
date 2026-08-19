@@ -87,6 +87,52 @@ export function approvalBreakdown(statuses: string[]): ApprovalBreakdown {
   };
 }
 
+// --- Response rate (engagement) --------------------------------------------
+
+/** Statuses where the request reached the customer, so a response was possible. */
+const REACHED_STATUSES = [
+  'SENT',
+  'VIEWED',
+  'CALLBACK',
+  'APPROVED',
+  'PARTIALLY_APPROVED',
+  'DECLINED',
+  'EXPIRED',
+] as const;
+/** Statuses that represent an actual customer response (any action taken). */
+const RESPONDED_STATUSES = ['APPROVED', 'PARTIALLY_APPROVED', 'DECLINED', 'CALLBACK'] as const;
+
+export interface ResponseRate {
+  /** Cases that were delivered to the customer (could have responded). */
+  reached: number;
+  /** Cases the customer acted on (approve/partial/decline/callback). */
+  responded: number;
+  /** responded as a share of reached, 0–100 or null when nothing was reached. */
+  rate: number | null;
+}
+
+/**
+ * Engagement funnel: of the cases that actually reached a customer, how many
+ * got any response? Complements `approvalBreakdown` (which measures the *quality*
+ * of decisions over decided cases): this measures whether customers engaged at
+ * all. DRAFT (never sent) and CANCELLED (withdrawn) are excluded from both the
+ * numerator and denominator; EXPIRED counts as reached-but-not-responded. A
+ * CALLBACK counts as a response. Pure → unit-tested.
+ */
+export function responseRate(statuses: string[]): ResponseRate {
+  const reached = statuses.filter((s) =>
+    (REACHED_STATUSES as readonly string[]).includes(s),
+  ).length;
+  const responded = statuses.filter((s) =>
+    (RESPONDED_STATUSES as readonly string[]).includes(s),
+  ).length;
+  return {
+    reached,
+    responded,
+    rate: reached > 0 ? Math.round((responded / reached) * 100) : null,
+  };
+}
+
 // --- Revenue from approved positions --------------------------------------
 
 export interface RevenueCase {

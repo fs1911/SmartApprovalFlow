@@ -15,6 +15,7 @@ import { ok } from '../../lib/envelope.js';
 import {
   resolvePeriod,
   approvalBreakdown,
+  responseRate,
   revenueRange,
   itemsByCategory,
   casesByUrgency,
@@ -79,6 +80,7 @@ export async function reportingRoutes(app: FastifyInstance) {
       const cases = await loadCases(tenantId, period.from, period.to);
 
       const breakdown = approvalBreakdown(cases.map((c) => c.status));
+      const engagement = responseRate(cases.map((c) => c.status));
       const revenue = revenueRange(cases);
       const categories = itemsByCategory(cases.flatMap((c) => c.items));
       const urgencies = casesByUrgency(cases);
@@ -119,6 +121,11 @@ export async function reportingRoutes(app: FastifyInstance) {
           cancelled: cases.filter((c) => c.status === 'CANCELLED').length,
         },
         approvalRate: breakdown.approvalRate,
+        engagement: {
+          rate: engagement.rate,
+          responded: engagement.responded,
+          reached: engagement.reached,
+        },
         responseHours: {
           avg: round1(mean(responseHours)),
           median: round1(median(responseHours)),

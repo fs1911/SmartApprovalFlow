@@ -17,6 +17,14 @@ test('reporting summary honours the period filter and returns insights', async (
   assert.equal(res.status, 200);
   assert.equal(res.body.data.period.preset, '90d');
   assert.equal(typeof res.body.data.approvalRate === 'number' || res.body.data.approvalRate === null, true);
+  // Block 50: engagement / response rate.
+  assert.ok(res.body.data.engagement);
+  assert.equal(typeof res.body.data.engagement.reached, 'number');
+  assert.equal(typeof res.body.data.engagement.responded, 'number');
+  assert.equal(
+    typeof res.body.data.engagement.rate === 'number' || res.body.data.engagement.rate === null,
+    true,
+  );
   assert.ok(res.body.data.revenue);
   assert.equal(typeof res.body.data.revenue.minMinor, 'number');
   assert.ok(Array.isArray(res.body.data.trend.buckets));
