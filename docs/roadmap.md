@@ -52,7 +52,9 @@ riesig".
 | **Block 45** | **Antwortzeit-Verteilung im Reporting** — `responseTimeBuckets` (4 Bins: <1h/1–24h/1–3d/>3d) + `responseBuckets` in `GET /reporting/summary`, Web-Balkenkarte „Antwortzeit-Verteilung" (Anteil je Bin, kein Drilldown) | ✅ abgeschlossen |
 | **Block 46** | **Detailseiten-Politur** — Kontextzeile (Kunde · Fahrzeug · Kennzeichen) unter dem Titel, `EmptyState` für den leeren Verlauf, A11y-Rollen der Timeline (`list`/`listitem`); reine Präsentation | ✅ abgeschlossen |
 | **Block 47** | **Marketing-Redesign („Wow"-Pass, Teil 1)** — eigenständige Typografie via `next/font` (Inter · Space Grotesk · Newsreader-Serif), committete Mint/Salbei-Markenpalette, überarbeiteter Hero (Serif-Subline, Akzent-Unterstreichung, Geräte-Mockup), scroll-getriebenes Storytelling (`ScrollStory`: gepinntes Phone + IntersectionObserver + Fortschritts-Punkte, `reduced-motion`/No-JS-Fallback), veredelte Feature-Karten; provider-frei, rein visuell | ✅ abgeschlossen |
-| **Block 48** | **App-Redesign („Wow"-Pass, Teil 2)** — dieselbe Design-Sprache auf App-Shell/Dashboard/Detailseiten übertragen (Typo, Abstände, Micro-Interactions) | ⏳ geplant |
+| **Block 48** | **App-Redesign („Wow"-Pass, Teil 2)** — Display-Schrift auf App-Headings (verbindet Produkt + Marketing), Sidebar-Aktiv-Akzent, sticky Topbar mit Frosted-Backdrop, zurückhaltende Micro-Interactions (Button-Press, Card/Row-Hover), `reduced-motion`-Fallback; App behält bewusst ihre blaue Identität | ✅ abgeschlossen |
+| **Block 49** | **App-Screens in der gehobenen Sprache** — Dashboard-Statuskarten, Freigaben-Liste, Detail-Panels und Formulare/Leerzustände am Screen-Feinschliff; rein präsentativ | ⏳ geplant |
+| **Block 50** | **Annahmequote im Reporting** — reine, test-gedeckte Kennzahl (`approvalRate` = freigegeben / entschieden) in `GET /reporting/summary` + Web-Karte; provider-frei | ⏳ geplant |
 
 ## Leitplanken über alle Blöcke
 

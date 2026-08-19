@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <NavLink href="/settings">Einstellungen</NavLink>
         </nav>
         <div className="sidebar__foot">
-          MVP · Block 7
+          Klarwerk · MVP
           <br />
           {me.tenant.slug}
         </div>
