@@ -51,7 +51,8 @@ Block 44 (Sortierung der Freigaben-Liste) ✅ ·
 Block 45 (Antwortzeit-Verteilung im Reporting) ✅ ·
 Block 46 (Detailseiten-Politur) ✅ ·
 Block 47 (Marketing-Redesign — „Wow"-Pass Teil 1) ✅ ·
-Block 48 (App-Redesign — „Wow"-Pass Teil 2) ✅
+Block 48 (App-Redesign — „Wow"-Pass Teil 2) ✅ ·
+Block 49 (App-Screens: geteilte Stat-Tile-Sprache) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---

@@ -79,21 +79,25 @@ export default async function DashboardPage() {
           const body = (
             <div className="card__body">
               <div className={`badge badge--${s.tone}`}>{s.label}</div>
-              <div style={{ fontSize: '2rem', fontWeight: 700, marginTop: 8 }}>{s.value}</div>
+              <div className="stat__value">{s.value}</div>
             </div>
           );
           return s.status ? (
             <Link
               key={s.label}
               href={`/approvals?status=${s.status}`}
-              className="card"
+              className={`card stat-card stat-card--${s.tone}`}
               style={{ flex: '1 1 160px', color: 'inherit', textDecoration: 'none' }}
               aria-label={`${s.value} ${s.label} in der Liste anzeigen`}
             >
               {body}
             </Link>
           ) : (
-            <div key={s.label} className="card" style={{ flex: '1 1 160px' }}>
+            <div
+              key={s.label}
+              className={`card stat-card stat-card--${s.tone}`}
+              style={{ flex: '1 1 160px' }}
+            >
               {body}
             </div>
           );

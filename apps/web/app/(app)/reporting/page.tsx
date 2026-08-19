@@ -69,8 +69,12 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
     <div className="card" style={{ flex: '1 1 180px' }}>
       <div className="card__body">
         <div className="subtle">{label}</div>
-        <div style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: 6 }}>{value}</div>
-        {hint && <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>{hint}</div>}
+        <div className="stat__value stat__value--sm">{value}</div>
+        {hint && (
+          <div className="subtle" style={{ fontSize: 'var(--text-xs)' }}>
+            {hint}
+          </div>
+        )}
       </div>
     </div>
   );
