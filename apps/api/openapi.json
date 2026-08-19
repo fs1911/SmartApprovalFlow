@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Klarwerk API",
-    "description": "Public REST API for Klarwerk. All responses use a consistent envelope. See docs/api-design.md.",
+    "title": "Nicka API",
+    "description": "Public REST API for Nicka. All responses use a consistent envelope. See docs/api-design.md.",
     "version": "1.0.0-block1"
   },
   "components": {

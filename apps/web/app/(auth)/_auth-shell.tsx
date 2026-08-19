@@ -24,8 +24,8 @@ export function AuthShell({
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-5)' }}>
           <Link href="/" className="mk-brand" style={{ justifyContent: 'center' }}>
-            <span className="mk-brand__logo">K</span>
-            <span className="mk-brand__name">Klarwerk</span>
+            <span className="mk-brand__logo">N</span>
+            <span className="mk-brand__name">Nicka</span>
           </Link>
         </div>
         <div className="card">

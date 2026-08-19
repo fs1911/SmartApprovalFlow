@@ -4,7 +4,7 @@ import { AuthShell } from '../../_auth-shell';
 import { AcceptForm } from './_accept-form';
 
 export const metadata: Metadata = {
-  title: 'Einladung annehmen — Klarwerk',
+  title: 'Einladung annehmen — Nicka',
   robots: { index: false, follow: false },
 };
 

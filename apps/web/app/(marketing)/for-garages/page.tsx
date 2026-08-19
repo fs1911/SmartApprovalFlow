@@ -37,7 +37,7 @@ export default function ForGaragesPage() {
             </p>
           </div>
           <div className="mk-feature">
-            <h3>Mit Klarwerk</h3>
+            <h3>Mit Nicka</h3>
             <p>
               Ein Link mit Foto und Preisband ist in einer Minute gesendet. Die Kundschaft
               entscheidet mobil. Ihr Team sieht den Status live – und hat den Nachweis.
@@ -69,7 +69,7 @@ export default function ForGaragesPage() {
         <Eyebrow>Bewusst schlank</Eyebrow>
         <h2>Ein Layer, kein Systemwechsel.</h2>
         <p className="mk-lead">
-          Klarwerk ersetzt Ihre Werkstattsoftware nicht. Es ergänzt genau den fehlenden
+          Nicka ersetzt Ihre Werkstattsoftware nicht. Es ergänzt genau den fehlenden
           Baustein – die digitale, belegbare Kundenfreigabe – und lässt sich später über eine
           API anbinden.
         </p>

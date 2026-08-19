@@ -30,8 +30,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </a>
       <aside className="sidebar">
         <div className="sidebar__brand">
-          <span className="sidebar__logo">K</span>
-          <span>Klarwerk</span>
+          <span className="sidebar__logo">N</span>
+          <span>Nicka</span>
         </div>
         <nav className="sidebar__nav">
           <NavLink href="/dashboard">Übersicht</NavLink>
@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <NavLink href="/settings">Einstellungen</NavLink>
         </nav>
         <div className="sidebar__foot">
-          Klarwerk · MVP
+          Nicka · MVP
           <br />
           {me.tenant.slug}
         </div>

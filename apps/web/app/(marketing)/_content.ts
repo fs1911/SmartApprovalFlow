@@ -7,15 +7,18 @@
  */
 
 export const BRAND = {
-  name: 'Klarwerk',
-  short: 'Klarwerk',
-  domain: 'smartapprovalflow.ch',
+  name: 'Nicka',
+  short: 'Nicka',
+  domain: 'nicka.ch',
+  /** Punchy brand slogan (from "nicken" = to nod = the customer's quick yes). */
+  slogan: 'Ein Nicken genügt.',
+  /** Descriptive positioning used in titles/footer. */
   tagline: 'Digitale Freigaben für Werkstätten',
 };
 
 /** One-sentence positioning formula. */
 export const POSITIONING =
-  'Klarwerk ist der schnellste Weg für Garagen, Zusatzarbeiten digital, ' +
+  'Nicka ist der schnellste Weg für Garagen, Zusatzarbeiten digital, ' +
   'verständlich und belegbar vom Kunden freigeben zu lassen – mobil, ohne App, ohne Login.';
 
 export const HERO = {
@@ -51,7 +54,7 @@ export const BENEFITS: Benefit[] = [
   },
   {
     title: 'Läuft neben Ihrer Software',
-    body: 'Kein Systemwechsel. Klarwerk legt einen wertvollen Layer über Ihren bestehenden Ablauf.',
+    body: 'Kein Systemwechsel. Nicka legt einen wertvollen Layer über Ihren bestehenden Ablauf.',
   },
 ];
 
@@ -96,7 +99,7 @@ export const FAQS: Faq[] = [
   },
   {
     q: 'Ersetzt das meine bestehende Werkstattsoftware?',
-    a: 'Nein. Klarwerk ist bewusst ein Layer obendrauf. Sie behalten Ihre Abläufe und ergänzen digitale Freigaben.',
+    a: 'Nein. Nicka ist bewusst ein Layer obendrauf. Sie behalten Ihre Abläufe und ergänzen digitale Freigaben.',
   },
   {
     q: 'Ist das rechtlich belegbar?',
@@ -118,7 +121,7 @@ export const FAQS: Faq[] = [
 
 /** Short blurb for LinkedIn / e-mail / demo contexts. */
 export const SHORT_PITCH =
-  'Klarwerk hilft Garagen, Zusatzarbeiten digital und belegbar freigeben zu lassen: ' +
+  'Nicka hilft Garagen, Zusatzarbeiten digital und belegbar freigeben zu lassen: ' +
   'Der Serviceberater sendet Befund, Foto und Preisband als sicheren Link, die Kundschaft gibt ' +
   'mobil frei – ohne App, ohne Login. Schneller, professioneller, nachvollziehbar.';
 

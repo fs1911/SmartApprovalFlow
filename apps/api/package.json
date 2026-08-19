@@ -2,7 +2,7 @@
   "name": "@saf/api",
   "version": "0.1.0",
   "private": true,
-  "description": "Klarwerk — public REST API (Fastify, OpenAPI-first).",
+  "description": "Nicka — public REST API (Fastify, OpenAPI-first).",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",

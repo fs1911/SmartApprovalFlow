@@ -1,5 +1,5 @@
 /**
- * Canonical enums and status models for Klarwerk.
+ * Canonical enums and status models for Nicka.
  *
  * These are the single source of truth shared by the API, the web app and the
  * database layer. Keep them in sync with packages/db/prisma/schema.prisma.

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Scroll-driven storytelling of the Klarwerk customer journey (Block 47).
+ * Scroll-driven storytelling of the Nicka customer journey (Block 47).
  *
  * A phone mockup stays pinned (sticky) while the four narrative steps scroll
  * past; the phone swaps its screen as each step becomes active. Built on a
@@ -46,7 +46,7 @@ function PhoneScreen({ step }: { step: number }) {
   return (
     <div className="mk-device__screen">
       <div className="mk-device__bar">
-        <div className="mk-device__brand">Klarwerk</div>
+        <div className="mk-device__brand">Nicka</div>
         <div className="mk-device__title">Muster-Garage · AC-2026-0142</div>
       </div>
 
@@ -164,7 +164,7 @@ export function ScrollStory() {
   }, []);
 
   return (
-    <section className="mk-story" aria-label="So funktioniert Klarwerk">
+    <section className="mk-story" aria-label="So funktioniert Nicka">
       <div className="mk-container mk-story__head">
         <span className="mk-eyebrow">So funktioniert es</span>
         <h2>Von der Empfehlung zur dokumentierten Freigabe.</h2>

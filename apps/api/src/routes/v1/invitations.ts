@@ -82,7 +82,7 @@ export async function invitationRoutes(app: FastifyInstance) {
         where: { id: auth.tenantId },
         select: { name: true, brandName: true },
       });
-      const workspaceName = tenant?.brandName ?? tenant?.name ?? 'Klarwerk';
+      const workspaceName = tenant?.brandName ?? tenant?.name ?? 'Nicka';
       const acceptUrl = `${config.WEB_BASE_URL}/invite/${token}`;
 
       await dispatchMessage({

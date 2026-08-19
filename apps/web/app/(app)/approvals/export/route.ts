@@ -39,7 +39,7 @@ export async function GET(req: Request): Promise<Response> {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
       'content-disposition':
-        upstream.headers.get('content-disposition') ?? 'attachment; filename="klarwerk-cases.csv"',
+        upstream.headers.get('content-disposition') ?? 'attachment; filename="nicka-cases.csv"',
     },
   });
 }

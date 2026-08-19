@@ -222,7 +222,7 @@ export async function approvalCaseRoutes(app: FastifyInstance) {
       });
 
       const csv = toCsv(header, csvRows);
-      const fname = `klarwerk-cases-${new Date().toISOString().slice(0, 10)}.csv`;
+      const fname = `nicka-cases-${new Date().toISOString().slice(0, 10)}.csv`;
       return reply
         .header('content-type', 'text/csv; charset=utf-8')
         .header('content-disposition', `attachment; filename="${fname}"`)

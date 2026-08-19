@@ -33,15 +33,15 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Klarwerk — Digitale Freigaben für Werkstätten',
+    default: 'Nicka — Digitale Freigaben für Werkstätten',
     template: '%s',
   },
   description:
     'Zusatzarbeiten digital freigeben lassen: sicherer Link mit Foto, Klartext und Preisband. ' +
     'Ihre Kundschaft entscheidet mobil – ohne App, ohne Login. Jede Freigabe dokumentiert.',
-  applicationName: 'Klarwerk',
+  applicationName: 'Nicka',
   openGraph: {
-    siteName: 'Klarwerk',
+    siteName: 'Nicka',
     locale: 'de_CH',
     type: 'website',
   },

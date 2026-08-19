@@ -25,7 +25,7 @@ export default function GlobalError({ reset }: { error: Error; reset: () => void
             </div>
           </div>
         </div>
-        <div className="public-foot">Klarwerk</div>
+        <div className="public-foot">Nicka</div>
       </main>
     </div>
   );

@@ -10,7 +10,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <header className="mk-header">
         <div className="mk-container mk-header__inner">
           <Link href="/" className="mk-brand" aria-label={`${BRAND.name} Startseite`}>
-            <span className="mk-brand__logo">K</span>
+            <span className="mk-brand__logo">N</span>
             <span className="mk-brand__name">{BRAND.short}</span>
           </Link>
           <nav className="mk-nav" aria-label="Hauptnavigation">
@@ -37,7 +37,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="mk-container mk-footer__grid">
           <div>
             <div className="mk-brand">
-              <span className="mk-brand__logo">K</span>
+              <span className="mk-brand__logo">N</span>
               <span className="mk-brand__name">{BRAND.short}</span>
             </div>
             <p className="subtle" style={{ marginTop: 12, maxWidth: 280 }}>

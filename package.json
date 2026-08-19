@@ -2,7 +2,7 @@
   "name": "smart-approval-flow",
   "version": "0.1.0",
   "private": true,
-  "description": "Klarwerk für Garagen — digitale Freigabe von Zusatzarbeiten und Diagnosen (MVP Block 1: Foundation).",
+  "description": "Nicka für Garagen — digitale Freigabe von Zusatzarbeiten und Diagnosen (MVP Block 1: Foundation).",
   "workspaces": [
     "apps/*",
     "packages/*"

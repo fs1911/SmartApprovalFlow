@@ -30,7 +30,7 @@ test('case export returns text/csv with the expected header and filename', async
   assert.match(res.headers['content-type'] as string, /text\/csv/);
   assert.match(
     res.headers['content-disposition'] as string,
-    /attachment; filename="klarwerk-cases-.*\.csv"/,
+    /attachment; filename="nicka-cases-.*\.csv"/,
   );
   assert.equal(
     rows(res.body as string)[0],

@@ -1,5 +1,5 @@
 // =============================================================================
-// Klarwerk — Prisma schema (Block 1 foundation)
+// Nicka — Prisma schema (Block 1 foundation)
 //
 // Design notes:
 //  * Multi-tenant by row: almost every business row carries `tenantId`, and all

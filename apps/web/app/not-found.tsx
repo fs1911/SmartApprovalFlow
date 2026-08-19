@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Seite nicht gefunden — Klarwerk' };
+export const metadata = { title: 'Seite nicht gefunden — Nicka' };
 
 /** Global 404. Kept calm and on-brand; offers a way back rather than a dead end. */
 export default function NotFound() {
@@ -23,7 +23,7 @@ export default function NotFound() {
             </div>
           </div>
         </div>
-        <div className="public-foot">Klarwerk</div>
+        <div className="public-foot">Nicka</div>
       </main>
     </div>
   );

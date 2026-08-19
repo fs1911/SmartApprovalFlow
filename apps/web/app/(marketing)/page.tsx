@@ -24,7 +24,7 @@ export default function HomePage() {
       <section className="mk-hero">
         <div className="mk-container mk-hero__inner">
           <div className="mk-hero__copy">
-            <Eyebrow>Für unabhängige Garagen &amp; Werkstätten</Eyebrow>
+            <Eyebrow>{BRAND.slogan}</Eyebrow>
             <h1>
               {HERO.headline.split('in Minuten').flatMap((part, i) =>
                 i === 0
@@ -55,7 +55,7 @@ export default function HomePage() {
             >
               <div className="mk-device__screen">
                 <div className="mk-device__bar">
-                  <div className="mk-device__brand">Klarwerk</div>
+                  <div className="mk-device__brand">Nicka</div>
                   <div className="mk-device__title">Muster-Garage · Freigabe AC-2026-0142</div>
                 </div>
                 <div className="mk-device__body">
@@ -92,7 +92,7 @@ export default function HomePage() {
                     <span className="mk-btn-decline">Ablehnen</span>
                   </div>
                   <div className="mk-device__foot">
-                    Bereitgestellt über Klarwerk · sicher &amp; belegbar
+                    Bereitgestellt über Nicka · sicher &amp; belegbar
                   </div>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function HomePage() {
         <h2>Freigaben per Telefon sind langsam, unklar und schlecht belegbar.</h2>
         <p className="mk-lead">
           Zusatzarbeiten gehen verloren, Fahrzeuge stehen, und bei der Rechnung entstehen
-          Diskussionen. Klarwerk macht aus der Freigabe einen klaren, dokumentierten
+          Diskussionen. Nicka macht aus der Freigabe einen klaren, dokumentierten
           Schritt – den Ihre Kundschaft in Sekunden versteht.
         </p>
       </Section>

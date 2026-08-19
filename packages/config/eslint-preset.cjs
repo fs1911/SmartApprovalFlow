@@ -1,5 +1,5 @@
 /**
- * Shared ESLint preset for Klarwerk.
+ * Shared ESLint preset for Nicka.
  * Kept intentionally lean: TypeScript recommended rules + Prettier compatibility.
  * Apps extend this and add framework-specific plugins (e.g. Next.js) locally.
  */

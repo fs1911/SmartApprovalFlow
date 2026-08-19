@@ -1,5 +1,5 @@
 /**
- * @saf/types — shared contract layer for Klarwerk.
+ * @saf/types — shared contract layer for Nicka.
  *
  * Import from here everywhere (API, web, db seed) so enums, the API envelope
  * and validation schemas stay consistent across the whole system.

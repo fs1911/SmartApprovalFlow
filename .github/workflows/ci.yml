@@ -1,4 +1,4 @@
-# CI for Klarwerk (Block 9).
+# CI for Nicka (Block 9).
 #
 # Mirrors `npm run verify` locally, plus a Postgres service so the integration
 # tests (apps/api/src/test/integration.test.ts) run against a real database.

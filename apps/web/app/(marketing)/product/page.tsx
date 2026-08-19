@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: `Wie es funktioniert — ${BRAND.name}`,
   description:
     'Vom Befund zur dokumentierten Freigabe: Fall anlegen, sicheren Link senden, Kunde entscheidet ' +
-    'mobil, Status live sehen. So arbeitet Klarwerk im Werkstattalltag.',
+    'mobil, Status live sehen. So arbeitet Nicka im Werkstattalltag.',
   alternates: { canonical: '/product' },
 };
 
@@ -18,7 +18,7 @@ export default function ProductPage() {
           <Eyebrow>Produkt</Eyebrow>
           <h1>Von der Diagnose zur dokumentierten Freigabe.</h1>
           <p className="mk-hero__sub">
-            Klarwerk begleitet genau den Moment, in dem am Fahrzeug etwas Zusätzliches
+            Nicka begleitet genau den Moment, in dem am Fahrzeug etwas Zusätzliches
             auffällt – und macht daraus eine klare, belegbare Kundenentscheidung.
           </p>
         </div>

@@ -2,7 +2,7 @@
   "name": "@saf/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Klarwerk — web app (Next.js App Router).",
+  "description": "Nicka — web app (Next.js App Router).",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",

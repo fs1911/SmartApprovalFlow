@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { LoginForm } from './_login-form';
 
 export const metadata: Metadata = {
-  title: 'Anmelden — Klarwerk',
+  title: 'Anmelden — Nicka',
   robots: { index: false, follow: false },
 };
 
@@ -22,8 +22,8 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 'var(--space-5)' }}>
           <Link href="/" className="mk-brand" style={{ justifyContent: 'center' }}>
-            <span className="mk-brand__logo">K</span>
-            <span className="mk-brand__name">Klarwerk</span>
+            <span className="mk-brand__logo">N</span>
+            <span className="mk-brand__name">Nicka</span>
           </Link>
         </div>
         <div className="card">

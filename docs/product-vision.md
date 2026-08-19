@@ -1,4 +1,4 @@
-# Produktvision — Klarwerk für Garagen
+# Produktvision — Nicka für Garagen
 
 ## Problem
 

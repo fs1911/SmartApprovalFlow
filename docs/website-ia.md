@@ -1,6 +1,6 @@
 # Website Information Architecture
 
-Öffentlicher Marketing-Auftritt von Klarwerk.
+Öffentlicher Marketing-Auftritt von Nicka.
 
 ## Platzierungsentscheidung
 

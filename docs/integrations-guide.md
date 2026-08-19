@@ -1,6 +1,6 @@
 # Integrations-Guide (Block 12)
 
-Anbindung von Garagensoftware an Klarwerk: Fälle per API erstellen,
+Anbindung von Garagensoftware an Nicka: Fälle per API erstellen,
 Events per Webhook empfangen. Lokal komplett ohne externe Accounts testbar.
 
 Basis-URL (lokal): `http://localhost:4000`. Interaktive Doku: `/docs` (Swagger).

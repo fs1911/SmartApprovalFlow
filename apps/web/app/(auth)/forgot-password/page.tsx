@@ -4,7 +4,7 @@ import { AuthShell } from '../_auth-shell';
 import { ForgotForm } from './_forgot-form';
 
 export const metadata: Metadata = {
-  title: 'Passwort vergessen — Klarwerk',
+  title: 'Passwort vergessen — Nicka',
   robots: { index: false, follow: false },
 };
 

@@ -24,7 +24,7 @@ export const webEnv = {
   /** Base URL the web app uses to reach the API (server-side fetch). */
   apiBaseUrl: readUrl('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000'),
   /** Public site URL for canonical / OpenGraph / sitemap. */
-  siteUrl: readUrl('NEXT_PUBLIC_SITE_URL', 'https://smartapprovalflow.ch'),
+  siteUrl: readUrl('NEXT_PUBLIC_SITE_URL', 'https://nicka.ch'),
   /** Dev-only role/tenant impersonation defaults (replaced by real auth later). */
   devTenant: process.env.SAF_DEV_TENANT ?? 'muster-garage',
   devRole: process.env.SAF_DEV_ROLE ?? 'OWNER',
