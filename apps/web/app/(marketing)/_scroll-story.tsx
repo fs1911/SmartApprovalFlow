@@ -195,6 +195,26 @@ export function ScrollStory() {
             </li>
           ))}
         </ol>
+
+        {/* Progress dots (sticky). Enhancement only: without JS the steps still
+            read top-to-bottom, so these are hidden from assistive tech. */}
+        <ul className="mk-story__dots" aria-hidden>
+          {STEPS.map((s, i) => (
+            <li key={s.n}>
+              <button
+                type="button"
+                className="mk-story__dot"
+                data-active={active === i}
+                tabIndex={-1}
+                onClick={() =>
+                  stepRefs.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+              >
+                <span className="mk-story__dot-num">{s.n}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

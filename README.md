@@ -49,7 +49,8 @@ Block 42 (Konsistente Leerzustände) ✅ ·
 Block 43 (Reporting nach Dringlichkeit) ✅ ·
 Block 44 (Sortierung der Freigaben-Liste) ✅ ·
 Block 45 (Antwortzeit-Verteilung im Reporting) ✅ ·
-Block 46 (Detailseiten-Politur) ✅
+Block 46 (Detailseiten-Politur) ✅ ·
+Block 47 (Marketing-Redesign — „Wow"-Pass Teil 1) ✅
 — siehe [`docs/roadmap.md`](docs/roadmap.md).
 
 ---

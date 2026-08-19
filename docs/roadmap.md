@@ -51,6 +51,8 @@ riesig".
 | **Block 44** | **Sortierung der Freigaben-Liste** — `?sort=newest\|oldest` auf `GET /approval-cases` (spiegelt Order + Keyset-Cursor korrekt), CSV-Export folgt der Sortierung; JS-freie „Neueste/Älteste zuerst"-Steuerung, `sort` überlebt Filterwechsel, ist aber kein Filter | ✅ abgeschlossen |
 | **Block 45** | **Antwortzeit-Verteilung im Reporting** — `responseTimeBuckets` (4 Bins: <1h/1–24h/1–3d/>3d) + `responseBuckets` in `GET /reporting/summary`, Web-Balkenkarte „Antwortzeit-Verteilung" (Anteil je Bin, kein Drilldown) | ✅ abgeschlossen |
 | **Block 46** | **Detailseiten-Politur** — Kontextzeile (Kunde · Fahrzeug · Kennzeichen) unter dem Titel, `EmptyState` für den leeren Verlauf, A11y-Rollen der Timeline (`list`/`listitem`); reine Präsentation | ✅ abgeschlossen |
+| **Block 47** | **Marketing-Redesign („Wow"-Pass, Teil 1)** — eigenständige Typografie via `next/font` (Inter · Space Grotesk · Newsreader-Serif), committete Mint/Salbei-Markenpalette, überarbeiteter Hero (Serif-Subline, Akzent-Unterstreichung, Geräte-Mockup), scroll-getriebenes Storytelling (`ScrollStory`: gepinntes Phone + IntersectionObserver + Fortschritts-Punkte, `reduced-motion`/No-JS-Fallback), veredelte Feature-Karten; provider-frei, rein visuell | ✅ abgeschlossen |
+| **Block 48** | **App-Redesign („Wow"-Pass, Teil 2)** — dieselbe Design-Sprache auf App-Shell/Dashboard/Detailseiten übertragen (Typo, Abstände, Micro-Interactions) | ⏳ geplant |
 
 ## Leitplanken über alle Blöcke
 

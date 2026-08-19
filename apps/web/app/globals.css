@@ -894,7 +894,7 @@ textarea {
 }
 .mk-story__grid {
   display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
+  grid-template-columns: 0.9fr 1.1fr auto;
   gap: clamp(2rem, 6vw, 5rem);
   align-items: start;
 }
@@ -1058,6 +1058,51 @@ textarea {
   border-radius: var(--radius-full);
 }
 
+/* --- Scroll-story progress dots ------------------------------------------ */
+.mk-story__dots {
+  position: sticky;
+  top: 45vh;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  align-self: center;
+}
+.mk-story__dot {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 2px solid var(--color-mint-400);
+  background: transparent;
+  color: var(--color-mint-700);
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    transform 0.3s ease;
+}
+.mk-story__dot-num {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: var(--weight-bold);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mk-story__dot[data-active='true'] {
+  background: var(--color-mint-ink);
+  border-color: var(--color-mint-ink);
+  color: #fff;
+  transform: scale(1.12);
+}
+.mk-story__dot[data-active='true'] .mk-story__dot-num {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mk-story__step {
     opacity: 1;
@@ -1067,6 +1112,9 @@ textarea {
   .mk-screen-fade,
   .mk-tap__ring {
     animation: none;
+  }
+  .mk-story__dot {
+    transition: none;
   }
 }
 
@@ -1080,16 +1128,40 @@ textarea {
   grid-template-columns: repeat(2, 1fr);
 }
 .mk-feature {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
+.mk-feature:hover {
+  border-color: var(--color-mint-400);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+/* Small mint tick accent before each feature heading. */
 .mk-feature h3 {
   font-size: var(--text-base);
   font-weight: var(--weight-semibold);
   margin: 0 0 var(--space-2);
+  padding-left: 18px;
+  position: relative;
+}
+.mk-feature h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--color-mint-500);
+  transform: rotate(45deg);
 }
 .mk-feature p {
   color: var(--color-ink-500);
@@ -1108,7 +1180,7 @@ textarea {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: var(--color-brand-500);
+  background: var(--color-mint-ink);
   color: #fff;
   display: grid;
   place-items: center;
@@ -1143,9 +1215,15 @@ textarea {
   gap: var(--space-3);
 }
 .mk-price-card--hl {
-  border-color: var(--color-brand-500);
+  border-color: var(--color-mint-500);
   box-shadow: var(--shadow-md);
   position: relative;
+}
+/* "Empfohlen" badge on the highlighted plan, in the marketing mint. */
+.mk-root .mk-price-card--hl .badge--info {
+  background: var(--color-mint-100);
+  color: var(--color-mint-700);
+  border: 1px solid var(--color-mint-400);
 }
 .mk-price-card__price {
   font-size: var(--text-3xl);
@@ -1331,6 +1409,9 @@ textarea {
   }
   .mk-story__media {
     position: static;
+  }
+  .mk-story__dots {
+    display: none;
   }
   .mk-story__step {
     min-height: auto;
