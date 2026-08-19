@@ -21,6 +21,15 @@
   --color-accent-600: #c65a1e;
   --color-accent-50: #fdf0e7;
 
+  /* Mint / sage — the marketing signature colour (calm, trustworthy, premium).
+     -600 is darkened for accessible text/links on light backgrounds. */
+  --color-mint-500: #a7dcca;
+  --color-mint-400: #bce4d6;
+  --color-mint-100: #e3f4ee;
+  --color-mint-600: #2f8f6f;
+  --color-mint-700: #236b53;
+  --color-mint-ink: #123b2e; /* deep green-black for text on mint */
+
   --color-ink-900: #16202b; /* primary text */
   --color-ink-700: #33414f;
   --color-ink-500: #5b6b7a; /* secondary text */
@@ -51,6 +60,7 @@
     sans-serif;
   --font-display:
     var(--font-display-face), 'Space Grotesk', var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-serif-face), 'Newsreader', Georgia, 'Times New Roman', serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
 
   --text-xs: 0.75rem;

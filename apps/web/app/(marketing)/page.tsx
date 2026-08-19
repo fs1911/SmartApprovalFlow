@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HERO, BENEFITS, STEPS, BRAND, POSITIONING } from './_content';
+import { HERO, BENEFITS, BRAND, POSITIONING } from './_content';
 import { Section, Eyebrow, CtaRow, FinalCta } from './_components';
+import { ScrollStory } from './_scroll-story';
 
 export const metadata: Metadata = {
   title: `${BRAND.name} — Digitale Freigaben für Werkstätten`,
@@ -125,22 +126,10 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* How it works */}
+      {/* How it works — scroll-driven story of the customer journey */}
+      <ScrollStory />
       <Section>
-        <Eyebrow>So funktioniert es</Eyebrow>
-        <h2>In vier Schritten zur dokumentierten Freigabe.</h2>
-        <div className="mk-steps" style={{ marginTop: 'var(--space-6)' }}>
-          {STEPS.map((s) => (
-            <div key={s.n} className="mk-step">
-              <div className="mk-step__n">{s.n}</div>
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 'var(--space-6)' }}>
-          <Link href="/product">Ausführlich ansehen →</Link>
-        </div>
+        <Link href="/product">Ausführlich ansehen →</Link>
       </Section>
 
       {/* Positioning line */}

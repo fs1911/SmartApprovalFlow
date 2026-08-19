@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Newsreader } from 'next/font/google';
 import '@saf/ui/tokens.css';
 import './globals.css';
 import { SITE_URL } from '@/lib/site';
@@ -18,6 +18,16 @@ const spaceGrotesk = Space_Grotesk({
   display: 'swap',
   weight: ['500', '600', '700'],
   variable: '--font-display-face',
+});
+
+// Serif for marketing sublines/quotes — an elegant counterpoint to the bold
+// display sans (Beagle-inspired pairing, Block 47).
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  display: 'swap',
+  style: ['normal', 'italic'],
+  weight: ['400', '500'],
+  variable: '--font-serif-face',
 });
 
 export const metadata: Metadata = {
@@ -40,7 +50,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html
+      lang="de"
+      className={`${inter.variable} ${spaceGrotesk.variable} ${newsreader.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
