@@ -41,11 +41,23 @@ API-URL). Genau so gehen wir vor.
 Öffne den aus dem Repo erstellten Service (oder **+ New → GitHub Repo** →
 dasselbe Repo) und benenne ihn **`api`**. Dann:
 
-**Settings → Build**
+**Settings → Build — WICHTIG: auf Dockerfile umstellen**
 
-- **Dockerfile Path:** `apps/api/Dockerfile`
-  _(baut automatisch die letzte Stage `serve` — die migriert die DB beim Start
-  und startet dann die API. Kein „Target" nötig.)_
+Railway wählt sonst automatisch seinen eigenen Builder „Railpack" und scheitert
+mit _„No start command detected"_ (unser Monorepo hat kein Root-Start-Skript).
+Zwing Railway, unser **Dockerfile** zu nutzen — **eine** dieser zwei Varianten:
+
+- **Variante A (empfohlen, aus dem Repo):** Setze bei diesem Service unter
+  **Settings → Build** das **Config-Datei-Feld** (heißt „Railway Config File" /
+  „Config as code") auf **`apps/api/railway.json`**. Diese Datei pinnt Builder =
+  Dockerfile + Pfad + Healthcheck.
+- **Variante B (rein im UI):** Setze unter **Settings → Build** das Feld
+  **„Dockerfile Path"** auf **`apps/api/Dockerfile`** (schaltet Railpack ab).
+
+In beiden Fällen: **Root Directory = `/`** lassen (das Dockerfile baut vom
+Repo-Wurzelverzeichnis). Es baut automatisch die letzte Stage `serve` — die
+migriert die DB beim Start, legt den Owner an und startet dann die API. Kein
+„Target" nötig.
 
 **Variables** (Tab „Variables" → „New Variable"):
 
@@ -84,9 +96,11 @@ Owner-Login angelegt (aus den `BOOTSTRAP_*`-Variablen).
 
 **+ New → GitHub Repo** → dasselbe Repo → benenne ihn **`web`**.
 
-**Settings → Build**
+**Settings → Build — auf Dockerfile umstellen** (wie beim API-Baustein):
 
-- **Dockerfile Path:** `apps/web/Dockerfile`
+- **Variante A:** Config-Datei-Feld auf **`apps/web/railway.json`**, oder
+- **Variante B:** **„Dockerfile Path"** auf **`apps/web/Dockerfile`**.
+- **Root Directory = `/`** lassen.
 
 **Variables:**
 
